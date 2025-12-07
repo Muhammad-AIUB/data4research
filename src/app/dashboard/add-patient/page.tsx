@@ -96,13 +96,13 @@ export default function AddPatient() {
         const patientIdToUse = result.patient?.patientId || result.patient?.id
         router.push(`/dashboard/add-patient/next?patientId=${patientIdToUse}`)
       } else {
-        const error = await res.json()
-        alert(error.message || "Failed to add patient")
+        const errorData = await res.json().catch(() => ({ message: 'Unknown error occurred' }))
+        alert(errorData.message || "Failed to add patient. Please check all required fields.")
         setLoading(false)
       }
     } catch (err) {
-      alert("Failed to add patient")
-      console.error(err)
+      console.error('Error submitting form:', err)
+      alert("Failed to add patient. Please check your connection and try again.")
       setLoading(false)
     }
   }

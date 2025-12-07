@@ -95,11 +95,20 @@ export async function POST(request: Request) {
     } = body
 
     // Validate required fields
-    if (!name || !age || !mobile || !relativeMobile || !patientId) {
+    if (!name || !age || !mobile || !relativeMobile) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
+        { message: 'Missing required fields: Name, Age, Mobile, and Relative Mobile are required' },
         { status: 400 }
       )
+    }
+
+    // Auto-generate patientId if not provided
+    let finalPatientId = patientId
+    if (!finalPatientId || finalPatientId.trim() === '') {
+      // Generate a unique patient ID: P + timestamp + random 4 digits
+      const timestamp = Date.now().toString(36).toUpperCase()
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+      finalPatientId = `P${timestamp}${random}`
     }
 
     // Validate age is a valid number
@@ -120,7 +129,7 @@ export async function POST(request: Request) {
         ethnicity: ethnicity || '',
         religion: religion || 'islam',
         nid: nid || null,
-        patientId,
+        patientId: finalPatientId,
         mobile,
         spouseMobile: spouseMobile || null,
         relativeMobile: relativeMobile || null,
