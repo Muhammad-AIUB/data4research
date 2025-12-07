@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import CalendarWithNavigation from "@/components/CalendarWithNavigation"
 import ExpandableSection from "@/components/ExpandableSection"
@@ -40,7 +40,7 @@ type PatientTest = {
   hematology?: TestDataSection
 }
 
-export default function NextPage() {
+function NextPageContent() {
   const searchParams = useSearchParams()
   const patientId = searchParams.get('patientId')
   
@@ -510,3 +510,16 @@ export default function NextPage() {
   )
 }
 
+export default function NextPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <NextPageContent />
+    </Suspense>
+  )
+}
