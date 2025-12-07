@@ -233,8 +233,8 @@ export default async function PatientDetailPage({
             </div>
           ) : (
             <div className="space-y-6">
-              {Object.entries(
-                patient.tests.reduce((acc: any, test: any) => {
+              {(Object.entries(
+                patient.tests.reduce((acc: Record<string, any[]>, test: any) => {
                   const sampleDate = test.sampleDate instanceof Date 
                     ? test.sampleDate 
                     : new Date(test.sampleDate)
@@ -247,10 +247,10 @@ export default async function PatientDetailPage({
                   if (!acc[date]) acc[date] = []
                   acc[date].push(test)
                   return acc
-                }, {})
-              )
+                }, {} as Record<string, any[]>)
+              ) as [string, any[]][])
                 .sort(([dateA], [dateB]) => new Date(dateB.split('/').reverse().join('-')).getTime() - new Date(dateA.split('/').reverse().join('-')).getTime())
-                .map(([date, tests]: [string, any[]]) => {
+                .map(([date, tests]) => {
                   const sortedTests = [...tests].sort((a, b) => {
                     const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
                     const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)

@@ -275,8 +275,8 @@ export default function NextPage() {
             <div className="text-center py-8 text-gray-500">No saved test data found. Submit test data to see it here.</div>
           ) : (
             <div className="space-y-6">
-              {Object.entries(
-                savedTestData.reduce((acc: any, test: any) => {
+              {(Object.entries(
+                savedTestData.reduce((acc: Record<string, any[]>, test: any) => {
                   // Handle both Date object and ISO string
                   const sampleDate = test.sampleDate instanceof Date 
                     ? test.sampleDate 
@@ -290,10 +290,10 @@ export default function NextPage() {
                   if (!acc[date]) acc[date] = []
                   acc[date].push(test)
                   return acc
-                }, {})
-              )
+                }, {} as Record<string, any[]>)
+              ) as [string, any[]][])
                 .sort(([dateA], [dateB]) => new Date(dateB.split('/').reverse().join('-')).getTime() - new Date(dateA.split('/').reverse().join('-')).getTime())
-                .map(([date, tests]: [string, any[]]) => {
+                .map(([date, tests]) => {
                   // Sort tests within each date group by sampleDate (latest first)
                   const sortedTests = [...tests].sort((a, b) => {
                     const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
