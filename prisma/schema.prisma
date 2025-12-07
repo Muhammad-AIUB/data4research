@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String?
+  email     String    @unique
+  password  String
+  role      String    @default("DOCTOR") // ADMIN or DOCTOR
+  createdAt DateTime  @default(now())
+  patients  Patient[]
+}
+
+model Option {
+  id       String @id @default(uuid())
+  category String // "ethnicity", "religion", "district"
+  label    String
+  value    String
+  order    Int    @default(0)
+}
+
+model Patient {
+  id             String        @id @default(uuid())
+  name           String
+  dateOfBirth    DateTime
+  age            Int
+  ethnicity      String
+  religion       String        @default("Islam")
+  nid            String?
+  patientId      String        @unique
+  mobile         String
+  spouseMobile   String?
+  relativeMobile String?
+  district       String
+  address        String
+  shortHistory   String?
+  surgicalHistory String?
+  familyHistory  String?
+  pastIllness    String?
+  tags           String[]      @default([])
+  specialNotes   String?
+  finalDiagnosis String?
+  createdBy      String
+  createdByUser  User          @relation(fields: [createdBy], references: [id])
+  createdAt      DateTime      @default(now())
+  tests          PatientTest[]
+}
+
+model PatientTest {
+  id                String   @id @default(uuid())
+  patientId         String
+  patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  sampleDate        DateTime
+  autoimmunoProfile Json?
+  cardiology        Json?
+  rft               Json?
+  lft               Json?
+  diseaseHistory    Json?
+  imaging           Json?
+  hematology        Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
