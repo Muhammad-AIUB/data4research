@@ -92,6 +92,9 @@ export default function AddPatient() {
 
       if (res.ok) {
         const result = await res.json()
+        setLoading(false)
+        // Show success message
+        alert("Patient saved successfully!")
         // Navigate with patient ID (use patientId field from response)
         const patientIdToUse = result.patient?.patientId || result.patient?.id
         router.push(`/dashboard/add-patient/next?patientId=${patientIdToUse}`)
