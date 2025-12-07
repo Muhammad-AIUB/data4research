@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import CalendarWithNavigation from "@/components/CalendarWithNavigation"
 import ExpandableSection from "@/components/ExpandableSection"
 import AutoimmunoProfileModal from "@/components/modals/AutoimmunoProfileModal"
@@ -14,28 +14,53 @@ import HematologyModal from "@/components/modals/HematologyModal"
 import { Button } from "@/components/ui/button"
 import { formatTestData } from "@/lib/formatTestData"
 
+// Type definitions for test data
+type TestDataSection = Record<string, unknown> | null
+type TestData = {
+  patientId: string
+  sampleDate: string
+  autoimmunoProfile: TestDataSection
+  cardiology: TestDataSection
+  rft: TestDataSection
+  lft: TestDataSection
+  diseaseHistory: TestDataSection
+  imaging: TestDataSection
+  hematology: TestDataSection
+}
+
+type PatientTest = {
+  id: string
+  sampleDate: Date | string
+  autoimmunoProfile?: TestDataSection
+  cardiology?: TestDataSection
+  rft?: TestDataSection
+  lft?: TestDataSection
+  diseaseHistory?: TestDataSection
+  imaging?: TestDataSection
+  hematology?: TestDataSection
+}
+
 export default function NextPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const patientId = searchParams.get('patientId')
   
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [openModal, setOpenModal] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [savedTestData, setSavedTestData] = useState<any[]>([])
+  const [savedTestData, setSavedTestData] = useState<PatientTest[]>([])
   const [loadingSavedData, setLoadingSavedData] = useState(false)
   
   // Store all test data from modals
-  const [testData, setTestData] = useState({
+  const [testData, setTestData] = useState<TestData>({
     patientId: patientId || '',
     sampleDate: new Date().toISOString(),
-    autoimmunoProfile: null as any,
-    cardiology: null as any,
-    rft: null as any,
-    lft: null as any,
-    diseaseHistory: null as any,
-    imaging: null as any,
-    hematology: null as any,
+    autoimmunoProfile: null,
+    cardiology: null,
+    rft: null,
+    lft: null,
+    diseaseHistory: null,
+    imaging: null,
+    hematology: null,
   })
 
   useEffect(() => {
@@ -44,6 +69,7 @@ export default function NextPage() {
     }
     // Always fetch saved data on mount and when patientId changes
     fetchSavedTestData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId])
 
   const fetchSavedTestData = async () => {
@@ -75,7 +101,7 @@ export default function NextPage() {
     setTestData(prev => ({ ...prev, sampleDate: date.toISOString() }))
   }
 
-  const updateTestData = (section: string, data: any, date?: Date) => {
+  const updateTestData = (section: keyof TestData, data: TestDataSection, date?: Date) => {
     setTestData(prev => ({ 
       ...prev, 
       [section]: {
@@ -86,6 +112,12 @@ export default function NextPage() {
   }
 
   const handleSubmit = async () => {
+    // Validate patientId exists before submitting
+    if (!patientId || patientId.trim() === '') {
+      alert("Patient ID is missing. Please go back and create the patient first.")
+      return
+    }
+
     setLoading(true)
     try {
       const response = await fetch('/api/patient-tests', {
@@ -276,7 +308,7 @@ export default function NextPage() {
           ) : (
             <div className="space-y-6">
               {(Object.entries(
-                savedTestData.reduce((acc: Record<string, any[]>, test: any) => {
+                savedTestData.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
                   // Handle both Date object and ISO string
                   const sampleDate = test.sampleDate instanceof Date 
                     ? test.sampleDate 
@@ -290,8 +322,8 @@ export default function NextPage() {
                   if (!acc[date]) acc[date] = []
                   acc[date].push(test)
                   return acc
-                }, {} as Record<string, any[]>)
-              ) as [string, any[]][])
+                }, {} as Record<string, PatientTest[]>)
+              ) as [string, PatientTest[]][])
                 .sort(([dateA], [dateB]) => new Date(dateB.split('/').reverse().join('-')).getTime() - new Date(dateA.split('/').reverse().join('-')).getTime())
                 .map(([date, tests]) => {
                   // Sort tests within each date group by sampleDate (latest first)

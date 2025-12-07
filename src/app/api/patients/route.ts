@@ -102,12 +102,21 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate age is a valid number
+    const ageNum = parseInt(age)
+    if (isNaN(ageNum) || ageNum < 0 || ageNum > 120) {
+      return NextResponse.json(
+        { message: 'Age must be a valid number between 0 and 120' },
+        { status: 400 }
+      )
+    }
+
     // Create patient
     const patient = await prisma.patient.create({
       data: {
         name,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
-        age: parseInt(age),
+        age: ageNum,
         ethnicity: ethnicity || '',
         religion: religion || 'islam',
         nid: nid || null,
