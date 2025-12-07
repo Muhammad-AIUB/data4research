@@ -38,6 +38,14 @@ const schema = z.object({
   finalDiagnosis: z.string().optional(),
 })
 
+type FormData = z.infer<typeof schema>
+
+type OptionItem = {
+  id: string
+  value: string
+  label: string
+}
+
 export default function AddPatient() {
   const { data, error } = useSWR("/api/options", fetcher)
   const router = useRouter()
@@ -48,14 +56,14 @@ export default function AddPatient() {
   const [tags, setTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       age: 0
     }
   })
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormData) => {
     setLoading(true)
 
     // Use age from form data, fallback to state if needed
@@ -172,7 +180,7 @@ export default function AddPatient() {
           <Label>Ethnicity</Label>
           <Select defaultValue="south-asian" onValueChange={v => setValue("ethnicity", v)}>
             <SelectValue placeholder="Select Ethnicity" />
-            {data.ethnicities?.map((e: any) => (
+            {data.ethnicities?.map((e: OptionItem) => (
               <SelectItem key={e.id} value={e.value}>{e.label}</SelectItem>
             ))}
           </Select>
@@ -183,7 +191,7 @@ export default function AddPatient() {
           <Label>Religion</Label>
           <Select defaultValue="islam" onValueChange={v => setValue("religion", v)}>
             <SelectValue placeholder="Select Religion" />
-            {data.religions?.map((r: any) => (
+            {data.religions?.map((r: OptionItem) => (
               <SelectItem key={r.id} value={r.value}>{r.label}</SelectItem>
             ))}
           </Select>
@@ -204,7 +212,7 @@ export default function AddPatient() {
 
         {/* Relative Mobile */}
         <div>
-          <Label>First Degree Relative's Mobile * (Blood related e.g. son, daughter, father, mother, brother or sister)</Label>
+          <Label>First Degree Relative&apos;s Mobile * (Blood related e.g. son, daughter, father, mother, brother or sister)</Label>
           <Input {...register("relativeMobile")} placeholder="01xxxxxxxxx" />
           {errors.relativeMobile && <p className="text-red-500 text-sm mt-1">{errors.relativeMobile.message as string}</p>}
         </div>
@@ -220,7 +228,7 @@ export default function AddPatient() {
           <Label>District</Label>
           <Select onValueChange={v => setValue("district", v)}>
             <SelectValue placeholder="Select District" />
-            {data.districts?.map((d: any) => (
+            {data.districts?.map((d: OptionItem) => (
               <SelectItem key={d.id} value={d.value}>{d.label}</SelectItem>
             ))}
           </Select>

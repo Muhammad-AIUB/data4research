@@ -43,7 +43,15 @@ type PatientTest = {
 // Separate component for saved reports to avoid conditional hook
 function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }) {
   const groupedAndSorted = useMemo(() => {
-      const grouped = savedTestData.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
+      // First, sort all tests by createdAt (latest first) to maintain serial order
+      const sortedByCreatedAt = [...savedTestData].sort((a: PatientTest & { createdAt?: Date | string }, b: PatientTest & { createdAt?: Date | string }) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.id ? 0 : -1)
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.id ? 0 : -1)
+        return timeB - timeA // Latest first
+      })
+      
+      // Then group by date while maintaining the order
+      const grouped = sortedByCreatedAt.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
         // Fix timezone issue - use local date components
         const sampleDate = test.sampleDate instanceof Date 
           ? test.sampleDate 
@@ -56,10 +64,11 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
         const date = `${day}/${month}/${year}`
         
         if (!acc[date]) acc[date] = []
-        acc[date].push(test)
+        acc[date].push(test) // Maintain order - latest saves will be first in each group
         return acc
       }, {} as Record<string, PatientTest[]>)
     
+    // Sort date groups by date (latest date first), but tests within each group maintain createdAt order
     return Object.entries(grouped).sort(([dateA], [dateB]) => {
       const [dayA, monthA, yearA] = dateA.split('/').map(Number)
       const [dayB, monthB, yearB] = dateB.split('/').map(Number)
@@ -72,16 +81,9 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
   return (
     <div className="space-y-6">
       {groupedAndSorted.map(([date, tests]) => {
-        // Sort by createdAt (latest first) to ensure newest saves appear first
-        const sortedTests = [...tests].sort((a: PatientTest & { createdAt?: Date | string }, b: PatientTest & { createdAt?: Date | string }) => {
-          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
-          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
-          if (timeA !== timeB) return timeB - timeA // Latest first
-          // If same creation time, sort by sampleDate
-          const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
-          const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
-          return dateB.getTime() - dateA.getTime()
-        })
+        // Tests are already sorted by createdAt (latest first) from the grouping step
+        // No need to sort again - maintain the order
+        const sortedTests = tests
         
         return (
           <div key={date} className="bg-white border rounded-lg p-4 shadow-sm">
