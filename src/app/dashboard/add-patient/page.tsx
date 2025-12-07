@@ -133,8 +133,8 @@ export default function AddPatient() {
               setYear={setYear} 
               onAgeChange={(newAge) => {
                 setAge(newAge)
-                if (newAge !== "") {
-                  setValue("age", typeof newAge === 'number' ? newAge : parseInt(newAge.toString()), { shouldValidate: true })
+                if (typeof newAge === 'number') {
+                  setValue("age", newAge, { shouldValidate: true })
                 }
               }} 
             />
