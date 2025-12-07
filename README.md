@@ -20,12 +20,13 @@
 
 **Keywords**: Full-Stack Development • Next.js 16 • React 19 • TypeScript • Real-Time Unit Conversion • Intelligent Automation • Medical Data Management • Performance Optimization • User Experience Design • Database Architecture • API Development • Business Impact • ROI Optimization
 
-**Business Impact**: 
-- 💰 **$250K+ Annual Savings** - Reduces data entry costs by 85%
-- ⚡ **6x Capacity Increase** - Handle 300+ patients/day vs 50/day
-- ⏱️ **85% Time Reduction** - From 40 min to 6 min per patient
-- 🎯 **90% Error Reduction** - Automated validation eliminates mistakes
-- 📈 **Scalable Growth** - Expand without proportional cost increase
+**Key Features Implemented**: 
+- ⭐ **Field-Level Favourite System** - localStorage-based, mark individual fields as favourites
+- 🔄 **Real-Time Unit Conversion** - Bidirectional auto-conversion (mg/dL↔mmol/L, °C↔°F, kg↔lbs)
+- 🧮 **Auto-Calculations** - BMI, MAP, TSAT, eGFR automatically calculated
+- 📊 **7 Test Categories** - 350+ medical fields with modal-based entry
+- 🔍 **Advanced Search** - Multi-field search with PostgreSQL full-text
+- 🛡️ **Data Validation** - Client + Server validation (Zod + Prisma)
 
 **Technical Excellence**: 
 - 🚀 **Modern Stack**: Next.js 16 (App Router), React 19, TypeScript 5
@@ -49,49 +50,41 @@
 
 ### 🎯 Top 7 Innovations
 
-1. **⭐ Field-Level Favourite System** - Mark individual input fields as favourites (not report-level). Saves 60-70% time on repetitive data entry. Uses localStorage for instant access.
+1. **⭐ Field-Level Favourite System** - Mark individual input fields as favourites (not report-level). Uses localStorage for instant access. Implemented in `src/lib/favourites.ts` with field-level granularity.
 
-2. **🔄 Real-Time Unit Conversion** - Auto bidirectional conversion: mg/dL↔mmol/L, °C↔°F, kg↔lbs, cm↔feet/inches. Eliminates manual conversion errors.
+2. **🔄 Real-Time Unit Conversion** - Auto bidirectional conversion implemented in modals: mg/dL↔mmol/L (Cardiology, RFT, LFT), °C↔°F (Disease History), kg↔lbs (Disease History), cm↔feet/inches (Disease History). See `src/components/modals/` for implementation.
 
-3. **🧮 Auto-Calculations** - BMI, MAP, TSAT, eGFR, Ideal Body Weight calculated automatically. Ensures accuracy.
+3. **🧮 Auto-Calculations** - BMI (from height/weight), MAP (from BP), TSAT (from iron/TIBC), eGFR, Ideal Body Weight - all implemented with real-time calculation in modals.
 
-4. **📊 7 Test Categories (350+ Fields)** - Autoimmuno Profile (80+), Cardiology, RFT, LFT, Disease History, Imaging, Hematology. Each with 50+ specialized fields.
+4. **📊 7 Test Categories (350+ Fields)** - Autoimmuno Profile (80+ fields), Cardiology, RFT, LFT, Disease History, Imaging, Hematology. Each modal in `src/components/modals/` with 50+ specialized fields.
 
-5. **📅 Smart Date Management** - Custom calendar with quick navigation (-1Y, -1M, -5d, +5d, etc.). Individual date pickers per modal.
+5. **📅 Smart Date Management** - Custom calendar component (`src/components/CalendarWithNavigation.tsx`) with quick navigation buttons. Individual date pickers in each modal (`src/components/ModalDatePicker.tsx`).
 
-6. **🔍 Advanced Search** - Multi-field search (Name, Mobile, ID, Diagnosis, Tags). PostgreSQL full-text with debouncing.
+6. **🔍 Advanced Search** - Multi-field search implemented in `src/app/dashboard/patients/page.tsx` - searches Name, Mobile, Patient ID, Diagnosis, Tags. Uses PostgreSQL `contains` with case-insensitive mode.
 
-7. **🛡️ Data Integrity** - Client + Server validation (Zod + Prisma). TypeScript coverage. Auto Patient ID generation.
+7. **🛡️ Data Integrity** - Client validation with Zod schema (`src/app/dashboard/add-patient/page.tsx`), server validation in API routes (`src/app/api/patients/route.ts`). Auto Patient ID generation if not provided. Full TypeScript coverage.
 
 ---
 
-## 💰 Business Impact (Why This Matters)
+## 💰 Business Value (How This Helps Users)
 
-### 📊 ROI at a Glance
+### ⏱️ Time Savings Features
+- **Favourite Fields**: Quick access to frequently used fields saves repetitive typing
+- **Auto Unit Conversion**: No manual calculation needed - saves time and prevents errors
+- **Auto-Calculations**: BMI, MAP, TSAT calculated automatically - no manual math
+- **Smart Date Navigation**: Quick date buttons (-1Y, -1M, -5d, etc.) for faster date selection
 
-| Metric | Before | After | Impact |
-|--------|--------|-------|--------|
-| **Time/Patient** | 40 min | 6 min | **85% faster** |
-| **Patients/Day** | 50 | 300+ | **6x capacity** |
-| **Staff Needed** | 4 people | 1 person | **75% cost cut** |
-| **Error Rate** | 10-15% | <1% | **90% reduction** |
-| **Annual Savings** | - | **$250K+** | **Massive ROI** |
+### 🎯 Error Prevention
+- **Client + Server Validation**: Zod schema validation prevents invalid data entry
+- **Type Safety**: TypeScript catches errors at compile time
+- **Auto Unit Conversion**: Eliminates manual conversion calculation errors
+- **Required Field Validation**: Ensures all critical data is captured
 
-### 💡 Real-World Impact
-
-**Case Study**: Medical research facility
-- **Before**: 50 patients/day, 4 staff, $8K/month
-- **After**: 300 patients/day, 1 staff, $2K/month
-- **Result**: 6x capacity, 75% cost reduction, **$72K/year savings**
-
-### 🚀 Business Benefits
-
-✅ **Handle 6x More Patients** - Same staff, 6x capacity  
-✅ **$250K+ Annual Savings** - Reduced staffing costs  
-✅ **90% Error Reduction** - Automated validation  
-✅ **Real-Time Reports** - Instant vs 2-3 days  
-✅ **Scalable Growth** - Expand without cost increase  
-✅ **ROI in 1-2 Months** - Quick payback period
+### 📈 Scalability Features
+- **Efficient Data Entry**: Modal-based forms with favourite fields for faster input
+- **Search Functionality**: Quick patient lookup by name, mobile, ID, diagnosis, or tags
+- **Date-Grouped Reports**: Easy chronological tracking of test results
+- **Organized Data Structure**: Proper database schema for easy querying and analysis
 
 ---
 
@@ -231,16 +224,16 @@ NEXTAUTH_SECRET="your-secret-key-here"
 
 ### Technical Skills Demonstrated
 ✅ **Full-Stack**: Next.js 16, React 19, TypeScript, PostgreSQL, Prisma  
-✅ **Modern Patterns**: Server Components, Suspense, API Routes, Type-safe DB  
-✅ **Problem-Solving**: Real-world solutions, innovative features, user-centric design  
+✅ **Modern Patterns**: Server Components, Suspense boundaries, API Routes, Type-safe database  
+✅ **Problem-Solving**: Real-world solutions (favourite fields, unit conversion, auto-calculations)  
 ✅ **Code Quality**: 100% TypeScript, ESLint, clean architecture, proper error handling  
-✅ **DevOps**: Vercel deployment, environment management, production-ready  
+✅ **DevOps**: Vercel deployment, Prisma migrations, environment management  
 
-### Business Understanding
-✅ **ROI Focus**: Features that save time and money ($250K+ annual savings)  
-✅ **Scalability**: Designed for growth (6x capacity increase)  
-✅ **User Efficiency**: Every feature reduces workload (85% time reduction)  
-✅ **Data Quality**: Automated validation (90% error reduction)
+### What Makes This Different
+✅ **Innovation**: Field-level favourite system (not typical in CRUD apps)  
+✅ **User-Centric**: Features designed to reduce repetitive work (favourites, auto-conversions)  
+✅ **Data Quality**: Client + Server validation, type safety, error prevention  
+✅ **Scalable Design**: Proper database schema, efficient queries, organized code structure
 
 ---
 
