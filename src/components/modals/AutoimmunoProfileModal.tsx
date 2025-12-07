@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Star, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,14 +15,45 @@ interface Props {
   onDataChange?: (data: any, date: Date) => void
   patientId?: string | null
   onSaveSuccess?: () => void
+  savedData?: Array<{ sampleDate: Date | string; autoimmunoProfile?: any }>
 }
 
-export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
+export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [] }: Props) {
   const [formData, setFormData] = useState<Record<string, { value: string; notes: string }>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
   const reportType = "autoimmunoProfile"
   const reportName = "Autoimmuno Profile"
+
+  // Load saved data when modal opens
+  useEffect(() => {
+    if (savedData && savedData.length > 0) {
+      const dateStr = reportDate.toISOString().split('T')[0]
+      const matchingTest = savedData.find(test => {
+        if (!test.autoimmunoProfile) return false
+        const testDate = test.sampleDate instanceof Date 
+          ? test.sampleDate.toISOString().split('T')[0]
+          : new Date(test.sampleDate).toISOString().split('T')[0]
+        return testDate === dateStr
+      })
+      
+      const testToLoad = matchingTest || savedData
+        .filter(test => test.autoimmunoProfile)
+        .sort((a, b) => {
+          const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
+          const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
+          return dateB.getTime() - dateA.getTime()
+        })[0]
+      
+      if (testToLoad?.autoimmunoProfile) {
+        setFormData(testToLoad.autoimmunoProfile as Record<string, { value: string; notes: string }>)
+        const testDate = testToLoad.sampleDate instanceof Date 
+          ? testToLoad.sampleDate 
+          : new Date(testToLoad.sampleDate)
+        setReportDate(testDate)
+      }
+    }
+  }, [savedData, reportDate])
 
   const updateField = (fieldName: string, value: string, type: 'value' | 'notes') => {
     setFormData(prev => ({

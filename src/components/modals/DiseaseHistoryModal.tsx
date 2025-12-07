@@ -15,9 +15,10 @@ interface Props {
   onDataChange?: (data: any, date: Date) => void
   patientId?: string | null
   onSaveSuccess?: () => void
+  savedData?: Array<{ sampleDate: Date | string; diseaseHistory?: any }>
 }
 
-export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
+export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [] }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
   const reportType = "diseaseHistory"
@@ -140,6 +141,36 @@ export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange
       updateField("bmi", "")
     }
   }, [formData.weightKg, formData.heightCm])
+
+  // Load saved data when modal opens
+  useEffect(() => {
+    if (savedData && savedData.length > 0) {
+      const dateStr = reportDate.toISOString().split('T')[0]
+      const matchingTest = savedData.find(test => {
+        if (!test.diseaseHistory) return false
+        const testDate = test.sampleDate instanceof Date 
+          ? test.sampleDate.toISOString().split('T')[0]
+          : new Date(test.sampleDate).toISOString().split('T')[0]
+        return testDate === dateStr
+      })
+      
+      const testToLoad = matchingTest || savedData
+        .filter(test => test.diseaseHistory)
+        .sort((a, b) => {
+          const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
+          const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
+          return dateB.getTime() - dateA.getTime()
+        })[0]
+      
+      if (testToLoad?.diseaseHistory) {
+        setFormData(testToLoad.diseaseHistory as Record<string, string | number>)
+        const testDate = testToLoad.sampleDate instanceof Date 
+          ? testToLoad.sampleDate 
+          : new Date(testToLoad.sampleDate)
+        setReportDate(testDate)
+      }
+    }
+  }, [savedData])
 
   // Ideal body weight range: 19.5 x (height in cm / 100)^2 to 25 x (height in cm / 100)^2
   useEffect(() => {

@@ -14,9 +14,10 @@ interface Props {
   onDataChange?: (data: any, date: Date) => void
   patientId?: string | null
   onSaveSuccess?: () => void
+  savedData?: Array<{ sampleDate: Date | string; imaging?: any }>
 }
 
-export default function ImagingHistopathologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
+export default function ImagingHistopathologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [] }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
   const reportType = "imaging"
@@ -34,6 +35,36 @@ export default function ImagingHistopathologyModal({ onClose, defaultDate, onDat
     immunohistochemistry: "",
     notes: "",
   })
+
+  // Load saved data when modal opens
+  useEffect(() => {
+    if (savedData && savedData.length > 0) {
+      const dateStr = reportDate.toISOString().split('T')[0]
+      const matchingTest = savedData.find(test => {
+        if (!test.imaging) return false
+        const testDate = test.sampleDate instanceof Date 
+          ? test.sampleDate.toISOString().split('T')[0]
+          : new Date(test.sampleDate).toISOString().split('T')[0]
+        return testDate === dateStr
+      })
+      
+      const testToLoad = matchingTest || savedData
+        .filter(test => test.imaging)
+        .sort((a, b) => {
+          const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
+          const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
+          return dateB.getTime() - dateA.getTime()
+        })[0]
+      
+      if (testToLoad?.imaging) {
+        setFormData(testToLoad.imaging as typeof formData)
+        const testDate = testToLoad.sampleDate instanceof Date 
+          ? testToLoad.sampleDate 
+          : new Date(testToLoad.sampleDate)
+        setReportDate(testDate)
+      }
+    }
+  }, [savedData, reportDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
