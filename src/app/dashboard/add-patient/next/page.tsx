@@ -72,7 +72,12 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
   return (
     <div className="space-y-6">
       {groupedAndSorted.map(([date, tests]) => {
-        const sortedTests = [...tests].sort((a, b) => {
+        // Sort by createdAt (latest first) to ensure newest saves appear first
+        const sortedTests = [...tests].sort((a: PatientTest & { createdAt?: Date | string }, b: PatientTest & { createdAt?: Date | string }) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+          if (timeA !== timeB) return timeB - timeA // Latest first
+          // If same creation time, sort by sampleDate
           const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
           const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
           return dateB.getTime() - dateA.getTime()

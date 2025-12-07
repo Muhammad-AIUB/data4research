@@ -237,7 +237,7 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patientId: patientId || null,
-          sampleDate: reportDate.toISOString(),
+          sampleDate: `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}-${String(reportDate.getDate()).padStart(2, '0')}`,
           hematology: formData,
         })
       })

@@ -253,7 +253,12 @@ export default async function PatientDetailPage({
               ) as [string, any[]][])
                 .sort(([dateA], [dateB]) => new Date(dateB.split('/').reverse().join('-')).getTime() - new Date(dateA.split('/').reverse().join('-')).getTime())
                 .map(([date, tests]) => {
-                  const sortedTests = [...tests].sort((a, b) => {
+                  // Sort by createdAt (latest first) to ensure newest saves appear first
+                  const sortedTests = [...tests].sort((a: any, b: any) => {
+                    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                    if (timeA !== timeB) return timeB - timeA // Latest first
+                    // If same creation time, sort by sampleDate
                     const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
                     const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
                     return dateB.getTime() - dateA.getTime()

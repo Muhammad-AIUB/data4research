@@ -83,7 +83,7 @@ export default function ImagingHistopathologyModal({ onClose, defaultDate, onDat
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patientId: patientId || null,
-          sampleDate: reportDate.toISOString(),
+          sampleDate: `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}-${String(reportDate.getDate()).padStart(2, '0')}`,
           imaging: formData,
         })
       })

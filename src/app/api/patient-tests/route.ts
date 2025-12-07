@@ -36,11 +36,13 @@ export async function GET(request: Request) {
     }
 
     // Fetch all tests (filtered by patientId if provided, or all if not)
+    // Sort by createdAt (latest first) to ensure newest saves appear first
     const tests = await prisma.patientTest.findMany({
       where: whereClause,
-      orderBy: {
-        sampleDate: 'desc'
-      }
+      orderBy: [
+        { createdAt: 'desc' }, // Latest saves first
+        { sampleDate: 'desc' }  // Then by sample date
+      ]
     })
     
     console.log(`Fetched ${tests.length} tests for patientId: ${patientId || 'all'}`)
@@ -107,10 +109,24 @@ export async function POST(request: Request) {
     // Use sampleDate from testData or body, default to now
     const reportDate = testData.sampleDate || sampleDate || new Date().toISOString()
     
-    // Fix timezone issue - parse date and use local date components
-    const dateObj = new Date(reportDate)
-    // Create date at midnight local time to avoid timezone conversion issues
-    const localDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())
+    // Fix timezone issue - parse date string (YYYY-MM-DD format) and create local date at midnight
+    let localDate: Date
+    if (typeof reportDate === 'string') {
+      // Check if it's YYYY-MM-DD format (from modals) or ISO string
+      if (/^\d{4}-\d{2}-\d{2}$/.test(reportDate)) {
+        // YYYY-MM-DD format - parse directly to avoid timezone issues
+        const [year, month, day] = reportDate.split('-').map(Number)
+        localDate = new Date(year, month - 1, day)
+      } else {
+        // ISO string - parse and use local components
+        const dateObj = new Date(reportDate)
+        localDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())
+      }
+    } else {
+      // If it's already a Date object, use local components
+      const dateObj = new Date(reportDate)
+      localDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())
+    }
 
     // Store test data in database
     const savedTest = await prisma.patientTest.create({
