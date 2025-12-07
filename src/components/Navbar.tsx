@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import NavbarLogin from './NavbarLogin'
 import { SignOutButton } from './SignOutButton'
 import { SettingsDropdown } from './SettingsDropdown'
+import Link from 'next/link'
 import type { Session } from 'next-auth'
 
 export default async function Navbar() {
@@ -12,7 +13,9 @@ export default async function Navbar() {
   return (
     <nav className="bg-blue-600 text-white p-4">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
-        <h1 className="text-xl font-bold">Data4Research</h1>
+        <Link href={session && session.user ? "/dashboard" : "/"} className="text-xl font-bold hover:text-blue-200 transition-colors cursor-pointer">
+          Data4Research
+        </Link>
         {session && session.user ? (
           <div className="flex items-center">
             <span className="mr-4">Welcome {session.user.name}</span>

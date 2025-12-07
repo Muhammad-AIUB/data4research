@@ -91,8 +91,9 @@ export default function AddPatient() {
 
       if (res.ok) {
         const result = await res.json()
-        // Navigate with patient ID
-        router.push(`/dashboard/add-patient/next?patientId=${result.patient.id}`)
+        // Navigate with patient ID (use patientId field from response)
+        const patientIdToUse = result.patient?.patientId || result.patient?.id
+        router.push(`/dashboard/add-patient/next?patientId=${patientIdToUse}`)
       } else {
         const error = await res.json()
         alert(error.message || "Failed to add patient")

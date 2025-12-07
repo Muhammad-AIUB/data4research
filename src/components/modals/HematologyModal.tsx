@@ -12,13 +12,16 @@ interface Props {
   onClose: () => void
   defaultDate: Date
   onDataChange?: (data: Record<string, string | DualValue>, date: Date) => void
+  patientId?: string | null
+  onSaveSuccess?: () => void
 }
 
 type DualValue = { value1: string; value2: string }
 
-export default function HematologyModal({ onClose, defaultDate, onDataChange }: Props) {
+export default function HematologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
   const [formData, setFormData] = useState<Record<string, string | DualValue>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
+  const [saving, setSaving] = useState(false)
   const reportType = "hematology"
   const reportName = "Hematology"
 
@@ -181,17 +184,48 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange }: 
     return ""
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const data = {
-      formData,
-      date: reportDate.toISOString()
+    
+    const hasData = Object.keys(formData).length > 0 && 
+      Object.values(formData).some(f => {
+        if (typeof f === 'string') return f.trim() !== ''
+        if (f && typeof f === 'object') return f.value1 || f.value2
+        return false
+      })
+    
+    if (!hasData) {
+      alert("Please enter at least one field value before saving.")
+      return
     }
-    console.log("Hematology Data:", data)
-    if (onDataChange) {
-      onDataChange(formData, reportDate)
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/patient-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patientId || null,
+          sampleDate: reportDate.toISOString(),
+          hematology: formData,
+        })
+      })
+
+      if (response.ok) {
+        if (onSaveSuccess) onSaveSuccess()
+        if (onDataChange) onDataChange(formData, reportDate)
+        alert("Hematology data saved successfully!")
+        onClose()
+      } else {
+        const error = await response.json()
+        alert(error.message || "Failed to save data. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error saving Hematology data:", error)
+      alert("Failed to save data. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    onClose()
   }
 
   let i = 0
@@ -339,8 +373,10 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange }: 
             </div>
 
             <div className="flex gap-2 justify-end pt-4 border-t mt-4">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Save</Button>
+              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : "Save"}
+              </Button>
             </div>
           </form>
         </div>

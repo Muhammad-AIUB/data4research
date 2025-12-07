@@ -13,10 +13,13 @@ interface Props {
   onClose: () => void
   defaultDate: Date
   onDataChange?: (data: any, date: Date) => void
+  patientId?: string | null
+  onSaveSuccess?: () => void
 }
 
-export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange }: Props) {
+export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate)
+  const [saving, setSaving] = useState(false)
   const reportType = "diseaseHistory"
   const reportName = "On Examination Disease History"
   const [formData, setFormData] = useState<Record<string, string | number>>({
@@ -167,17 +170,44 @@ export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange
     "bg-blue-50 border-blue-200",
   ]
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const data = {
-      formData,
-      date: reportDate.toISOString()
+    
+    const hasData = Object.keys(formData).length > 0 && 
+      Object.values(formData).some(f => f !== "" && f !== null && f !== undefined)
+    
+    if (!hasData) {
+      alert("Please enter at least one field value before saving.")
+      return
     }
-    console.log("On Examination Disease History Data:", data)
-    if (onDataChange) {
-      onDataChange(formData, reportDate)
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/patient-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patientId || null,
+          sampleDate: reportDate.toISOString(),
+          diseaseHistory: formData,
+        })
+      })
+
+      if (response.ok) {
+        if (onSaveSuccess) onSaveSuccess()
+        if (onDataChange) onDataChange(formData, reportDate)
+        alert("Disease History data saved successfully!")
+        onClose()
+      } else {
+        const error = await response.json()
+        alert(error.message || "Failed to save data. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error saving Disease History data:", error)
+      alert("Failed to save data. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    onClose()
   }
 
   let i = 0
@@ -490,8 +520,10 @@ export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange
             </div>
 
             <div className="flex gap-2 justify-end sticky bottom-0 bg-white pt-4 border-t mt-4">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Save</Button>
+              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : "Save"}
+              </Button>
             </div>
           </form>
         </div>

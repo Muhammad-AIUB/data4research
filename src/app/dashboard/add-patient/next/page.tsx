@@ -12,6 +12,7 @@ import DiseaseHistoryModal from "@/components/modals/DiseaseHistoryModal"
 import ImagingHistopathologyModal from "@/components/modals/ImagingHistopathologyModal"
 import HematologyModal from "@/components/modals/HematologyModal"
 import { Button } from "@/components/ui/button"
+import { formatTestData } from "@/lib/formatTestData"
 
 export default function NextPage() {
   const router = useRouter()
@@ -40,19 +41,27 @@ export default function NextPage() {
   useEffect(() => {
     if (patientId) {
       setTestData(prev => ({ ...prev, patientId }))
-      fetchSavedTestData()
     }
+    // Always fetch saved data on mount and when patientId changes
+    fetchSavedTestData()
   }, [patientId])
 
   const fetchSavedTestData = async () => {
-    if (!patientId) return
-    
     setLoadingSavedData(true)
     try {
-      const response = await fetch(`/api/patient-tests?patientId=${patientId}`)
+      const currentPatientId = patientId || testData.patientId
+      // Fetch all tests if no patientId, or filter by patientId if provided
+      const url = currentPatientId 
+        ? `/api/patient-tests?patientId=${currentPatientId}`
+        : `/api/patient-tests`
+      
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
+        console.log("Fetched saved test data:", data)
         setSavedTestData(data.tests || [])
+      } else {
+        console.error("Failed to fetch saved test data:", response.status)
       }
     } catch (error) {
       console.error("Error fetching saved test data:", error)
@@ -77,11 +86,6 @@ export default function NextPage() {
   }
 
   const handleSubmit = async () => {
-    if (!patientId) {
-      alert("Patient ID is missing. Please go back and create the patient first.")
-      return
-    }
-
     setLoading(true)
     try {
       const response = await fetch('/api/patient-tests', {
@@ -149,7 +153,9 @@ export default function NextPage() {
             <AutoimmunoProfileModal 
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
+              patientId={patientId}
               onDataChange={(data, date) => updateTestData('autoimmunoProfile', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
 
@@ -162,7 +168,9 @@ export default function NextPage() {
             <CardiologyModal 
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
+              patientId={patientId}
               onDataChange={(data, date) => updateTestData('cardiology', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
 
@@ -175,7 +183,9 @@ export default function NextPage() {
             <RFTModal 
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
+              patientId={patientId}
               onDataChange={(data, date) => updateTestData('rft', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
 
@@ -188,7 +198,9 @@ export default function NextPage() {
             <LFTModal 
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
+              patientId={patientId}
               onDataChange={(data, date) => updateTestData('lft', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
 
@@ -201,7 +213,9 @@ export default function NextPage() {
             <DiseaseHistoryModal 
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
+              patientId={patientId}
               onDataChange={(data, date) => updateTestData('diseaseHistory', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
 
@@ -214,7 +228,9 @@ export default function NextPage() {
             <ImagingHistopathologyModal 
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
+              patientId={patientId}
               onDataChange={(data, date) => updateTestData('imaging', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
 
@@ -227,7 +243,9 @@ export default function NextPage() {
             <HematologyModal 
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
+              patientId={patientId}
               onDataChange={(data, date) => updateTestData('hematology', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
         </div>
@@ -275,75 +293,183 @@ export default function NextPage() {
                 }, {})
               )
                 .sort(([dateA], [dateB]) => new Date(dateB.split('/').reverse().join('-')).getTime() - new Date(dateA.split('/').reverse().join('-')).getTime())
-                .map(([date, tests]: [string, any[]]) => (
+                .map(([date, tests]: [string, any[]]) => {
+                  // Sort tests within each date group by sampleDate (latest first)
+                  const sortedTests = [...tests].sort((a, b) => {
+                    const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
+                    const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
+                    return dateB.getTime() - dateA.getTime()
+                  })
+                  
+                  return (
                   <div key={date} className="bg-white border rounded-lg p-4 shadow-sm">
-                    <h3 className="text-xl font-semibold mb-4 text-blue-600 border-b pb-2">
-                      Date: {date}
-                    </h3>
+                    <div className="flex justify-between items-center mb-4 border-b pb-2">
+                      <h3 className="text-xl font-semibold text-blue-600">Test Reports</h3>
+                      <span className="text-sm font-medium text-gray-600">{date}</span>
+                    </div>
                     <div className="space-y-4">
-                      {tests.map((test, index) => (
+                      {sortedTests.map((test, index) => (
                         <div key={index} className="bg-gray-50 rounded p-4 border-l-4 border-blue-500">
                           {test.autoimmunoProfile && (
                             <div className="mb-3">
-                              <h4 className="font-semibold text-blue-700 mb-2">Autoimmuno Profile</h4>
-                              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                                {JSON.stringify(test.autoimmunoProfile, null, 2)}
-                              </pre>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-blue-700">Autoimmuno Profile</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(test.sampleDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="bg-white p-3 rounded space-y-1">
+                                {formatTestData(test.autoimmunoProfile, 'autoimmunoProfile').map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="font-medium text-gray-700">{item.label}:</span>
+                                    <span className="text-gray-900">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                           {test.cardiology && (
                             <div className="mb-3">
-                              <h4 className="font-semibold text-green-700 mb-2">Cardiology</h4>
-                              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                                {JSON.stringify(test.cardiology, null, 2)}
-                              </pre>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-green-700">Cardiology</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(test.sampleDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="bg-white p-3 rounded space-y-1">
+                                {formatTestData(test.cardiology, 'cardiology').map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="font-medium text-gray-700">{item.label}:</span>
+                                    <span className="text-gray-900">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                           {test.rft && (
                             <div className="mb-3">
-                              <h4 className="font-semibold text-purple-700 mb-2">RFT</h4>
-                              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                                {JSON.stringify(test.rft, null, 2)}
-                              </pre>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-purple-700">RFT</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(test.sampleDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="bg-white p-3 rounded space-y-1">
+                                {formatTestData(test.rft, 'rft').map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="font-medium text-gray-700">{item.label}:</span>
+                                    <span className="text-gray-900">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                           {test.lft && (
                             <div className="mb-3">
-                              <h4 className="font-semibold text-yellow-700 mb-2">LFT</h4>
-                              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                                {JSON.stringify(test.lft, null, 2)}
-                              </pre>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-yellow-700">LFT</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(test.sampleDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="bg-white p-3 rounded space-y-1">
+                                {formatTestData(test.lft, 'lft').map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="font-medium text-gray-700">{item.label}:</span>
+                                    <span className="text-gray-900">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                           {test.diseaseHistory && (
                             <div className="mb-3">
-                              <h4 className="font-semibold text-pink-700 mb-2">Disease History</h4>
-                              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                                {JSON.stringify(test.diseaseHistory, null, 2)}
-                              </pre>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-pink-700">Disease History</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(test.sampleDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="bg-white p-3 rounded space-y-1">
+                                {formatTestData(test.diseaseHistory, 'diseaseHistory').map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="font-medium text-gray-700">{item.label}:</span>
+                                    <span className="text-gray-900">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                           {test.imaging && (
                             <div className="mb-3">
-                              <h4 className="font-semibold text-indigo-700 mb-2">Imaging, Histopathology</h4>
-                              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                                {JSON.stringify(test.imaging, null, 2)}
-                              </pre>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-indigo-700">Imaging, Histopathology</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(test.sampleDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="bg-white p-3 rounded space-y-1">
+                                {formatTestData(test.imaging, 'imaging').map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="font-medium text-gray-700">{item.label}:</span>
+                                    <span className="text-gray-900">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                           {test.hematology && (
                             <div className="mb-3">
-                              <h4 className="font-semibold text-orange-700 mb-2">Hematology</h4>
-                              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                                {JSON.stringify(test.hematology, null, 2)}
-                              </pre>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-orange-700">Hematology</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(test.sampleDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="bg-white p-3 rounded space-y-1">
+                                {formatTestData(test.hematology, 'hematology').map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="font-medium text-gray-700">{item.label}:</span>
+                                    <span className="text-gray-900">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
                       ))}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
             </div>
           )}
         </div>

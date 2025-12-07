@@ -16,28 +16,34 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const patientId = searchParams.get('patientId')
 
-    if (!patientId) {
-      return NextResponse.json({ message: 'Patient ID is required' }, { status: 400 })
+    // Build where clause - if patientId provided, filter by it, otherwise get all
+    let whereClause: any = {}
+    if (patientId && patientId.trim() !== '') {
+      const patient = await prisma.patient.findUnique({
+        where: { patientId }
+      })
+      
+      if (patient) {
+        whereClause.patientId = patient.id
+      } else {
+        // If patientId provided but not found, return empty
+        return NextResponse.json({ tests: [] }, { status: 200 })
+      }
+    } else {
+      // If no patientId, get all tests (including those without patientId)
+      // This allows showing tests saved without patient ID
+      whereClause = {}
     }
 
-    // Find the patient by patientId
-    const patient = await prisma.patient.findUnique({
-      where: { patientId }
-    })
-
-    if (!patient) {
-      return NextResponse.json({ message: 'Patient not found' }, { status: 404 })
-    }
-
-    // Fetch all tests for this patient
+    // Fetch all tests (filtered by patientId if provided, or all if not)
     const tests = await prisma.patientTest.findMany({
-      where: {
-        patientId: patient.id
-      },
+      where: whereClause,
       orderBy: {
         sampleDate: 'desc'
       }
     })
+    
+    console.log(`Fetched ${tests.length} tests for patientId: ${patientId || 'all'}`)
 
     return NextResponse.json({ tests }, { status: 200 })
   } catch (error: any) {
@@ -61,17 +67,15 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { patientId, sampleDate, ...testData } = body
 
-    if (!patientId) {
-      return NextResponse.json({ message: 'Patient ID is required' }, { status: 400 })
-    }
-
-    // Find the patient by patientId
-    const patient = await prisma.patient.findUnique({
-      where: { patientId }
-    })
-
-    if (!patient) {
-      return NextResponse.json({ message: 'Patient not found' }, { status: 404 })
+    // Patient ID is optional - if provided, link to patient, otherwise save without link
+    let patient = null
+    if (patientId && patientId.trim() !== '') {
+      patient = await prisma.patient.findUnique({
+        where: { patientId }
+      })
+      
+      // If patientId provided but not found, still allow saving (don't block)
+      // Just won't link to patient
     }
 
     // Parse the test data - each section has { data, date } structure
@@ -106,7 +110,7 @@ export async function POST(request: Request) {
     // Store test data in database
     const savedTest = await prisma.patientTest.create({
       data: {
-        patientId: patient.id,
+        patientId: patient?.id || null, // Use null if no patient (optional field)
         sampleDate: new Date(reportDate),
         autoimmunoProfile: parsedTestData.autoimmunoProfile || null,
         cardiology: parsedTestData.cardiology || null,

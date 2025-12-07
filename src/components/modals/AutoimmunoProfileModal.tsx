@@ -13,11 +13,14 @@ interface Props {
   onClose: () => void
   defaultDate: Date
   onDataChange?: (data: any, date: Date) => void
+  patientId?: string | null
+  onSaveSuccess?: () => void
 }
 
-export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataChange }: Props) {
+export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
   const [formData, setFormData] = useState<Record<string, { value: string; notes: string }>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
+  const [saving, setSaving] = useState(false)
   const reportType = "autoimmunoProfile"
   const reportName = "Autoimmuno Profile"
 
@@ -118,17 +121,51 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
     </div>
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const data = {
-      formData,
-      date: reportDate.toISOString()
+    
+    // Check if there's any data to save
+    const hasData = Object.keys(formData).length > 0 && 
+      Object.values(formData).some(f => f.value || f.notes)
+    
+    if (!hasData) {
+      alert("Please enter at least one field value before saving.")
+      return
     }
-    console.log("Autoimmuno Profile Data:", data)
-    if (onDataChange) {
-      onDataChange(formData, reportDate)
+
+    setSaving(true)
+    try {
+      // Save to database immediately
+      const response = await fetch('/api/patient-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patientId || null,
+          sampleDate: reportDate.toISOString(),
+          autoimmunoProfile: formData,
+        })
+      })
+
+      if (response.ok) {
+        // Notify parent to refresh saved data
+        if (onSaveSuccess) {
+          onSaveSuccess()
+        }
+        if (onDataChange) {
+          onDataChange(formData, reportDate)
+        }
+        alert("Autoimmuno Profile data saved successfully!")
+        onClose()
+      } else {
+        const error = await response.json()
+        alert(error.message || "Failed to save data. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error saving Autoimmuno Profile data:", error)
+      alert("Failed to save data. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    onClose()
   }
 
   return (
@@ -328,10 +365,12 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
             ["ch50", "CH50 (Total complement activity)"],
           ], 107)}
 
-          <div className="flex gap-2 justify-end pt-4 border-t mt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Save</Button>
-          </div>
+            <div className="flex gap-2 justify-end pt-4 border-t mt-4">
+              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            </div>
         </form>
         </div>
       </div>

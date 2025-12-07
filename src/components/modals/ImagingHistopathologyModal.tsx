@@ -12,10 +12,13 @@ interface Props {
   onClose: () => void
   defaultDate: Date
   onDataChange?: (data: any, date: Date) => void
+  patientId?: string | null
+  onSaveSuccess?: () => void
 }
 
-export default function ImagingHistopathologyModal({ onClose, defaultDate, onDataChange }: Props) {
+export default function ImagingHistopathologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate)
+  const [saving, setSaving] = useState(false)
   const reportType = "imaging"
   const reportName = "Imaging, Histopathology"
   const [formData, setFormData] = useState({
@@ -32,17 +35,43 @@ export default function ImagingHistopathologyModal({ onClose, defaultDate, onDat
     notes: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const data = {
-      formData,
-      date: reportDate.toISOString()
+    
+    const hasData = Object.values(formData).some(f => f && f.toString().trim() !== '')
+    
+    if (!hasData) {
+      alert("Please enter at least one field value before saving.")
+      return
     }
-    console.log("Imaging & Histopathology Data:", data)
-    if (onDataChange) {
-      onDataChange(formData, reportDate)
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/patient-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patientId || null,
+          sampleDate: reportDate.toISOString(),
+          imaging: formData,
+        })
+      })
+
+      if (response.ok) {
+        if (onSaveSuccess) onSaveSuccess()
+        if (onDataChange) onDataChange(formData, reportDate)
+        alert("Imaging & Histopathology data saved successfully!")
+        onClose()
+      } else {
+        const error = await response.json()
+        alert(error.message || "Failed to save data. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error saving Imaging & Histopathology data:", error)
+      alert("Failed to save data. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    onClose()
   }
 
 
@@ -145,8 +174,10 @@ export default function ImagingHistopathologyModal({ onClose, defaultDate, onDat
             />
           </div>
           <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
           </div>
         </form>
       </div>

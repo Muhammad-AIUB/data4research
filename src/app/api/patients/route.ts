@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 import type { Session } from 'next-auth'
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
     // @ts-expect-error - getServerSession type inference issue
     const session = await getServerSession(authOptions) as Session | null
@@ -13,9 +13,62 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!session.user.id) {
-      console.error('Session user ID is missing:', session)
-      return NextResponse.json({ message: 'User ID not found in session. Please log out and log back in.' }, { status: 401 })
+    const { searchParams } = new URL(request.url)
+    const searchQuery = searchParams.get('search')
+
+    // Build where clause for search
+    let whereClause: any = {}
+
+    if (searchQuery && searchQuery.trim() !== '') {
+      const searchTerm = searchQuery.trim()
+      
+      // Search in multiple fields: name, mobile, finalDiagnosis, and tags
+      whereClause = {
+        OR: [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { mobile: { contains: searchTerm, mode: 'insensitive' } },
+          { patientId: { contains: searchTerm, mode: 'insensitive' } },
+          { finalDiagnosis: { contains: searchTerm, mode: 'insensitive' } },
+          { tags: { has: searchTerm } }, // Search in tags array
+          { relativeMobile: { contains: searchTerm, mode: 'insensitive' } },
+          { spouseMobile: { contains: searchTerm, mode: 'insensitive' } },
+        ]
+      }
+    }
+
+    // Fetch all patients with search filter
+    const patients = await prisma.patient.findMany({
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        tests: {
+          orderBy: {
+            sampleDate: 'desc'
+          },
+          take: 1 // Get latest test for each patient
+        }
+      }
+    })
+
+    return NextResponse.json({ patients }, { status: 200 })
+  } catch (error: any) {
+    console.error('Error fetching patients:', error)
+    return NextResponse.json(
+      { message: error.message || 'Failed to fetch patients' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    // @ts-expect-error - getServerSession type inference issue
+    const session = await getServerSession(authOptions) as Session | null
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -38,15 +91,24 @@ export async function POST(request: Request) {
       pastIllness,
       tags,
       specialNotes,
-      finalDiagnosis
+      finalDiagnosis,
     } = body
 
+    // Validate required fields
+    if (!name || !age || !mobile || !relativeMobile || !patientId) {
+      return NextResponse.json(
+        { message: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Create patient
     const patient = await prisma.patient.create({
       data: {
         name,
-        dateOfBirth: new Date(dateOfBirth),
-        age,
-        ethnicity: ethnicity || 'south-asian',
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
+        age: parseInt(age),
+        ethnicity: ethnicity || '',
         religion: religion || 'islam',
         nid: nid || null,
         patientId,
@@ -84,4 +146,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

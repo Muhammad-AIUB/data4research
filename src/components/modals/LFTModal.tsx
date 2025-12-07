@@ -13,11 +13,14 @@ interface Props {
   onClose: () => void
   defaultDate: Date
   onDataChange?: (data: any, date: Date) => void
+  patientId?: string | null
+  onSaveSuccess?: () => void
 }
 
-export default function LFTModal({ onClose, defaultDate, onDataChange }: Props) {
+export default function LFTModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess }: Props) {
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
+  const [saving, setSaving] = useState(false)
   const reportType = "lft"
   const reportName = "LFT (Liver Function Test)"
 
@@ -240,17 +243,48 @@ export default function LFTModal({ onClose, defaultDate, onDataChange }: Props) 
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const data = {
-      formData,
-      date: reportDate.toISOString()
+    
+    const hasData = Object.keys(formData).length > 0 && 
+      Object.values(formData).some(f => {
+        if (typeof f === 'string') return f.trim() !== ''
+        if (f && typeof f === 'object') return f.value1 || f.value2
+        return false
+      })
+    
+    if (!hasData) {
+      alert("Please enter at least one field value before saving.")
+      return
     }
-    console.log("LFT Data:", data)
-    if (onDataChange) {
-      onDataChange(formData, reportDate)
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/patient-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patientId || null,
+          sampleDate: reportDate.toISOString(),
+          lft: formData,
+        })
+      })
+
+      if (response.ok) {
+        if (onSaveSuccess) onSaveSuccess()
+        if (onDataChange) onDataChange(formData, reportDate)
+        alert("LFT data saved successfully!")
+        onClose()
+      } else {
+        const error = await response.json()
+        alert(error.message || "Failed to save data. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error saving LFT data:", error)
+      alert("Failed to save data. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    onClose()
   }
 
   let fieldIndex = 0
@@ -409,8 +443,10 @@ export default function LFTModal({ onClose, defaultDate, onDataChange }: Props) 
             </div>
 
             <div className="flex gap-2 justify-end pt-4 border-t mt-4">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Save</Button>
+              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : "Save"}
+              </Button>
             </div>
           </form>
         </div>
