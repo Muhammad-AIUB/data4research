@@ -58,7 +58,7 @@ export default function AddPatient() {
     setLoading(true)
 
     // Use age from form data, fallback to state if needed
-    const finalAge = data.age || (age !== "" ? (typeof age === 'number' ? age : parseInt(age.toString())) : 0)
+    const finalAge = data.age || (typeof age === 'number' ? age : 0)
 
     // Calculate date of birth from age if calendar is filled, otherwise use a default date
     let dateOfBirth: Date
