@@ -64,7 +64,9 @@ export default function ImagingHistopathologyModal({ onClose, defaultDate, onDat
         setReportDate(testDate)
       }
     }
-  }, [savedData, reportDate])
+    // Only run when savedData changes, not on every reportDate change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

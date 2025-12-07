@@ -53,7 +53,9 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
         setReportDate(testDate)
       }
     }
-  }, [savedData, reportDate])
+    // Only run when savedData changes, not on every reportDate change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedData])
 
   const updateField = (fieldName: string, value: string, type: 'value' | 'notes' = 'value') => {
     setFormData(prev => ({

@@ -26,7 +26,7 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
   const reportType = "hematology"
   const reportName = "Hematology"
 
-  // Load saved data when modal opens
+  // Load saved data when modal opens (only once when savedData changes, not on every reportDate change)
   useEffect(() => {
     if (savedData && savedData.length > 0) {
       const dateStr = reportDate.toISOString().split('T')[0]
@@ -47,14 +47,19 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         })[0]
       
       if (testToLoad?.hematology && typeof testToLoad.hematology === 'object' && testToLoad.hematology !== null) {
-        setFormData(testToLoad.hematology as Record<string, string | DualValue>)
+        // Load saved data - this will only include fields that were saved
+        // Empty fields will be handled by getFieldValue returning ""
+        const savedHematologyData = testToLoad.hematology as Record<string, string | DualValue>
+        setFormData(savedHematologyData)
         const testDate = testToLoad.sampleDate instanceof Date 
           ? testToLoad.sampleDate 
           : new Date(testToLoad.sampleDate)
         setReportDate(testDate)
       }
     }
-  }, [savedData, reportDate])
+    // Only run when savedData changes, not on every reportDate change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedData])
 
   const updateField = (field: string, value: string, key?: keyof DualValue) => {
     setFormData(prev => {

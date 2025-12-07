@@ -53,7 +53,9 @@ export default function LFTModal({ onClose, defaultDate, onDataChange, patientId
         setReportDate(testDate)
       }
     }
-  }, [savedData, reportDate])
+    // Only run when savedData changes, not on every reportDate change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedData])
 
   const updateField = (fieldName: string, value: string, type?: string) => {
     setFormData(prev => {

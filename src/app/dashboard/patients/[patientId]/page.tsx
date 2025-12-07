@@ -26,9 +26,10 @@ export default async function PatientDetailPage({
     where: { patientId },
     include: {
       tests: {
-        orderBy: {
-          sampleDate: 'desc'
-        }
+        orderBy: [
+          { createdAt: 'desc' }, // Latest saves first
+          { sampleDate: 'desc' }  // Then by sample date
+        ]
       }
     }
   })
@@ -234,7 +235,12 @@ export default async function PatientDetailPage({
           ) : (
             <div className="space-y-6">
               {(Object.entries(
-                patient.tests.reduce((acc: Record<string, any[]>, test: any) => {
+                // First, sort all tests by createdAt (latest first) to maintain serial order
+                [...patient.tests].sort((a: any, b: any) => {
+                  const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                  const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                  return timeB - timeA // Latest first
+                }).reduce((acc: Record<string, any[]>, test: any) => {
                   // Fix timezone issue - use local date components
                   const sampleDate = test.sampleDate instanceof Date 
                     ? test.sampleDate 
@@ -247,22 +253,25 @@ export default async function PatientDetailPage({
                   const date = `${day}/${month}/${year}`
                   
                   if (!acc[date]) acc[date] = []
-                  acc[date].push(test)
+                  acc[date].push(test) // Maintain order - latest saves will be first in each group
                   return acc
                 }, {} as Record<string, any[]>)
               ) as [string, any[]][])
-                .sort(([dateA], [dateB]) => new Date(dateB.split('/').reverse().join('-')).getTime() - new Date(dateA.split('/').reverse().join('-')).getTime())
+                .sort(([, testsA], [, testsB]) => {
+                  // Sort date groups by latest createdAt in each group (not by date itself)
+                  const getLatestTime = (tests: any[]) => {
+                    return Math.max(...tests.map((t: any) => 
+                      t.createdAt ? new Date(t.createdAt).getTime() : 0
+                    ))
+                  }
+                  const timeA = getLatestTime(testsA)
+                  const timeB = getLatestTime(testsB)
+                  return timeB - timeA // Latest first
+                })
                 .map(([date, tests]) => {
-                  // Sort by createdAt (latest first) to ensure newest saves appear first
-                  const sortedTests = [...tests].sort((a: any, b: any) => {
-                    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
-                    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
-                    if (timeA !== timeB) return timeB - timeA // Latest first
-                    // If same creation time, sort by sampleDate
-                    const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
-                    const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
-                    return dateB.getTime() - dateA.getTime()
-                  })
+                  // Tests are already sorted by createdAt (latest first) from the grouping step
+                  // No need to sort again - maintain the order
+                  const sortedTests = tests
                   
                   return (
                     <div key={date} className="border rounded-lg p-4">

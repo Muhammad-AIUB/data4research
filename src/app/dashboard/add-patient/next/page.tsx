@@ -68,13 +68,18 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
         return acc
       }, {} as Record<string, PatientTest[]>)
     
-    // Sort date groups by date (latest date first), but tests within each group maintain createdAt order
-    return Object.entries(grouped).sort(([dateA], [dateB]) => {
-      const [dayA, monthA, yearA] = dateA.split('/').map(Number)
-      const [dayB, monthB, yearB] = dateB.split('/').map(Number)
-      const dateObjA = new Date(yearA, monthA - 1, dayA)
-      const dateObjB = new Date(yearB, monthB - 1, dayB)
-      return dateObjB.getTime() - dateObjA.getTime()
+    // Sort date groups by latest createdAt in each group (not by date itself)
+    // This ensures latest saves appear first regardless of date
+    return Object.entries(grouped).sort(([, testsA], [, testsB]) => {
+      // Get the latest createdAt from each group
+      const getLatestTime = (tests: PatientTest[]) => {
+        return Math.max(...tests.map((t: PatientTest & { createdAt?: Date | string }) => 
+          t.createdAt ? new Date(t.createdAt).getTime() : 0
+        ))
+      }
+      const timeA = getLatestTime(testsA)
+      const timeB = getLatestTime(testsB)
+      return timeB - timeA // Latest first
     }) as [string, PatientTest[]][]
   }, [savedTestData])
 
