@@ -123,17 +123,18 @@ export function formatTestData(data: any, reportType: string): { label: string; 
       // Handle { value: "...", notes: "..." } structure
       if ('value' in value || 'value1' in value || 'value2' in value) {
         const parts: string[] = []
-        if ('value' in value && value.value) parts.push(value.value)
-        if ('value1' in value && value.value1) {
-          if ('value2' in value && value.value2) {
-            parts.push(`${value.value1} / ${value.value2}`)
+        const val = value as Record<string, unknown>
+        if ('value' in val && val.value) parts.push(String(val.value))
+        if ('value1' in val && val.value1) {
+          if ('value2' in val && val.value2) {
+            parts.push(`${val.value1} / ${val.value2}`)
           } else {
-            parts.push(value.value1)
+            parts.push(String(val.value1))
           }
-        } else if ('value2' in value && value.value2) {
-          parts.push(value.value2)
+        } else if ('value2' in val && val.value2) {
+          parts.push(String(val.value2))
         }
-        if ('notes' in value && value.notes) parts.push(`Notes: ${value.notes}`)
+        if ('notes' in val && val.notes) parts.push(`Notes: ${String(val.notes)}`)
         displayValue = parts.join(' | ')
       } else {
         // For other object types, try to format nicely
