@@ -43,20 +43,22 @@ type PatientTest = {
 // Separate component for saved reports to avoid conditional hook
 function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }) {
   const groupedAndSorted = useMemo(() => {
-    const grouped = savedTestData.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
-      const sampleDate = test.sampleDate instanceof Date 
-        ? test.sampleDate 
-        : new Date(test.sampleDate)
-      
-      const date = sampleDate.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      })
-      if (!acc[date]) acc[date] = []
-      acc[date].push(test)
-      return acc
-    }, {} as Record<string, PatientTest[]>)
+      const grouped = savedTestData.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
+        // Fix timezone issue - use local date components
+        const sampleDate = test.sampleDate instanceof Date 
+          ? test.sampleDate 
+          : new Date(test.sampleDate)
+        
+        // Get local date components to avoid timezone conversion issues
+        const year = sampleDate.getFullYear()
+        const month = String(sampleDate.getMonth() + 1).padStart(2, '0')
+        const day = String(sampleDate.getDate()).padStart(2, '0')
+        const date = `${day}/${month}/${year}`
+        
+        if (!acc[date]) acc[date] = []
+        acc[date].push(test)
+        return acc
+      }, {} as Record<string, PatientTest[]>)
     
     return Object.entries(grouped).sort(([dateA], [dateB]) => {
       const [dayA, monthA, yearA] = dateA.split('/').map(Number)
@@ -90,7 +92,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-blue-700">Autoimmuno Profile</h4>
                         <span className="text-xs text-gray-500">
-                          {new Date(test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
@@ -108,7 +116,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-green-700">Cardiology</h4>
                         <span className="text-xs text-gray-500">
-                          {new Date(test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
@@ -126,7 +140,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-purple-700">RFT</h4>
                         <span className="text-xs text-gray-500">
-                          {new Date(test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
@@ -144,7 +164,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-yellow-700">LFT</h4>
                         <span className="text-xs text-gray-500">
-                          {new Date(test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
@@ -162,7 +188,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-pink-700">Disease History</h4>
                         <span className="text-xs text-gray-500">
-                          {new Date(test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
@@ -180,7 +212,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-indigo-700">Imaging, Histopathology</h4>
                         <span className="text-xs text-gray-500">
-                          {new Date(test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
@@ -198,7 +236,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-orange-700">Hematology</h4>
                         <span className="text-xs text-gray-500">
-                          {new Date(test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
@@ -311,17 +355,18 @@ function NextPageContent() {
 
       if (response.ok) {
         alert("Patient test data submitted successfully!")
-        // Refresh saved test data
-        await fetchSavedTestData()
+        // Refresh saved test data in background (don't wait)
+        fetchSavedTestData().catch(console.error)
+        setLoading(false)
         // Don't redirect, stay on page to see the saved data
       } else {
         const error = await response.json()
         alert(error.message || "Failed to submit patient test data. Please try again.")
+        setLoading(false)
       }
     } catch (error) {
       console.error("Error submitting patient test data:", error)
       alert("Failed to submit patient test data. Please try again.")
-    } finally {
       setLoading(false)
     }
   }

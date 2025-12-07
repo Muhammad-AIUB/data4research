@@ -92,12 +92,12 @@ export default function AddPatient() {
 
       if (res.ok) {
         const result = await res.json()
-        setLoading(false)
         // Show success message
         alert("Patient saved successfully!")
-        // Navigate with patient ID (use patientId field from response)
+        // Navigate immediately without waiting - optimistic navigation
         const patientIdToUse = result.patient?.patientId || result.patient?.id
         router.push(`/dashboard/add-patient/next?patientId=${patientIdToUse}`)
+        // Don't set loading to false here - let navigation handle it
       } else {
         const errorData = await res.json().catch(() => ({ message: 'Unknown error occurred' }))
         alert(errorData.message || "Failed to add patient. Please check all required fields.")

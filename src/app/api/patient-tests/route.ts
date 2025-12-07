@@ -106,12 +106,17 @@ export async function POST(request: Request) {
 
     // Use sampleDate from testData or body, default to now
     const reportDate = testData.sampleDate || sampleDate || new Date().toISOString()
+    
+    // Fix timezone issue - parse date and use local date components
+    const dateObj = new Date(reportDate)
+    // Create date at midnight local time to avoid timezone conversion issues
+    const localDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())
 
     // Store test data in database
     const savedTest = await prisma.patientTest.create({
       data: {
         patientId: patient?.id || null, // Use null if no patient (optional field)
-        sampleDate: new Date(reportDate),
+        sampleDate: localDate,
         autoimmunoProfile: parsedTestData.autoimmunoProfile || null,
         cardiology: parsedTestData.cardiology || null,
         rft: parsedTestData.rft || null,

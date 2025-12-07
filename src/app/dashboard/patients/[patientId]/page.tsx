@@ -235,15 +235,17 @@ export default async function PatientDetailPage({
             <div className="space-y-6">
               {(Object.entries(
                 patient.tests.reduce((acc: Record<string, any[]>, test: any) => {
+                  // Fix timezone issue - use local date components
                   const sampleDate = test.sampleDate instanceof Date 
                     ? test.sampleDate 
                     : new Date(test.sampleDate)
                   
-                  const date = sampleDate.toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                  })
+                  // Get local date components to avoid timezone conversion issues
+                  const year = sampleDate.getFullYear()
+                  const month = String(sampleDate.getMonth() + 1).padStart(2, '0')
+                  const day = String(sampleDate.getDate()).padStart(2, '0')
+                  const date = `${day}/${month}/${year}`
+                  
                   if (!acc[date]) acc[date] = []
                   acc[date].push(test)
                   return acc
