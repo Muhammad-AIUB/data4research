@@ -89,6 +89,89 @@ const fieldLabels: Record<string, Record<string, string>> = {
   // Add more report types as needed
 }
 
+// Units mapping for display in saved reports
+const unitMeta: Record<
+  string,
+  Record<string, { unit?: string; unit1?: string; unit2?: string }>
+> = {
+  rft: {
+    creatinine: { unit1: "mg/dL", unit2: "µmol/L" },
+    sodium: { unit1: "mmol/L", unit2: "mEq/L" },
+    potassium: { unit1: "mmol/L", unit2: "mEq/L" },
+    chloride: { unit1: "mmol/L", unit2: "mEq/L" },
+    bicarbonate: { unit1: "mmol/L", unit2: "mEq/L" },
+    bun: { unit: "mg/dL" },
+  },
+  lft: {
+    alt: { unit: "U/L" },
+    ast: { unit: "U/L" },
+    alp: { unit: "U/L" },
+    ggt: { unit: "U/L" },
+    bilirubinTotal: { unit1: "µmol/L", unit2: "mg/dL" },
+    bilirubinDirect: { unit1: "µmol/L", unit2: "mg/dL" },
+    bilirubinIndirect: { unit1: "µmol/L", unit2: "mg/dL" },
+    albumin: { unit1: "g/L", unit2: "g/dL" },
+    globulin: { unit1: "g/L", unit2: "g/dL" },
+    ptPatient: { unit: "sec" },
+    ptTest: { unit: "sec" },
+    inr: { unit: "" },
+    hbvDna: { unit1: "C/mL", unit2: "IU/mL" },
+    hcvRna: { unit1: "C/mL", unit2: "IU/mL" },
+    ggtValue: { unit: "U/L" },
+  },
+  hematology: {
+    rbc: { unit: "million/µL" },
+    hemoglobin: { unit: "g/dL" },
+    hct: { unit: "%" },
+    mcv: { unit: "fL" },
+    mch: { unit: "pg" },
+    mchc: { unit: "g/dL" },
+    rdw: { unit: "%" },
+    wbc: { unit: "cells/µL" },
+    neutrophils: { unit1: "%", unit2: "cells/µL" },
+    lymphocytes: { unit1: "%", unit2: "cells/µL" },
+    monocytes: { unit1: "%", unit2: "cells/µL" },
+    eosinophils: { unit1: "%", unit2: "cells/µL" },
+    basophils: { unit1: "%", unit2: "cells/µL" },
+    immatureGranulocytes: { unit: "%" },
+    nrbc: { unit: "cells/100 WBC" },
+    plt: { unit: "/µL" },
+    mpv: { unit: "fL" },
+    pdw: { unit: "fL" },
+    pct: { unit: "%" },
+    esr: { unit: "mm/hr" },
+    ptPatient: { unit: "sec" },
+    ptTest: { unit: "sec" },
+    inr: { unit: "" },
+    aptt: { unit: "sec" },
+    fibrinogen: { unit1: "g/L", unit2: "mg/dL" },
+    dDimer: { unit: "ng/mL" },
+    bleedingTime: { unit: "sec" },
+    clottingTime: { unit: "sec" },
+    reticulocyteCount: { unit: "%" },
+    ldh: { unit: "U/L" },
+    serumIron: { unit1: "µmol/L", unit2: "µg/dL" },
+    tibc: { unit: "µg/dL" },
+    tsat: { unit: "%" },
+    ferritin: { unit: "ng/mL" },
+    b12: { unit: "µg/L" },
+    folate: { unit1: "µg/L", unit2: "ng/mL" },
+  },
+  diseaseHistory: {
+    weightKg: { unit: "kg" },
+    weightLb: { unit: "lb" },
+    sbp: { unit: "mmHg" },
+    dbp: { unit: "mmHg" },
+    map: { unit: "mmHg" },
+    pulse: { unit: "bpm" },
+    respiratoryRate: { unit: "breaths/min" },
+    spO2: { unit: "%" },
+  },
+  cardiology: {},
+  autoimmunoProfile: {},
+  imaging: {},
+}
+
 function getFieldLabel(key: string, reportType: string): string {
   const reportLabels = fieldLabels[reportType]
   if (reportLabels && reportLabels[key]) {
@@ -106,6 +189,7 @@ export function formatTestData(data: any, reportType: string): { label: string; 
   if (!data || typeof data !== 'object') return []
   
   const formatted: { label: string; value: string }[] = []
+  const units = unitMeta[reportType] || {}
   
   // Handle different data structures
   if (Array.isArray(data)) {
@@ -124,18 +208,22 @@ export function formatTestData(data: any, reportType: string): { label: string; 
       if ('value' in value || 'value1' in value || 'value2' in value) {
         const parts: string[] = []
         const val = value as Record<string, unknown>
-        if ('value' in val && val.value) parts.push(String(val.value))
+        const meta = units[key]
+
+        if ('value' in val && val.value) {
+          const u = meta?.unit ? ` ${meta.unit}` : ''
+          parts.push(`${val.value}${u}`)
+        }
         if ('value1' in val && val.value1) {
-          if ('value2' in val && val.value2) {
-            parts.push(`${val.value1} / ${val.value2}`)
-          } else {
-            parts.push(String(val.value1))
-          }
-        } else if ('value2' in val && val.value2) {
-          parts.push(String(val.value2))
+          const u1 = meta?.unit1 ? ` ${meta.unit1}` : ''
+          parts.push(`${val.value1}${u1}`)
+        }
+        if ('value2' in val && val.value2) {
+          const u2 = meta?.unit2 ? ` ${meta.unit2}` : ''
+          parts.push(`${val.value2}${u2}`)
         }
         if ('notes' in val && val.notes) parts.push(`Notes: ${String(val.notes)}`)
-        displayValue = parts.join(' | ')
+        displayValue = parts.join(' / ')
       } else {
         // For other object types, try to format nicely
         const objEntries = Object.entries(value).filter(([_, v]) => v !== null && v !== undefined && v !== '')
@@ -144,7 +232,8 @@ export function formatTestData(data: any, reportType: string): { label: string; 
         }
       }
     } else {
-      displayValue = String(value)
+      const unit = units[key]?.unit
+      displayValue = `${String(value)}${unit ? ` ${unit}` : ''}`
     }
     
     if (displayValue.trim()) {
