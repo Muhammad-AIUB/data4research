@@ -1,12 +1,18 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
+import { X, Heart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
+import { 
+  addSectionFieldsToFavourites, 
+  removeSectionFieldsFromFavourites, 
+  areAllSectionFieldsFavourite,
+  removeFavouriteField
+} from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -21,6 +27,7 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
   const [formData, setFormData] = useState<Record<string, { value: string; notes: string }>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0) // Force re-render when favorites change
 
   // Load saved data when modal opens
   useEffect(() => {
@@ -108,18 +115,67 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
     )
   }
 
-  const renderSection = (title: string, fields: Array<[string, string]>, startIndex: number) => (
-    <div className="mb-6 pb-4 border-b">
-      <h3 className="font-semibold text-lg mb-3 text-blue-700">{title}</h3>
-      <div className="space-y-2">
-        {fields.map(([fieldName, label], idx) => (
-          <div key={fieldName}>
-            {renderField(fieldName, label, startIndex + idx)}
-          </div>
-        ))}
+  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
+    const reportType = 'autoimmunoProfile'
+    const reportName = 'Autoimmuno Profile'
+    
+    if (areAllSectionFieldsFavourite(reportType, fields)) {
+      // Remove both value and notes fields
+      const fieldsToRemove: Array<[string, string]> = []
+      fields.forEach(([fieldName, fieldLabel]) => {
+        fieldsToRemove.push([fieldName, fieldLabel])
+        fieldsToRemove.push([`${fieldName}_notes`, `${fieldLabel} - Notes`])
+      })
+      fieldsToRemove.forEach(([fieldName]) => {
+        removeFavouriteField(reportType, fieldName)
+      })
+    } else {
+      // Add both value and notes fields for each field
+      const fieldsToAdd: Array<[string, string]> = []
+      fields.forEach(([fieldName, fieldLabel]) => {
+        // Add value field
+        fieldsToAdd.push([fieldName, fieldLabel])
+        // Add notes field
+        fieldsToAdd.push([`${fieldName}_notes`, `${fieldLabel} - Notes`])
+      })
+      addSectionFieldsToFavourites(reportType, reportName, fieldsToAdd, sectionTitle)
+    }
+    setFavoritesUpdated(prev => prev + 1) // Force re-render
+  }
+
+  const renderSection = (title: string, fields: Array<[string, string]>, startIndex: number) => {
+    const reportType = 'autoimmunoProfile'
+    // Check if all main fields (not notes fields) are favorites
+    const mainFields = fields.filter(([fieldName]) => !fieldName.endsWith('_notes'))
+    const allFavourite = areAllSectionFieldsFavourite(reportType, mainFields)
+    
+    return (
+      <div className="mb-6 pb-4 border-b">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+          <button
+            onClick={() => handleSectionFavoriteToggle(fields, title)}
+            className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+            title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+          >
+            <Heart 
+              className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+            />
+            <span className="text-sm text-gray-600">
+              {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+            </span>
+          </button>
+        </div>
+        <div className="space-y-2">
+          {fields.map(([fieldName, label], idx) => (
+            <div key={fieldName}>
+              {renderField(fieldName, label, startIndex + idx)}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

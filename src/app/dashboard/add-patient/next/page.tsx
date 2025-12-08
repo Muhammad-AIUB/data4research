@@ -8,9 +8,10 @@ import AutoimmunoProfileModal from "@/components/modals/AutoimmunoProfileModal"
 import CardiologyModal from "@/components/modals/CardiologyModal"
 import RFTModal from "@/components/modals/RFTModal"
 import LFTModal from "@/components/modals/LFTModal"
-import DiseaseHistoryModal from "@/components/modals/DiseaseHistoryModal"
+import DiseaseHistoryModal, { type DiseaseHistoryData } from "@/components/modals/DiseaseHistoryModal"
 import ImagingHistopathologyModal from "@/components/modals/ImagingHistopathologyModal"
 import HematologyModal from "@/components/modals/HematologyModal"
+import MyFavoritesModal from "@/components/modals/MyFavoritesModal"
 import { Button } from "@/components/ui/button"
 import { formatTestData } from "@/lib/formatTestData"
 
@@ -387,11 +388,12 @@ function NextPageContent() {
   const transformedSavedDataForDiseaseHistory = useMemo(() => {
     return savedTestData.map(test => ({
       sampleDate: test.sampleDate,
-      diseaseHistory: test.diseaseHistory === null ? undefined : test.diseaseHistory as any
+      diseaseHistory: test.diseaseHistory === null ? undefined : test.diseaseHistory as DiseaseHistoryData
     }))
   }, [savedTestData])
 
   const sectionColors = [
+    "bg-red-50 border-red-200",
     "bg-blue-50 border-blue-200",
     "bg-green-50 border-green-200",
     "bg-purple-50 border-purple-200",
@@ -422,10 +424,22 @@ function NextPageContent() {
         {/* Expandable Sections */}
         <div className="space-y-4">
           <ExpandableSection
+            title="My Favorites"
+            isOpen={openModal === "my-favorites"}
+            onToggle={() => setOpenModal(openModal === "my-favorites" ? null : "my-favorites")}
+            colorClass={sectionColors[0]}
+          >
+            <MyFavoritesModal 
+              onClose={() => setOpenModal(null)}
+              savedData={savedTestData}
+            />
+          </ExpandableSection>
+
+          <ExpandableSection
             title="Autoimmuno profile"
             isOpen={openModal === "autoimmuno"}
             onToggle={() => setOpenModal(openModal === "autoimmuno" ? null : "autoimmuno")}
-            colorClass={sectionColors[0]}
+            colorClass={sectionColors[1]}
           >
             <AutoimmunoProfileModal 
               onClose={() => setOpenModal(null)} 
@@ -441,7 +455,7 @@ function NextPageContent() {
             title="Cardiology"
             isOpen={openModal === "cardiology"}
             onToggle={() => setOpenModal(openModal === "cardiology" ? null : "cardiology")}
-            colorClass={sectionColors[1]}
+            colorClass={sectionColors[2]}
           >
             <CardiologyModal 
               onClose={() => setOpenModal(null)} 
@@ -457,7 +471,7 @@ function NextPageContent() {
             title="RFT"
             isOpen={openModal === "rft"}
             onToggle={() => setOpenModal(openModal === "rft" ? null : "rft")}
-            colorClass={sectionColors[2]}
+            colorClass={sectionColors[3]}
           >
             <RFTModal 
               onClose={() => setOpenModal(null)} 
@@ -473,7 +487,7 @@ function NextPageContent() {
             title="LFT"
             isOpen={openModal === "lft"}
             onToggle={() => setOpenModal(openModal === "lft" ? null : "lft")}
-            colorClass={sectionColors[3]}
+            colorClass={sectionColors[4]}
           >
             <LFTModal 
               onClose={() => setOpenModal(null)} 
@@ -489,7 +503,7 @@ function NextPageContent() {
             title="on examination Disease history"
             isOpen={openModal === "disease-history"}
             onToggle={() => setOpenModal(openModal === "disease-history" ? null : "disease-history")}
-            colorClass={sectionColors[4]}
+            colorClass={sectionColors[5]}
           >
             <DiseaseHistoryModal 
               onClose={() => setOpenModal(null)} 
@@ -505,7 +519,7 @@ function NextPageContent() {
             title="Imaging, Histopathology"
             isOpen={openModal === "imaging"}
             onToggle={() => setOpenModal(openModal === "imaging" ? null : "imaging")}
-            colorClass={sectionColors[5]}
+            colorClass={sectionColors[6]}
           >
             <ImagingHistopathologyModal 
               onClose={() => setOpenModal(null)} 
@@ -521,7 +535,7 @@ function NextPageContent() {
             title="Hematology"
             isOpen={openModal === "hematology"}
             onToggle={() => setOpenModal(openModal === "hematology" ? null : "hematology")}
-            colorClass={sectionColors[6]}
+            colorClass={sectionColors[7]}
           >
             <HematologyModal 
               onClose={() => setOpenModal(null)} 

@@ -1,12 +1,19 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
+import { X, Heart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
+import { 
+  addSectionFieldsToFavourites, 
+  removeSectionFieldsFromFavourites, 
+  areAllSectionFieldsFavourite,
+  isFieldFavourite,
+  removeFavouriteField
+} from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -21,6 +28,7 @@ export default function LFTModal({ onClose, defaultDate, onDataChange, patientId
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
 
   // Load saved data when modal opens
   useEffect(() => {
@@ -226,6 +234,92 @@ export default function LFTModal({ onClose, defaultDate, onDataChange, patientId
     }
   }
 
+  // Define which fields are dual (have value1 and value2)
+  const dualFields = new Set([
+    'bilirubinTotal', 'bilirubinDirect', 'bilirubinIndirect',
+    'hbvDna', 'hcvRna'
+  ])
+
+  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
+    const reportType = 'lft'
+    const reportName = 'LFT'
+    
+    // Check if all fields are favorites (check value1 for dual fields)
+    const fieldsToCheck = fields.map(([fieldName]) => 
+      dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName
+    )
+    
+    const allFavourite = fieldsToCheck.every(fieldName => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    if (allFavourite) {
+      // Remove all fields
+      fields.forEach(([fieldName]) => {
+        if (dualFields.has(fieldName)) {
+          removeFavouriteField(reportType, `${fieldName}_value1`)
+          removeFavouriteField(reportType, `${fieldName}_value2`)
+        } else {
+          removeFavouriteField(reportType, fieldName)
+        }
+      })
+    } else {
+      // Add all fields - for dual fields, add value1 and value2
+      const allFieldsToAdd: Array<[string, string]> = []
+      fields.forEach(([fieldName, fieldLabel]) => {
+        if (dualFields.has(fieldName)) {
+          // Determine units based on field name
+          let unit1 = "Unit 1"
+          let unit2 = "Unit 2"
+          
+          if (fieldName.includes('bilirubin')) {
+            unit1 = "µmol/L"
+            unit2 = "mg/dL"
+          } else if (fieldName === 'hbvDna' || fieldName === 'hcvRna') {
+            unit1 = "C/mL"
+            unit2 = "IU/mL"
+          }
+          
+          allFieldsToAdd.push([`${fieldName}_value1`, `${fieldLabel} - Value (${unit1})`])
+          allFieldsToAdd.push([`${fieldName}_value2`, `${fieldLabel} - Value (${unit2})`])
+        } else {
+          allFieldsToAdd.push([fieldName, fieldLabel])
+        }
+      })
+      addSectionFieldsToFavourites(reportType, reportName, allFieldsToAdd, sectionTitle)
+    }
+    setFavoritesUpdated(prev => prev + 1)
+  }
+
+  const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
+    const reportType = 'lft'
+    // Check if all fields are favorites (check value1 for dual fields)
+    const fieldsToCheck = fields.map(([fieldName]) => 
+      dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName
+    )
+    const allFavourite = fieldsToCheck.every(fieldName => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    return (
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+        <button
+          onClick={() => handleSectionFavoriteToggle(fields, title)}
+          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+        >
+          <Heart 
+            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+          />
+          <span className="text-sm text-gray-600">
+            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+          </span>
+        </button>
+      </div>
+    )
+  }
+
   let fieldIndex = 0
 
   return (
@@ -267,7 +361,21 @@ export default function LFTModal({ onClose, defaultDate, onDataChange, patientId
           <form id="lft-form" onSubmit={handleSubmit} className="space-y-4">
             {/* Liver Function Tests */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Liver Function Tests and Coagulation Parameters</h3>
+              {renderSectionHeader("Liver Function Tests and Coagulation Parameters", [
+                ["alt", "ALT/SGPT"],
+                ["ast", "AST/SGOT"],
+                ["alp", "ALP"],
+                ["bilirubinTotal", "S. Bilirubin (Total)"],
+                ["bilirubinDirect", "S. Bilirubin (Direct)"],
+                ["bilirubinIndirect", "S. Bilirubin (Indirect)"],
+                ["ptPatient", "Prothrombin Time Patient"],
+                ["ptTest", "Prothrombin Time Test"],
+                ["inr", "INR"],
+                ["albumin", "S. Albumin"],
+                ["globulin", "S. Globulin"],
+                ["agRatio", "A/G ratio"],
+                ["totalProtein", "S. Total Protein"],
+              ])}
               <div className="space-y-2">
                 {renderField("alt", "ALT/SGPT", fieldIndex++, "U/L")}
                 {renderField("ast", "AST/SGOT", fieldIndex++, "U/L")}
@@ -337,7 +445,18 @@ export default function LFTModal({ onClose, defaultDate, onDataChange, patientId
 
             {/* Viral Markers */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Viral Markers</h3>
+              {renderSectionHeader("Viral Markers", [
+                ["hbsag", "HBsAg"],
+                ["antiHBe", "Anti HBe"],
+                ["hbeag", "HBeAg"],
+                ["antiHbcIgm", "Anti HBc IgM"],
+                ["antiHbcTotal", "Anti HBc Total"],
+                ["hbvDna", "HBV DNA"],
+                ["antiHcv", "Anti HCV"],
+                ["hcvRna", "HCV RNA"],
+                ["antiHavIgm", "Anti HAV IgM"],
+                ["antiHevIgm", "Anti HEV IgM"],
+              ])}
               <div className="space-y-2">
                 {renderDropdown("hbsag", "HBsAg", fieldIndex++, ["Positive", "Negative"])}
                 {renderDropdown("antiHBe", "Anti HBe", fieldIndex++, ["Positive", "Negative"])}
@@ -362,7 +481,14 @@ export default function LFTModal({ onClose, defaultDate, onDataChange, patientId
 
             {/* Clinical Assessment */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Clinical Assessment and Scores</h3>
+              {renderSectionHeader("Clinical Assessment and Scores", [
+                ["ascites", "Ascites"],
+                ["hepaticEncephalopathy", "Hepatic encephalopathy"],
+                ["dialysis", "Is Patient getting Dialysis"],
+                ["childPughScore", "Child Pugh score"],
+                ["meldScore", "MELD Score"],
+                ["meldNaScore", "MELD Na score"],
+              ])}
               <div className="space-y-2">
                 {renderDropdown("ascites", "Ascites", fieldIndex++, ["absent", "Mild", "Moderate", "Huge"])}
                 {renderDropdown("hepaticEncephalopathy", "Hepatic encephalopathy", fieldIndex++, ["No encephalopathy", "Grade 1", "Grade 2", "Grade 3", "Grade 4"])}
@@ -375,7 +501,13 @@ export default function LFTModal({ onClose, defaultDate, onDataChange, patientId
 
             {/* Ascites Fluid Study */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Ascites Fluid Study</h3>
+              {renderSectionHeader("Ascites Fluid Study", [
+                ["appearance", "Appearance"],
+                ["color", "Color"],
+                ["turbidity", "Turbidity"],
+                ["specificGravity", "Specific Gravity"],
+                ["totalProteinAscites", "Total Protein"],
+              ])}
               <div className="space-y-2">
                 {renderDropdown("appearance", "Appearance", fieldIndex++, ["Clear", "Cloudy", "Bloody"])}
                 {renderDropdown("color", "Color", fieldIndex++, ["Straw", "Cloudy", "Red"])}

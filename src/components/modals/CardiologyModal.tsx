@@ -1,12 +1,19 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
+import { X, Heart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
+import { 
+  addSectionFieldsToFavourites, 
+  removeSectionFieldsFromFavourites, 
+  areAllSectionFieldsFavourite,
+  isFieldFavourite,
+  removeFavouriteField
+} from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -21,6 +28,7 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
 
   const formatDateString = (date: Date) => {
     const year = date.getFullYear()
@@ -194,6 +202,53 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
     }
   }
 
+  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
+    const reportType = 'cardiology'
+    const reportName = 'Cardiology'
+    
+    // Check if all fields are favorites
+    const allFavourite = fields.every(([fieldName]) => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    if (allFavourite) {
+      // Remove all fields
+      fields.forEach(([fieldName]) => {
+        removeFavouriteField(reportType, fieldName)
+      })
+    } else {
+      // Add all fields - in Cardiology, fields are already separate (fieldName and fieldNameMmol)
+      addSectionFieldsToFavourites(reportType, reportName, fields, sectionTitle)
+    }
+    setFavoritesUpdated(prev => prev + 1)
+  }
+
+  const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
+    const reportType = 'cardiology'
+    // Check if all fields are favorites
+    const allFavourite = fields.every(([fieldName]) => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    return (
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+        <button
+          onClick={() => handleSectionFavoriteToggle(fields, title)}
+          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+        >
+          <Heart 
+            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+          />
+          <span className="text-sm text-gray-600">
+            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+          </span>
+        </button>
+      </div>
+    )
+  }
+
   let fieldIndex = 0
 
   return (
@@ -229,7 +284,12 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
           <form id="cardiology-form" onSubmit={handleSubmit} className="space-y-4">
             {/* Cardiovascular Tests */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Cardiovascular Tests</h3>
+              {renderSectionHeader("Cardiovascular Tests", [
+                ["ecgReport", "ECG"],
+                ["echocardiogramType", "Echocardiogram - Type"],
+                ["echocardiogramReport", "Echocardiogram"],
+                ["ettReport", "ETT"],
+              ])}
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-4">
                   {renderField("ecgReport", "ECG", fieldIndex++)}
@@ -250,7 +310,19 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
 
             {/* Lipid Profile */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Lipid Profile</h3>
+              {renderSectionHeader("Lipid Profile", [
+                ["totalCholesterol", "Total Cholesterol"],
+                ["totalCholesterolMmol", "Total Cholesterol (mmol/L)"],
+                ["triglycerides", "Triglycerides"],
+                ["triglyceridesMmol", "Triglycerides (mmol/L)"],
+                ["ldl", "Low-Density Lipoprotein (LDL) Cholesterol"],
+                ["ldlMmol", "LDL Cholesterol (mmol/L)"],
+                ["hdl", "High-Density Lipoprotein (HDL) Cholesterol"],
+                ["hdlMmol", "HDL Cholesterol (mmol/L)"],
+                ["vldl", "Very Low-Density Lipoprotein (VLDL) Cholesterol"],
+                ["vldlMmol", "VLDL Cholesterol (mmol/L)"],
+                ["tcHdlRatio", "Total Cholesterol / HDL Ratio (TC/HDL)"],
+              ])}
               <div className="space-y-2">
                 {(() => {
                   const lipidTests = [
@@ -301,7 +373,12 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
 
             {/* Cardiac Markers */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Cardiac Markers</h3>
+              {renderSectionHeader("Cardiac Markers", [
+                ["lpPla2", "Lp-PLA2"],
+                ["tropI", "Trop I"],
+                ["highSensitiveTropI", "High Sensitive Trop I"],
+                ["ckMb", "CK MB"],
+              ])}
               <div className="space-y-2">
                 {renderField("lpPla2", "Lp-PLA2", fieldIndex++, "nmol/min/mL")}
                 {renderField("tropI", "Trop I", fieldIndex++)}
@@ -312,7 +389,10 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
 
             {/* Diagnostic Procedures */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Diagnostic Procedures</h3>
+              {renderSectionHeader("Diagnostic Procedures", [
+                ["angiogram", "Angiogram"],
+                ["tiltTableTest", "Tilt Table Test"],
+              ])}
               <div className="space-y-2">
                 {renderTextAreaField("angiogram", "Angiogram", fieldIndex++)}
                 {renderTextAreaField("tiltTableTest", "Tilt Table Test", fieldIndex++)}

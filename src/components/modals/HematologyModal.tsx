@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
+import { X, Heart } from "lucide-react"
+import { 
+  addSectionFieldsToFavourites, 
+  removeSectionFieldsFromFavourites, 
+  areAllSectionFieldsFavourite,
+  isFieldFavourite,
+  removeFavouriteField
+} from "@/lib/favourites"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -22,6 +29,90 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
   const [formData, setFormData] = useState<Record<string, string | DualValue>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
+  
+  // Define which fields are dual (have value1 and value2)
+  const dualFields = new Set([
+    'neutrophils', 'lymphocytes', 'monocytes', 'eosinophils', 'basophils',
+    'serumIron' // Has µmol/L and µg/dL
+  ])
+
+  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
+    const reportType = 'hematology'
+    const reportName = 'Hematology'
+    
+    // Check if all fields are favorites (check value1 for dual fields)
+    const fieldsToCheck = fields.map(([fieldName]) => 
+      dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName
+    )
+    
+    const allFavourite = fieldsToCheck.every(fieldName => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    if (allFavourite) {
+      // Remove all fields
+      fields.forEach(([fieldName]) => {
+        if (dualFields.has(fieldName)) {
+          removeFavouriteField(reportType, `${fieldName}_value1`)
+          removeFavouriteField(reportType, `${fieldName}_value2`)
+        } else {
+          removeFavouriteField(reportType, fieldName)
+        }
+      })
+    } else {
+      // Add all fields - for dual fields, add value1 and value2
+      const allFieldsToAdd: Array<[string, string]> = []
+      fields.forEach(([fieldName, fieldLabel]) => {
+        if (dualFields.has(fieldName)) {
+          // Determine units based on field name
+          let unit1 = "%"
+          let unit2 = "cells/µL"
+          
+          if (fieldName === 'serumIron') {
+            unit1 = "µmol/L"
+            unit2 = "µg/dL"
+          }
+          
+          allFieldsToAdd.push([`${fieldName}_value1`, `${fieldLabel} - Value (${unit1})`])
+          allFieldsToAdd.push([`${fieldName}_value2`, `${fieldLabel} - Value (${unit2})`])
+        } else {
+          allFieldsToAdd.push([fieldName, fieldLabel])
+        }
+      })
+      addSectionFieldsToFavourites(reportType, reportName, allFieldsToAdd, sectionTitle)
+    }
+    setFavoritesUpdated(prev => prev + 1)
+  }
+
+  const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
+    const reportType = 'hematology'
+    // Check if all fields are favorites (check value1 for dual fields)
+    const fieldsToCheck = fields.map(([fieldName]) => 
+      dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName
+    )
+    const allFavourite = fieldsToCheck.every(fieldName => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    return (
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+        <button
+          onClick={() => handleSectionFavoriteToggle(fields, title)}
+          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+        >
+          <Heart 
+            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+          />
+          <span className="text-sm text-gray-600">
+            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+          </span>
+        </button>
+      </div>
+    )
+  }
 
   // Load saved data when modal opens (only once when savedData changes, not on every reportDate change)
   useEffect(() => {
@@ -240,7 +331,28 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         <div className="overflow-y-auto p-6 flex-1">
           <form id="hematology-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">CBC</h3>
+              {renderSectionHeader("CBC", [
+                ["rbc", "RBC"],
+                ["hemoglobin", "Hb / Hgb"],
+                ["hct", "Hct"],
+                ["mcv", "MCV"],
+                ["mch", "MCH"],
+                ["mchc", "MCHC"],
+                ["rdw", "RDW"],
+                ["wbc", "WBC"],
+                ["neutrophils", "Neutrophils"],
+                ["lymphocytes", "Lymphocytes"],
+                ["monocytes", "Monocytes"],
+                ["eosinophils", "Eosinophils"],
+                ["basophils", "Basophils"],
+                ["immatureGranulocytes", "Immature Granulocytes"],
+                ["nrbc", "nRBC"],
+                ["plt", "PLT"],
+                ["mpv", "MPV"],
+                ["pdw", "PDW"],
+                ["pct", "PCT"],
+                ["esr", "ESR"],
+              ])}
               <div className="grid grid-cols-2 gap-2">
                 {renderField("rbc", "RBC", i++, "million/µL")}
                 {renderField("hemoglobin", "Hb / Hgb", i++, "g/dL")}
@@ -266,7 +378,17 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
             </div>
 
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Coagulation</h3>
+              {renderSectionHeader("Coagulation", [
+                ["ptPatient", "Prothrombin Time Patient"],
+                ["ptTest", "Prothrombin Time Test"],
+                ["inr", "INR"],
+                ["aptt", "APTT"],
+                ["fibrinogen", "Fibrinogen"],
+                ["dDimer", "D-dimer"],
+                ["bleedingTime", "Bleeding Time"],
+                ["clottingTime", "Clotting Time"],
+                ["reticulocyteCount", "Reticulocyte count"],
+              ])}
               <div className="space-y-2">
                 <div className={`p-2 rounded ${fieldColors[i % fieldColors.length]}`}>
                   <Label className="text-sm font-medium mb-2 block">Prothrombin Time</Label>
@@ -298,7 +420,17 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
             </div>
 
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Chemistry</h3>
+              {renderSectionHeader("Chemistry", [
+                ["pbf", "PBF"],
+                ["ldh", "LDH"],
+                ["serumIron", "S. Iron / S. Fe"],
+                ["tibc", "TIBC"],
+                ["ferritin", "S. Ferritin"],
+                ["tsat", "TSAT"],
+                ["boneMarrowStudy", "Bone Marrow Study"],
+                ["b12", "S. B12 level"],
+                ["folate", "S. Folate"],
+              ])}
               <div className="grid grid-cols-2 gap-2">
                 {renderField("pbf", "PBF", i++)}
                 {renderField("ldh", "LDH", i++, "U/L")}

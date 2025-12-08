@@ -1,11 +1,18 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
+import { X, Heart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
+import { 
+  addSectionFieldsToFavourites, 
+  removeSectionFieldsFromFavourites, 
+  areAllSectionFieldsFavourite,
+  isFieldFavourite,
+  removeFavouriteField
+} from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -20,6 +27,7 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
   const [formData, setFormData] = useState<Record<string, { value1: string; value2: string }>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
 
   // Load saved data when modal opens
   useEffect(() => {
@@ -177,6 +185,84 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
     }
   }
 
+  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string, hasDualValues: boolean = true) => {
+    const reportType = 'rft'
+    const reportName = 'RFT'
+    
+    // Check if all fields are already favorites (check value1 fields for dual value fields)
+    const fieldsToCheck = hasDualValues 
+      ? fields.map(([fieldName]) => `${fieldName}_value1`)
+      : fields.map(([fieldName]) => fieldName)
+    
+    const allFavourite = fieldsToCheck.every(fieldName => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    if (allFavourite) {
+      // Remove all fields including value1 and value2 for dual value fields
+      fields.forEach(([fieldName, fieldLabel]) => {
+        if (hasDualValues) {
+          // Remove value1 and value2 (not main field)
+          removeFavouriteField(reportType, `${fieldName}_value1`)
+          removeFavouriteField(reportType, `${fieldName}_value2`)
+        } else {
+          removeFavouriteField(reportType, fieldName)
+        }
+      })
+    } else {
+      // Add all fields - for dual value fields, add value1 and value2 separately with proper units
+      const allFieldsToAdd: Array<[string, string]> = []
+      fields.forEach(([fieldName, fieldLabel], idx) => {
+        if (hasDualValues) {
+          // Use actual units from the renderField calls
+          // For S. Creatinine: mg/dL, µmol/L
+          // For S. Electrolyte: mmol/L, mEq/L
+          let unit1 = "Unit 1"
+          let unit2 = "Unit 2"
+          
+          if (fieldName === "creatinine") {
+            unit1 = "mg/dL"
+            unit2 = "µmol/L"
+          } else if (['sodium', 'potassium', 'chloride', 'bicarbonate'].includes(fieldName)) {
+            unit1 = "mmol/L"
+            unit2 = "mEq/L"
+          }
+          
+          allFieldsToAdd.push([`${fieldName}_value1`, `${fieldLabel} - Value (${unit1})`])
+          allFieldsToAdd.push([`${fieldName}_value2`, `${fieldLabel} - Value (${unit2})`])
+        } else {
+          allFieldsToAdd.push([fieldName, fieldLabel])
+        }
+      })
+      addSectionFieldsToFavourites(reportType, reportName, allFieldsToAdd, sectionTitle)
+    }
+    setFavoritesUpdated(prev => prev + 1)
+  }
+
+  const renderSectionHeader = (title: string, fields: Array<[string, string]>, hasDualValues: boolean = true) => {
+    const reportType = 'rft'
+    // Check only main fields (not value1/value2)
+    const allFavourite = areAllSectionFieldsFavourite(reportType, fields)
+    
+    return (
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+            <button
+              onClick={() => handleSectionFavoriteToggle(fields, title, hasDualValues)}
+              className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+              title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+            >
+          <Heart 
+            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+          />
+          <span className="text-sm text-gray-600">
+            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+          </span>
+        </button>
+      </div>
+    )
+  }
+
   let fieldIndex = 0
 
   return (
@@ -218,7 +304,9 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
           <form id="rft-form" onSubmit={handleSubmit} className="space-y-4">
             {/* S. Creatinine */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">S. Creatinine</h3>
+              {renderSectionHeader("S. Creatinine", [
+                ["creatinine", "S. Creatinine"],
+              ], true)}
               <div className="space-y-2">
                 {renderField("creatinine", "S. Creatinine", fieldIndex++, "mg/dL", "µmol/L")}
               </div>
@@ -226,7 +314,12 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
 
             {/* S. Electrolyte */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">S. Electrolyte</h3>
+              {renderSectionHeader("S. Electrolyte", [
+                ["sodium", "Sodium (Na+)"],
+                ["potassium", "Potassium (K+)"],
+                ["chloride", "Chloride (Cl-)"],
+                ["bicarbonate", "Bicarbonate (HCO3-)"],
+              ], true)}
               <div className="space-y-2">
                 {renderField("sodium", "Sodium (Na+)", fieldIndex++, "mmol/L", "mEq/L")}
                 {renderField("potassium", "Potassium (K+)", fieldIndex++, "mmol/L", "mEq/L")}
@@ -237,7 +330,9 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
 
             {/* Blood Urea Nitrogen */}
             <div className="mb-6 pb-4 border-b">
-              <h3 className="font-semibold text-lg mb-3 text-blue-700">Blood Urea Nitrogen (BUN)</h3>
+              {renderSectionHeader("Blood Urea Nitrogen (BUN)", [
+                ["bun", "Blood Urea Nitrogen (BUN)"],
+              ], false)}
               <div className="space-y-2">
                 {(() => {
                   const colorClass = fieldColors[fieldIndex % fieldColors.length]

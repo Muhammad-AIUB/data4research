@@ -1,10 +1,17 @@
 'use client'
 
 import { useState, useEffect, useCallback } from "react"
-import { X } from "lucide-react"
+import { X, Heart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { 
+  addSectionFieldsToFavourites, 
+  removeSectionFieldsFromFavourites, 
+  areAllSectionFieldsFavourite,
+  isFieldFavourite,
+  removeFavouriteField
+} from "@/lib/favourites"
 import {
   Select,
   SelectTrigger,
@@ -41,7 +48,7 @@ type FormState = {
   surgicalHistory: string
 }
 
-type DiseaseHistoryData = Omit<FormState, "heightCm"> & {
+export type DiseaseHistoryData = Omit<FormState, "heightCm"> & {
   heightCm: number | null
 }
 
@@ -64,6 +71,54 @@ export default function DiseaseHistoryModal({
 }: Props) {
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
+  
+  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
+    const reportType = 'diseaseHistory'
+    const reportName = 'Disease History'
+    
+    // Check if all fields are favorites
+    const allFavourite = fields.every(([fieldName]) => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    if (allFavourite) {
+      // Remove all fields
+      fields.forEach(([fieldName]) => {
+        removeFavouriteField(reportType, fieldName)
+      })
+    } else {
+      // Add all fields
+      addSectionFieldsToFavourites(reportType, reportName, fields, sectionTitle)
+    }
+    setFavoritesUpdated(prev => prev + 1)
+  }
+
+  const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
+    const reportType = 'diseaseHistory'
+    // Check if all fields are favorites
+    const allFavourite = fields.every(([fieldName]) => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    return (
+      <div className="flex items-center justify-between mb-3 pb-2 border-b">
+        <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+        <button
+          onClick={() => handleSectionFavoriteToggle(fields, title)}
+          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+        >
+          <Heart 
+            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+          />
+          <span className="text-sm text-gray-600">
+            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+          </span>
+        </button>
+      </div>
+    )
+  }
 
   const [form, setForm] = useState<FormState>({
     age: "",
@@ -293,6 +348,20 @@ export default function DiseaseHistoryModal({
         </div>
 
         <form id="disease-history-form" onSubmit={handleSubmit} className="space-y-6 p-6">
+          {/* Physical Measurements Section */}
+          <div className="space-y-4">
+            {renderSectionHeader("Physical Measurements", [
+              ["age", "Age"],
+              ["heightCm", "Height (cm)"],
+              ["heightFeet", "Height (feet)"],
+              ["heightInch", "Height (inch)"],
+              ["weightLb", "Weight (lb)"],
+              ["weightKg", "Weight (kg)"],
+              ["bmi", "BMI"],
+              ["idealWeightKg", "Ideal Weight (kg)"],
+              ["idealWeightLb", "Ideal Weight (lb)"],
+            ])}
+          
           {/* Age */}
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <Label>Age</Label>
@@ -329,7 +398,20 @@ export default function DiseaseHistoryModal({
               <Input value={form.weightKg} onChange={(e) => update("weightKg", e.target.value)} className="bg-white" />
             </div>
           </div>
+          </div>
 
+          {/* Vital Signs Section */}
+          <div className="space-y-4">
+            {renderSectionHeader("Vital Signs", [
+              ["sbp", "Systolic (SBP)"],
+              ["dbp", "Diastolic (DBP)"],
+              ["map", "Mean Arterial Pressure"],
+              ["pulse", "Pulse"],
+              ["pulseNote", "Pulse Note"],
+              ["respiratoryRate", "Respiratory Rate"],
+              ["spO2", "Oxygen Saturation (SpO2)"],
+            ])}
+          
           {/* BP + MAP */}
           <div className="rounded-lg border border-teal-200 bg-teal-50 p-4">
             <div className="grid grid-cols-3 gap-4">
@@ -384,7 +466,21 @@ export default function DiseaseHistoryModal({
               <div></div>
             </div>
           </div>
+          </div>
 
+          {/* Clinical Findings Section */}
+          <div className="space-y-4">
+            {renderSectionHeader("Clinical Findings", [
+              ["anaemia", "Anaemia"],
+              ["jaundice", "Jaundice"],
+              ["ascites", "Ascites"],
+              ["heart", "Heart"],
+              ["lung", "Lung"],
+              ["specialNote", "Special Note"],
+              ["diseaseHistory", "Disease History"],
+              ["surgicalHistory", "Surgical History"],
+            ])}
+          
           {/* Anaemia / Jaundice / Ascites */}
           <div className="grid grid-cols-3 gap-4 rounded-lg border border-pink-200 bg-pink-50 p-4">
             <div>
@@ -452,6 +548,7 @@ export default function DiseaseHistoryModal({
               <Label>Surgical or Intervention History</Label>
               <Input value={form.surgicalHistory} onChange={(e) => update("surgicalHistory", e.target.value)} className="bg-white" />
             </div>
+          </div>
           </div>
 
           {/* Save Buttons */}

@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
+import { X, Heart } from "lucide-react"
+import { 
+  addSectionFieldsToFavourites, 
+  removeSectionFieldsFromFavourites, 
+  areAllSectionFieldsFavourite,
+  isFieldFavourite,
+  removeFavouriteField
+} from "@/lib/favourites"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -19,8 +26,52 @@ interface Props {
 export default function ImagingHistopathologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [] }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
   const reportType = "imaging"
   const reportName = "Imaging, Histopathology"
+  
+  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
+    // Check if all fields are favorites
+    const allFavourite = fields.every(([fieldName]) => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    if (allFavourite) {
+      // Remove all fields
+      fields.forEach(([fieldName]) => {
+        removeFavouriteField(reportType, fieldName)
+      })
+    } else {
+      // Add all fields
+      addSectionFieldsToFavourites(reportType, reportName, fields, sectionTitle)
+    }
+    setFavoritesUpdated(prev => prev + 1)
+  }
+
+  const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
+    // Check if all fields are favorites
+    const allFavourite = fields.every(([fieldName]) => 
+      isFieldFavourite(reportType, fieldName)
+    )
+    
+    return (
+      <div className="flex items-center justify-between mb-3 pb-2 border-b">
+        <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+        <button
+          onClick={() => handleSectionFavoriteToggle(fields, title)}
+          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+        >
+          <Heart 
+            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+          />
+          <span className="text-sm text-gray-600">
+            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+          </span>
+        </button>
+      </div>
+    )
+  }
   const [formData, setFormData] = useState({
     xray: "",
     ctScan: "",
@@ -144,6 +195,19 @@ export default function ImagingHistopathologyModal({ onClose, defaultDate, onDat
         </div>
         
         <form id="imaging-form" onSubmit={handleSubmit} className="space-y-4">
+          {renderSectionHeader("All Fields", [
+            ["xray", "X-Ray"],
+            ["ctScan", "CT Scan"],
+            ["mri", "MRI"],
+            ["ultrasound", "Ultrasound"],
+            ["petScan", "PET Scan"],
+            ["mammography", "Mammography"],
+            ["biopsy", "Biopsy"],
+            ["histopathology", "Histopathology"],
+            ["cytology", "Cytology"],
+            ["immunohistochemistry", "Immunohistochemistry"],
+            ["notes", "Notes"],
+          ])}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>X-Ray</Label>

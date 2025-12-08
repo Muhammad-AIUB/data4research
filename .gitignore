@@ -30,6 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# bash crash dumps
+*.stackdump
+
 # env files (can opt-in for committing if needed)
 .env*
 
