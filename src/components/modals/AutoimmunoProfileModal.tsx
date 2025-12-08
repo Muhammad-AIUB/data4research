@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X, Star, Trash2 } from "lucide-react"
+import { X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
-import { addFavouriteField, removeFavouriteField, isFieldFavourite } from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -22,8 +21,6 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
   const [formData, setFormData] = useState<Record<string, { value: string; notes: string }>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
-  const reportType = "autoimmunoProfile"
-  const reportName = "Autoimmuno Profile"
 
   // Load saved data when modal opens
   useEffect(() => {
@@ -83,10 +80,9 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
 
   const renderField = (fieldName: string, label: string, index: number) => {
     const colorClass = fieldColors[index % fieldColors.length]
-    const isFav = isFieldFavourite(reportType, fieldName)
     
     return (
-      <div className={`grid grid-cols-4 gap-2 items-end p-2 rounded ${colorClass}`}>
+      <div className={`grid grid-cols-3 gap-2 items-end p-2 rounded ${colorClass}`}>
         <div className="col-span-1">
           <Label className="text-sm">{label}</Label>
           <Select
@@ -107,35 +103,6 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
             placeholder="Notes"
             className="bg-white"
           />
-        </div>
-        <div className="col-span-1 flex justify-end">
-          {isFav ? (
-            <button
-              type="button"
-              onClick={() => {
-                removeFavouriteField(reportType, fieldName)
-                alert(`${label} removed from favourites!`)
-              }}
-              className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 rounded text-xs text-white transition-colors"
-              title="Remove from favourites"
-            >
-              <Trash2 className="w-3 h-3" />
-              Remove
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                addFavouriteField(reportType, reportName, fieldName, label)
-                alert(`${label} added to favourites!`)
-              }}
-              className="flex items-center gap-1 px-2 py-1.5 bg-yellow-500 hover:bg-yellow-600 rounded text-xs text-white transition-colors"
-              title="Add to favourites"
-            >
-              <Star className="w-3 h-3" />
-              Add Fav
-            </button>
-          )}
         </div>
       </div>
     )
@@ -213,13 +180,32 @@ export default function AutoimmunoProfileModal({ onClose, defaultDate, onDataCha
               defaultDate={defaultDate}
             />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex gap-2 mr-2">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-white border-white/40">
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const form = document.getElementById('autoimmuno-form')
+                  form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+                }}
+                disabled={saving}
+                className="bg-amber-400 hover:bg-amber-500 text-blue-900"
+              >
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <div className="overflow-y-auto p-6 flex-1">
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="autoimmuno-form" onSubmit={handleSubmit} className="space-y-4">
           {/* ANA PROFILE */}
           {renderSection("ANA PROFILE (Anti-Nuclear Antibody Panel)", [
             ["ana", "ANA (IFA, ELISA, or multiplex)"],

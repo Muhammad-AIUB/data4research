@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X, Star, Trash2 } from "lucide-react"
+import { X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
-import { addFavouriteField, removeFavouriteField, isFieldFavourite } from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -120,12 +119,31 @@ export default function ImagingHistopathologyModal({ onClose, defaultDate, onDat
               defaultDate={defaultDate}
             />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex gap-2 mr-2">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-gray-800 border-gray-300">
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const form = document.getElementById('imaging-form')
+                  form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+                }}
+                disabled={saving}
+                className="bg-amber-400 hover:bg-amber-500 text-blue-900"
+              >
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="imaging-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>X-Ray</Label>

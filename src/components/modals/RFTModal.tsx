@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X, Star, Trash2 } from "lucide-react"
+import { X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
-import { addFavouriteField, removeFavouriteField, isFieldFavourite } from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -21,8 +20,6 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
   const [formData, setFormData] = useState<Record<string, { value1: string; value2: string }>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
-  const reportType = "rft"
-  const reportName = "RFT (Renal Function Test)"
 
   // Load saved data when modal opens
   useEffect(() => {
@@ -110,7 +107,6 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
 
   const renderField = (fieldName: string, label: string, index: number, unit1: string, unit2: string) => {
     const colorClass = fieldColors[index % fieldColors.length]
-    const isFav = isFieldFavourite(reportType, fieldName)
     
     return (
       <div className={`p-2 rounded ${colorClass}`}>
@@ -135,35 +131,6 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
               placeholder={unit2}
               className="bg-white"
             />
-          </div>
-          <div className="flex justify-end">
-            {isFav ? (
-              <button
-                type="button"
-                onClick={() => {
-                  removeFavouriteField(reportType, fieldName)
-                  alert(`${label} removed from favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 rounded text-xs text-white transition-colors"
-                title="Remove from favourites"
-              >
-                <Trash2 className="w-3 h-3" />
-                Remove
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  addFavouriteField(reportType, reportName, fieldName, label)
-                  alert(`${label} added to favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-yellow-500 hover:bg-yellow-600 rounded text-xs text-white transition-colors"
-                title="Add to favourites"
-              >
-                <Star className="w-3 h-3" />
-                Add Fav
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -224,12 +191,31 @@ export default function RFTModal({ onClose, defaultDate, onDataChange, patientId
               defaultDate={defaultDate}
             />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex gap-2 mr-2">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-white border-white/40">
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const form = document.getElementById('rft-form')
+                  form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+                }}
+                disabled={saving}
+                className="bg-amber-400 hover:bg-amber-500 text-blue-900"
+              >
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <div className="overflow-y-auto p-6 flex-1">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form id="rft-form" onSubmit={handleSubmit} className="space-y-4">
             {/* S. Creatinine */}
             <div className="mb-6 pb-4 border-b">
               <h3 className="font-semibold text-lg mb-3 text-blue-700">S. Creatinine</h3>

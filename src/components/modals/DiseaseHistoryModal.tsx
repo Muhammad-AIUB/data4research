@@ -1,29 +1,71 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import { X, Star, Trash2 } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Select, SelectItem, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
-import { addFavouriteField, removeFavouriteField, isFieldFavourite } from "@/lib/favourites"
+
+type FormState = {
+  age: string
+  heightCm: string
+  heightFeet: string
+  heightInch: string
+  weightLb: string
+  weightKg: string
+  sbp: string
+  dbp: string
+  map: string
+  pulse: string
+  pulseNote: string
+  bmi: string
+  idealWeightKg: string
+  idealWeightLb: string
+  anaemia: string
+  jaundice: string
+  respiratoryRate: string
+  spO2: string
+  ascites: string
+  heart: string
+  lung: string
+  specialNote: string
+  diseaseHistory: string
+  surgicalHistory: string
+}
+
+type DiseaseHistoryData = Omit<FormState, "heightCm"> & {
+  heightCm: number | null
+}
 
 interface Props {
   onClose: () => void
   defaultDate: Date
-  onDataChange?: (data: any, date: Date) => void
+  onDataChange?: (data: DiseaseHistoryData, date: Date) => void
   patientId?: string | null
   onSaveSuccess?: () => void
-  savedData?: Array<{ sampleDate: Date | string; diseaseHistory?: any }>
+  savedData?: Array<{ sampleDate: Date | string; diseaseHistory?: DiseaseHistoryData }>
 }
 
-export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [] }: Props) {
-  const [reportDate, setReportDate] = useState(defaultDate)
+export default function DiseaseHistoryModal({
+  onClose,
+  defaultDate,
+  onDataChange,
+  patientId,
+  onSaveSuccess,
+  savedData = [],
+}: Props) {
+  const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
-  const reportType = "diseaseHistory"
-  const reportName = "On Examination Disease History"
-  const [formData, setFormData] = useState<Record<string, string | number>>({
+
+  const [form, setForm] = useState<FormState>({
     age: "",
     heightCm: "",
     heightFeet: "",
@@ -36,528 +78,392 @@ export default function DiseaseHistoryModal({ onClose, defaultDate, onDataChange
     pulse: "",
     pulseNote: "",
     bmi: "",
-    idealBodyWeightLb: "",
-    idealBodyWeightKg: "",
+    idealWeightKg: "",
+    idealWeightLb: "",
     anaemia: "",
     jaundice: "",
     respiratoryRate: "",
     spO2: "",
     ascites: "",
-    auscultationHeart: "",
-    auscultationLung: "",
+    heart: "",
+    lung: "",
     specialNote: "",
     diseaseHistory: "",
     surgicalHistory: "",
   })
 
-  const updateField = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+  const update = useCallback((key: keyof FormState, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }, [])
 
-  const getFieldValue = (field: string) => formData[field] || ""
-
-  // Height conversions: feet/inches to cm
-  useEffect(() => {
-    const feet = parseFloat(String(formData.heightFeet || ""))
-    const inch = parseFloat(String(formData.heightInch || ""))
-    if (!isNaN(feet) && !isNaN(inch) && (feet > 0 || inch > 0)) {
-      const cm = (feet * 30.48) + (inch * 2.54)
-      if (String(formData.heightCm) !== cm.toFixed(2)) {
-        updateField("heightCm", cm.toFixed(2))
+  // Height handlers (from provided calculator logic)
+  const handleFeetChange = useCallback(
+    (value: string) => {
+      update("heightFeet", value)
+      if (value === "" || value === null) {
+        update("heightInch", "")
+        update("heightCm", "")
+      } else {
+        const feetNum = parseFloat(value) || 0
+        const totalInches = feetNum * 12
+        const cmValue = totalInches * 2.54
+        update("heightInch", totalInches.toFixed(2))
+        update("heightCm", cmValue.toFixed(2))
       }
-    } else if (formData.heightFeet === "" && formData.heightInch === "" && formData.heightCm !== "") {
-      updateField("heightCm", "")
-    }
-  }, [formData.heightFeet, formData.heightInch])
+    },
+    [update]
+  )
 
-  // Height conversion: cm to feet/inches
-  useEffect(() => {
-    const cm = parseFloat(String(formData.heightCm || ""))
-    if (!isNaN(cm) && cm > 0) {
-      const totalInches = cm / 2.54
-      const feet = Math.floor(totalInches / 12)
-      const inches = (totalInches % 12).toFixed(2)
-      if (String(formData.heightFeet) !== feet.toString() || String(formData.heightInch) !== inches) {
-        updateField("heightFeet", feet.toString())
-        updateField("heightInch", inches)
+  const handleInchChange = useCallback(
+    (value: string) => {
+      update("heightInch", value)
+      if (value === "" || value === null) {
+        update("heightFeet", "")
+        update("heightCm", "")
+      } else {
+        const inchNum = parseFloat(value) || 0
+        const feetNum = inchNum / 12
+        const cmValue = inchNum * 2.54
+        update("heightFeet", feetNum.toFixed(2))
+        update("heightCm", cmValue.toFixed(2))
       }
-    } else if (formData.heightCm === "" && (formData.heightFeet !== "" || formData.heightInch !== "")) {
-      updateField("heightFeet", "")
-      updateField("heightInch", "")
-    }
-  }, [formData.heightCm])
+    },
+    [update]
+  )
 
-  // Weight conversion: lb to kg
-  useEffect(() => {
-    const lb = parseFloat(String(formData.weightLb || ""))
-    if (!isNaN(lb) && lb > 0) {
-      const kg = lb * 0.453592
-      if (String(formData.weightKg) !== kg.toFixed(2)) {
-        updateField("weightKg", kg.toFixed(2))
+  const handleCmChange = useCallback(
+    (value: string) => {
+      update("heightCm", value)
+      if (value === "" || value === null) {
+        update("heightFeet", "")
+        update("heightInch", "")
+      } else {
+        const cmNum = parseFloat(value) || 0
+        const totalInches = cmNum / 2.54
+        const feetNum = totalInches / 12
+        update("heightFeet", feetNum.toFixed(2))
+        update("heightInch", totalInches.toFixed(2))
       }
-    } else if (formData.weightLb === "" && formData.weightKg !== "") {
-      updateField("weightKg", "")
-    }
-  }, [formData.weightLb])
+    },
+    [update]
+  )
 
-  // Weight conversion: kg to lb
+  // Weight lb ↔ kg
   useEffect(() => {
-    const kg = parseFloat(String(formData.weightKg || ""))
-    if (!isNaN(kg) && kg > 0) {
-      const lb = kg / 0.453592
-      if (String(formData.weightLb) !== lb.toFixed(2)) {
-        updateField("weightLb", lb.toFixed(2))
-      }
-    } else if (formData.weightKg === "" && formData.weightLb !== "") {
-      updateField("weightLb", "")
+    const lb = parseFloat(form.weightLb)
+    if (lb > 0) {
+      update("weightKg", (lb * 0.453592).toFixed(2))
+    } else if (form.weightLb === "") {
+      update("weightKg", "")
     }
-  }, [formData.weightKg])
+  }, [form.weightLb, update])
 
-  // MAP calculation: [SBP + (2 x DBP)]/3
   useEffect(() => {
-    const sbp = parseFloat(String(formData.sbp || ""))
-    const dbp = parseFloat(String(formData.dbp || ""))
-    if (!isNaN(sbp) && !isNaN(dbp)) {
-      const map = (sbp + (2 * dbp)) / 3
-      if (String(formData.map) !== map.toFixed(2)) {
-        updateField("map", map.toFixed(2))
-      }
-    } else if ((formData.sbp === "" || formData.dbp === "") && formData.map !== "") {
-      updateField("map", "")
+    const kg = parseFloat(form.weightKg)
+    if (kg > 0) {
+      update("weightLb", (kg / 0.453592).toFixed(2))
+    } else if (form.weightKg === "") {
+      update("weightLb", "")
     }
-  }, [formData.sbp, formData.dbp])
+  }, [form.weightKg, update])
 
-  // BMI calculation: weight / (height in cm / 100)^2
+  // MAP = (SBP + 2×DBP)/3
   useEffect(() => {
-    const weight = parseFloat(String(formData.weightKg || ""))
-    const heightCm = parseFloat(String(formData.heightCm || ""))
-    if (!isNaN(weight) && !isNaN(heightCm) && heightCm > 0) {
-      const heightM = heightCm / 100
-      const bmi = weight / (heightM * heightM)
-      if (String(formData.bmi) !== bmi.toFixed(2)) {
-        updateField("bmi", bmi.toFixed(2))
-      }
-    } else if ((formData.weightKg === "" || formData.heightCm === "") && formData.bmi !== "") {
-      updateField("bmi", "")
+    const s = parseFloat(form.sbp)
+    const d = parseFloat(form.dbp)
+    if (s > 0 && d > 0) {
+      update("map", ((s + 2 * d) / 3).toFixed(1))
+    } else {
+      update("map", "")
     }
-  }, [formData.weightKg, formData.heightCm])
+  }, [form.sbp, form.dbp, update])
 
-  // Load saved data when modal opens
+  // BMI
   useEffect(() => {
-    if (savedData && savedData.length > 0) {
-      const dateStr = reportDate.toISOString().split('T')[0]
-      const matchingTest = savedData.find(test => {
-        if (!test.diseaseHistory) return false
-        const testDate = test.sampleDate instanceof Date 
-          ? test.sampleDate.toISOString().split('T')[0]
-          : new Date(test.sampleDate).toISOString().split('T')[0]
-        return testDate === dateStr
-      })
-      
-      const testToLoad = matchingTest || savedData
-        .filter(test => test.diseaseHistory)
-        .sort((a, b) => {
-          const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
-          const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
-          return dateB.getTime() - dateA.getTime()
-        })[0]
-      
-      if (testToLoad?.diseaseHistory) {
-        setFormData(testToLoad.diseaseHistory as Record<string, string | number>)
-        const testDate = testToLoad.sampleDate instanceof Date 
-          ? testToLoad.sampleDate 
-          : new Date(testToLoad.sampleDate)
-        setReportDate(testDate)
-      }
+    const kg = parseFloat(form.weightKg)
+    const cm = parseFloat(form.heightCm)
+    if (kg > 0 && cm > 0) {
+      update("bmi", (kg / ((cm / 100) ** 2)).toFixed(2))
+    } else {
+      update("bmi", "")
     }
-  }, [savedData])
+  }, [form.weightKg, form.heightCm, update])
 
-  // Ideal body weight range: 19.5 x (height in cm / 100)^2 to 25 x (height in cm / 100)^2
+  // Ideal Body Weight (19.5 – 25 BMI)
   useEffect(() => {
-    const heightCm = parseFloat(String(formData.heightCm || ""))
-    if (!isNaN(heightCm) && heightCm > 0) {
-      const heightM = heightCm / 100
-      const minKg = 19.5 * (heightM * heightM)
-      const maxKg = 25 * (heightM * heightM)
-      const minLb = minKg / 0.453592
-      const maxLb = maxKg / 0.453592
-      const kgRange = `${minKg.toFixed(2)} - ${maxKg.toFixed(2)}`
-      const lbRange = `${minLb.toFixed(2)} - ${maxLb.toFixed(2)}`
-      if (String(formData.idealBodyWeightKg) !== kgRange || String(formData.idealBodyWeightLb) !== lbRange) {
-        updateField("idealBodyWeightKg", kgRange)
-        updateField("idealBodyWeightLb", lbRange)
-      }
-    } else if (formData.heightCm === "" && (formData.idealBodyWeightKg !== "" || formData.idealBodyWeightLb !== "")) {
-      updateField("idealBodyWeightKg", "")
-      updateField("idealBodyWeightLb", "")
+    const cm = parseFloat(form.heightCm)
+    if (cm > 0) {
+      const m2 = (cm / 100) ** 2
+      const min = (19.5 * m2).toFixed(1)
+      const max = (25 * m2).toFixed(1)
+      update("idealWeightKg", `${min} – ${max}`)
+      update("idealWeightLb", `${(parseFloat(min) / 0.453592).toFixed(1)} – ${(parseFloat(max) / 0.453592).toFixed(1)}`)
+    } else {
+      update("idealWeightKg", "")
+      update("idealWeightLb", "")
     }
-  }, [formData.heightCm])
+  }, [form.heightCm, update])
 
+  // Load saved data
+  useEffect(() => {
+    if (savedData.length === 0) return
+    const today = reportDate.toISOString().split("T")[0]
+    const match = savedData.find((item) => {
+      const d = item.sampleDate instanceof Date ? item.sampleDate : new Date(item.sampleDate)
+      return d.toISOString().split("T")[0] === today
+    }) || savedData[savedData.length - 1]
 
-  const fieldColors = [
-    "bg-purple-50 border-purple-200",
-    "bg-yellow-50 border-yellow-200",
-    "bg-green-50 border-green-200",
-    "bg-blue-50 border-blue-200",
-  ]
+    if (match?.diseaseHistory) {
+      const dh = match.diseaseHistory
+      setForm((prev) => ({
+        ...prev,
+        ...dh,
+        heightCm: dh.heightCm != null ? String(dh.heightCm) : "",
+        heightFeet: dh.heightFeet ?? "",
+        heightInch: dh.heightInch ?? "",
+        anaemia: dh.anaemia ?? "",
+        jaundice: dh.jaundice ?? "",
+        ascites: dh.ascites ?? "",
+      }))
+    }
+  }, [savedData, reportDate, update])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    const hasData = Object.keys(formData).length > 0 && 
-      Object.values(formData).some(f => f !== "" && f !== null && f !== undefined)
-    
-    if (!hasData) {
-      alert("Please enter at least one field value before saving.")
-      return
+    setSaving(true)
+
+    const payload = {
+      patientId,
+      sampleDate: reportDate.toISOString().split("T")[0],
+      diseaseHistory: {
+        ...form,
+        heightCm: form.heightCm ? Number(form.heightCm) : null,
+      } as DiseaseHistoryData,
     }
 
-    setSaving(true)
     try {
-      const response = await fetch('/api/patient-tests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientId: patientId || null,
-          sampleDate: `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}-${String(reportDate.getDate()).padStart(2, '0')}`,
-          diseaseHistory: formData,
-        })
+      const res = await fetch("/api/patient-tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       })
-
-      if (response.ok) {
-        if (onSaveSuccess) onSaveSuccess()
-        if (onDataChange) onDataChange(formData, reportDate)
-        alert("Disease History data saved successfully!")
+      if (res.ok) {
+        onSaveSuccess?.()
+        onDataChange?.(payload.diseaseHistory, reportDate)
+        alert("Saved successfully!")
         onClose()
-      } else {
-        const error = await response.json()
-        alert(error.message || "Failed to save data. Please try again.")
       }
-    } catch (error) {
-      console.error("Error saving Disease History data:", error)
-      alert("Failed to save data. Please try again.")
+    } catch {
+      alert("Save failed")
     } finally {
       setSaving(false)
     }
   }
 
-  let i = 0
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-white">
+        <div className="sticky top-0 flex items-center justify-between bg-linear-to-r from-blue-600 to-purple-600 p-4 text-white">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold">On Examination Disease History</h2>
-            <ModalDatePicker
-              selectedDate={reportDate}
-              onDateChange={setReportDate}
-              defaultDate={defaultDate}
-            />
+            <h2 className="text-2xl font-bold">On Examination & Disease History</h2>
+            <ModalDatePicker selectedDate={reportDate} onDateChange={setReportDate} defaultDate={defaultDate} />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="overflow-y-auto p-6 flex-1">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Age */}
-            <div className={`p-2 rounded ${fieldColors[0]}`}>
-              <Label className="text-sm font-medium">Age</Label>
-              <Input
-                type="number"
-                value={getFieldValue("age")}
-                onChange={(e) => updateField("age", e.target.value)}
-                placeholder="Enter age"
-                className="bg-white"
-              />
-            </div>
-
-            {/* Height */}
-            <div className={`p-2 rounded ${fieldColors[1]}`}>
-              <Label className="text-sm font-medium mb-2 block">Height</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <Label className="text-xs">cm</Label>
-                  <Input
-                    type="number"
-                    value={getFieldValue("heightCm")}
-                    onChange={(e) => updateField("heightCm", e.target.value)}
-                    placeholder="cm"
-                    className="bg-white"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">feet</Label>
-                  <Input
-                    type="number"
-                    value={getFieldValue("heightFeet")}
-                    onChange={(e) => updateField("heightFeet", e.target.value)}
-                    placeholder="feet"
-                    className="bg-white"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">inch</Label>
-                  <Input
-                    type="number"
-                    value={getFieldValue("heightInch")}
-                    onChange={(e) => updateField("heightInch", e.target.value)}
-                    placeholder="inch"
-                    className="bg-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Weight */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className={`p-2 rounded ${fieldColors[1]}`}>
-                <Label className="text-sm font-medium">Weight (pound/lb)</Label>
-                <Input
-                  type="number"
-                  value={getFieldValue("weightLb")}
-                  onChange={(e) => updateField("weightLb", e.target.value)}
-                  placeholder="pound(lb)"
-                  className="bg-white"
-                />
-              </div>
-              <div className={`p-2 rounded ${fieldColors[0]}`}>
-                <Label className="text-sm font-medium">Weight (KG)</Label>
-                <Input
-                  type="number"
-                  value={getFieldValue("weightKg")}
-                  onChange={(e) => updateField("weightKg", e.target.value)}
-                  placeholder="KG"
-                  className="bg-white"
-                />
-              </div>
-            </div>
-
-            {/* BP */}
-            <div className="space-y-2">
-              <div className={`p-2 rounded ${fieldColors[1]}`}>
-                <Label className="text-sm font-medium">Systolic (SBP) (mmHg)</Label>
-                <Input
-                  type="number"
-                  value={getFieldValue("sbp")}
-                  onChange={(e) => updateField("sbp", e.target.value)}
-                  placeholder="mmHg"
-                  className="bg-white"
-                />
-              </div>
-              <div className={`p-2 rounded ${fieldColors[1]}`}>
-                <Label className="text-sm font-medium">Diastolic (DBP) (mmHg)</Label>
-                <Input
-                  type="number"
-                  value={getFieldValue("dbp")}
-                  onChange={(e) => updateField("dbp", e.target.value)}
-                  placeholder="mmHg"
-                  className="bg-white"
-                />
-              </div>
-              <div className={`p-2 rounded ${fieldColors[0]}`}>
-                <Label className="text-sm font-medium">Mean Arterial Pressure (mmHg)</Label>
-                <Input
-                  type="number"
-                  value={getFieldValue("map")}
-                  readOnly
-                  placeholder="Auto-calculated"
-                  className="bg-white"
-                />
-              </div>
-            </div>
-
-            {/* Pulse */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className={`p-2 rounded ${fieldColors[1]}`}>
-                <Label className="text-sm font-medium">Pulse (b/m)</Label>
-                <Input
-                  type="number"
-                  value={getFieldValue("pulse")}
-                  onChange={(e) => updateField("pulse", e.target.value)}
-                  placeholder="beats per minute"
-                  className="bg-white"
-                />
-              </div>
-              <div className={`p-2 rounded ${fieldColors[3]}`}>
-                <Label className="text-sm font-medium">Note</Label>
-                <Input
-                  value={getFieldValue("pulseNote")}
-                  onChange={(e) => updateField("pulseNote", e.target.value)}
-                  placeholder="Note"
-                  className="bg-white"
-                />
-              </div>
-            </div>
-
-            {/* BMI */}
-            <div className={`p-2 rounded ${fieldColors[0]}`}>
-              <Label className="text-sm font-medium">BMI</Label>
-              <Input
-                type="number"
-                value={getFieldValue("bmi")}
-                readOnly
-                placeholder="Auto-calculated"
-                className="bg-white"
-              />
-            </div>
-
-            {/* Ideal Body Weight */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className={`p-2 rounded ${fieldColors[0]}`}>
-                <Label className="text-sm font-medium">Ideal Body Weight (pound/lb)</Label>
-                <Input
-                  value={getFieldValue("idealBodyWeightLb")}
-                  readOnly
-                  placeholder="Auto-calculated"
-                  className="bg-white"
-                />
-              </div>
-              <div className={`p-2 rounded ${fieldColors[0]}`}>
-                <Label className="text-sm font-medium">Ideal Body Weight (KG)</Label>
-                <Input
-                  value={getFieldValue("idealBodyWeightKg")}
-                  readOnly
-                  placeholder="Auto-calculated"
-                  className="bg-white"
-                />
-              </div>
-            </div>
-
-            {/* Anaemia */}
-            <div className={`p-2 rounded ${fieldColors[2]}`}>
-              <Label className="text-sm font-medium">Anaemia</Label>
-              <Select
-                value={getFieldValue("anaemia")}
-                onValueChange={(v) => updateField("anaemia", v)}
-                className="bg-white"
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-white border-white/30">
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const formEl = document.getElementById("disease-history-form")
+                  formEl?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+                }}
+                disabled={saving}
+                className="bg-amber-400 hover:bg-amber-500 text-blue-900"
               >
-                <SelectValue placeholder="Select" />
-                <SelectItem value="+">+</SelectItem>
-                <SelectItem value="++">++</SelectItem>
-                <SelectItem value="+++">+++</SelectItem>
-              </Select>
-            </div>
-
-            {/* Jaundice */}
-            <div className={`p-2 rounded ${fieldColors[2]}`}>
-              <Label className="text-sm font-medium">Jaundice</Label>
-              <Select
-                value={getFieldValue("jaundice")}
-                onValueChange={(v) => updateField("jaundice", v)}
-                className="bg-white"
-              >
-                <SelectValue placeholder="Select" />
-                <SelectItem value="+">+</SelectItem>
-                <SelectItem value="++">++</SelectItem>
-                <SelectItem value="+++">+++</SelectItem>
-              </Select>
-            </div>
-
-            {/* Respiratory Rate */}
-            <div className={`p-2 rounded ${fieldColors[1]}`}>
-              <Label className="text-sm font-medium">Respiratory Rate (/min)</Label>
-              <Input
-                type="number"
-                value={getFieldValue("respiratoryRate")}
-                onChange={(e) => updateField("respiratoryRate", e.target.value)}
-                placeholder="/min"
-                className="bg-white"
-              />
-            </div>
-
-            {/* Oxygen Saturation */}
-            <div className={`p-2 rounded ${fieldColors[1]}`}>
-              <Label className="text-sm font-medium">Oxygen Saturation (SpO2) (%)</Label>
-              <Input
-                type="number"
-                value={getFieldValue("spO2")}
-                onChange={(e) => updateField("spO2", e.target.value)}
-                placeholder="%"
-                className="bg-white"
-              />
-            </div>
-
-            {/* Ascites */}
-            <div className={`p-2 rounded ${fieldColors[2]}`}>
-              <Label className="text-sm font-medium">Ascites</Label>
-              <Select
-                value={getFieldValue("ascites")}
-                onValueChange={(v) => updateField("ascites", v)}
-                className="bg-white"
-              >
-                <SelectValue placeholder="Select" />
-                <SelectItem value="absent">absent</SelectItem>
-                <SelectItem value="Mild">Mild</SelectItem>
-                <SelectItem value="Moderate">Moderate</SelectItem>
-                <SelectItem value="Huge">Huge</SelectItem>
-              </Select>
-            </div>
-
-            {/* Auscultation Heart */}
-            <div className={`p-2 rounded ${fieldColors[3]}`}>
-              <Label className="text-sm font-medium">Auscultation Heart</Label>
-              <textarea
-                value={getFieldValue("auscultationHeart")}
-                onChange={(e) => updateField("auscultationHeart", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md min-h-20 bg-white"
-                placeholder="Enter findings"
-              />
-            </div>
-
-            {/* Auscultation of Lung */}
-            <div className={`p-2 rounded ${fieldColors[3]}`}>
-              <Label className="text-sm font-medium">Auscultation of Lung</Label>
-              <textarea
-                value={getFieldValue("auscultationLung")}
-                onChange={(e) => updateField("auscultationLung", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md min-h-20 bg-white"
-                placeholder="Enter findings"
-              />
-            </div>
-
-            {/* Special note or other findings of O/E */}
-            <div className={`p-2 rounded ${fieldColors[3]}`}>
-              <Label className="text-sm font-medium">Special note or other findings of O/E (On Examination)</Label>
-              <textarea
-                value={getFieldValue("specialNote")}
-                onChange={(e) => updateField("specialNote", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md min-h-20 bg-white"
-                placeholder="Enter special notes or findings"
-              />
-            </div>
-
-            {/* Disease History */}
-            <div className={`p-2 rounded ${fieldColors[3]}`}>
-              <Label className="text-sm font-medium">Disease History e.g first known, disease event etc.</Label>
-              <textarea
-                value={getFieldValue("diseaseHistory")}
-                onChange={(e) => updateField("diseaseHistory", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md min-h-20 bg-white"
-                placeholder="Enter disease history"
-              />
-            </div>
-
-            {/* Surgical or Intervention History */}
-            <div className={`p-2 rounded ${fieldColors[3]}`}>
-              <Label className="text-sm font-medium">Surgical or Intervention History e.g. cholecystectomy, RFA of cardiac fiber, TACE of HCC etc.</Label>
-              <textarea
-                value={getFieldValue("surgicalHistory")}
-                onChange={(e) => updateField("surgicalHistory", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md min-h-20 bg-white"
-                placeholder="Enter surgical or intervention history"
-              />
-            </div>
-
-            <div className="flex gap-2 justify-end sticky bottom-0 bg-white pt-4 border-t mt-4">
-              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-              <Button type="submit" disabled={saving}>
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
-          </form>
+            <button onClick={onClose} className="rounded-full p-2 hover:bg-white/20">
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
+
+        <form id="disease-history-form" onSubmit={handleSubmit} className="space-y-6 p-6">
+          {/* Age */}
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <Label>Age</Label>
+            <Input value={form.age} onChange={(e) => update("age", e.target.value)} placeholder="35" className="bg-white" />
+          </div>
+
+          {/* Height */}
+          <div className="rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4">
+            <Label className="mb-2 block font-bold">Height (delete any = clear all)</Label>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>cm</Label>
+                <Input value={form.heightCm} onChange={(e) => handleCmChange(e.target.value)} placeholder="170" />
+              </div>
+              <div>
+                <Label>feet</Label>
+                <Input value={form.heightFeet} onChange={(e) => handleFeetChange(e.target.value)} placeholder="5" />
+              </div>
+              <div>
+                <Label>inch</Label>
+                <Input value={form.heightInch} onChange={(e) => handleInchChange(e.target.value)} placeholder="7" step="0.1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Weight */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg border border-purple-300 bg-purple-50 p-4">
+              <Label>pound (lb)</Label>
+              <Input value={form.weightLb} onChange={(e) => update("weightLb", e.target.value)} className="bg-white" />
+            </div>
+            <div className="rounded-lg border border-purple-300 bg-purple-50 p-4">
+              <Label>KG</Label>
+              <Input value={form.weightKg} onChange={(e) => update("weightKg", e.target.value)} className="bg-white" />
+            </div>
+          </div>
+
+          {/* BP + MAP */}
+          <div className="rounded-lg border border-teal-200 bg-teal-50 p-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Diastolic (DBP)</Label>
+                <Input value={form.dbp} onChange={(e) => update("dbp", e.target.value)} className="bg-white" />
+              </div>
+              <div>
+                <Label>Mean Arterial Pressure (auto)</Label>
+                <Input value={form.map} readOnly className="bg-gray-100" />
+              </div>
+              <div>
+                <Label>Systolic (SBP)</Label>
+                <Input value={form.sbp} onChange={(e) => update("sbp", e.target.value)} className="bg-white" />
+              </div>
+            </div>
+          </div>
+
+          {/* BMI + Ideal Weight */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+              <Label>BMI (auto)</Label>
+              <Input value={form.bmi} readOnly className="bg-gray-100" />
+            </div>
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+              <Label>Ideal Body Weight (kg)</Label>
+              <Input value={form.idealWeightKg} readOnly className="bg-gray-100" />
+            </div>
+          </div>
+
+          {/* Pulse + SpO2 + Respiratory Rate */}
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Pulse (b/m)</Label>
+                <Input value={form.pulse} onChange={(e) => update("pulse", e.target.value)} className="bg-white" />
+              </div>
+              <div>
+                <Label>Note</Label>
+                <Input value={form.pulseNote} onChange={(e) => update("pulseNote", e.target.value)} className="bg-white" />
+              </div>
+              <div>
+                <Label>Oxygen Saturation (SpO2)</Label>
+                <Input value={form.spO2} onChange={(e) => update("spO2", e.target.value)} className="bg-white" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Respiratory Rate</Label>
+                <Input value={form.respiratoryRate} onChange={(e) => update("respiratoryRate", e.target.value)} className="bg-white" />
+              </div>
+              <div></div>
+            </div>
+          </div>
+
+          {/* Anaemia / Jaundice / Ascites */}
+          <div className="grid grid-cols-3 gap-4 rounded-lg border border-pink-200 bg-pink-50 p-4">
+            <div>
+              <Label>Anaemia</Label>
+              <Select value={form.anaemia ?? ""} onValueChange={(v) => update("anaemia", v)}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Select</SelectItem>
+                  <SelectItem value="+">+</SelectItem>
+                  <SelectItem value="++">++</SelectItem>
+                  <SelectItem value="+++">+++</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Jaundice</Label>
+              <Select value={form.jaundice ?? ""} onValueChange={(v) => update("jaundice", v)}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Select</SelectItem>
+                  <SelectItem value="+">+</SelectItem>
+                  <SelectItem value="++">++</SelectItem>
+                  <SelectItem value="+++">+++</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Ascites</Label>
+              <Select value={form.ascites ?? ""} onValueChange={(v) => update("ascites", v)}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Select</SelectItem>
+                  <SelectItem value="absent">absent</SelectItem>
+                  <SelectItem value="Mild">Mild</SelectItem>
+                  <SelectItem value="Moderate">Moderate</SelectItem>
+                  <SelectItem value="Huge">Huge</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Auscultation */}
+          <div className="grid grid-cols-2 gap-4 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+            <div>
+              <Label>Auscultation Heart</Label>
+              <Input value={form.heart} onChange={(e) => update("heart", e.target.value)} className="bg-white" />
+            </div>
+            <div>
+              <Label>Auscultation Lung</Label>
+              <Input value={form.lung} onChange={(e) => update("lung", e.target.value)} className="bg-white" />
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div>
+              <Label>Special note or other findings of O/E</Label>
+              <Input value={form.specialNote} onChange={(e) => update("specialNote", e.target.value)} className="bg-white" />
+            </div>
+            <div>
+              <Label>Disease History (e.g. first known, disease event etc.)</Label>
+              <Input value={form.diseaseHistory} onChange={(e) => update("diseaseHistory", e.target.value)} className="bg-white" />
+            </div>
+            <div>
+              <Label>Surgical or Intervention History</Label>
+              <Input value={form.surgicalHistory} onChange={(e) => update("surgicalHistory", e.target.value)} className="bg-white" />
+            </div>
+          </div>
+
+          {/* Save Buttons */}
+          <div className="flex justify-end gap-4 border-t pt-6">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   )

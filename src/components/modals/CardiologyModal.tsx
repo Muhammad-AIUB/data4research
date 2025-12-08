@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X, Star, Trash2 } from "lucide-react"
+import { X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
-import { addFavouriteField, removeFavouriteField, isFieldFavourite } from "@/lib/favourites"
 
 interface Props {
   onClose: () => void
@@ -19,21 +18,25 @@ interface Props {
 }
 
 export default function CardiologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [] }: Props) {
-  const [formData, setFormData] = useState<Record<string, { value: string; notes?: string }>>({})
+  const [formData, setFormData] = useState<Record<string, string>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
-  const reportType = "cardiology"
-  const reportName = "Cardiology"
+
+  const formatDateString = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   // Load saved data when modal opens
   useEffect(() => {
     if (savedData && savedData.length > 0) {
-      const dateStr = reportDate.toISOString().split('T')[0]
+      const dateStr = formatDateString(reportDate)
       const matchingTest = savedData.find(test => {
         if (!test.cardiology) return false
-        const testDate = test.sampleDate instanceof Date 
-          ? test.sampleDate.toISOString().split('T')[0]
-          : new Date(test.sampleDate).toISOString().split('T')[0]
+        const testDateObj = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+        const testDate = formatDateString(testDateObj)
         return testDate === dateStr
       })
       
@@ -46,7 +49,17 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
         })[0]
       
       if (testToLoad?.cardiology) {
-        setFormData(testToLoad.cardiology as Record<string, { value: string; notes?: string }>)
+        const rawData = testToLoad.cardiology as Record<string, unknown>
+        const flattened: Record<string, string> = {}
+        Object.entries(rawData).forEach(([key, val]) => {
+          if (typeof val === "string") {
+            flattened[key] = val
+          } else if (val && typeof val === "object" && "value" in (val as Record<string, unknown>)) {
+            const v = (val as Record<string, unknown>).value
+            if (typeof v === "string") flattened[key] = v
+          }
+        })
+        setFormData(flattened)
         const testDate = testToLoad.sampleDate instanceof Date 
           ? testToLoad.sampleDate 
           : new Date(testToLoad.sampleDate)
@@ -57,18 +70,14 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedData])
 
-  const updateField = (fieldName: string, value: string, type: 'value' | 'notes' = 'value') => {
+  const updateField = (fieldName: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [fieldName]: {
-        ...prev[fieldName],
-        [type]: value
-      }
+      [fieldName]: value
     }))
   }
 
-  const getFieldValue = (fieldName: string) => formData[fieldName]?.value || ""
-  const getFieldNotes = (fieldName: string) => formData[fieldName]?.notes || ""
+  const getFieldValue = (fieldName: string) => formData[fieldName] || ""
 
   const fieldColors = [
     "bg-blue-50 border-blue-200",
@@ -81,10 +90,8 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
     "bg-cyan-50 border-cyan-200",
   ]
 
-  const renderField = (fieldName: string, label: string, index: number, unit?: string, hasNotes: boolean = false) => {
+  const renderField = (fieldName: string, label: string, index: number, unit?: string, inputClass?: string) => {
     const colorClass = fieldColors[index % fieldColors.length]
-    const isFav = isFieldFavourite(reportType, fieldName)
-    const fullLabel = `${label}${unit ? ` (${unit})` : ''}`
     
     return (
       <div className={`p-2 rounded ${colorClass}`}>
@@ -93,59 +100,18 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
             <Label className="text-sm">{label} {unit && <span className="text-gray-500">({unit})</span>}</Label>
             <Input
               value={getFieldValue(fieldName)}
-              onChange={(e) => updateField(fieldName, e.target.value, 'value')}
+              onChange={(e) => updateField(fieldName, e.target.value)}
               placeholder="Enter value"
-              className="bg-white"
+              className={`bg-white h-16 text-xl px-4 ${inputClass ?? ""}`}
             />
-          </div>
-          {hasNotes && (
-            <div className="col-span-2">
-              <Label className="text-sm">Notes</Label>
-              <Input
-                value={getFieldNotes(fieldName)}
-                onChange={(e) => updateField(fieldName, e.target.value, 'notes')}
-                placeholder="Notes"
-                className="bg-white"
-              />
-            </div>
-          )}
-          <div className="col-span-1 flex justify-end">
-            {isFav ? (
-              <button
-                type="button"
-                onClick={() => {
-                  removeFavouriteField(reportType, fieldName)
-                  alert(`${fullLabel} removed from favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 rounded text-xs text-white transition-colors"
-                title="Remove from favourites"
-              >
-                <Trash2 className="w-3 h-3" />
-                Remove
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  addFavouriteField(reportType, reportName, fieldName, fullLabel)
-                  alert(`${fullLabel} added to favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-yellow-500 hover:bg-yellow-600 rounded text-xs text-white transition-colors"
-                title="Add to favourites"
-              >
-                <Star className="w-3 h-3" />
-                Add Fav
-              </button>
-            )}
           </div>
         </div>
       </div>
     )
   }
 
-  const renderSelectField = (fieldName: string, label: string, index: number, options: string[]) => {
+  const renderSelectField = (fieldName: string, label: string, index: number, options: string[], selectClass?: string) => {
     const colorClass = fieldColors[index % fieldColors.length]
-    const isFav = isFieldFavourite(reportType, fieldName)
     
     return (
       <div className={`p-2 rounded ${colorClass}`}>
@@ -154,43 +120,14 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
             <Label className="text-sm">{label}</Label>
             <Select
               value={getFieldValue(fieldName)}
-              onValueChange={(v) => updateField(fieldName, v, 'value')}
-              className="bg-white"
+              onValueChange={(v) => updateField(fieldName, v)}
+              className={`bg-white h-16 text-xl px-4 ${selectClass ?? ""}`}
             >
               <SelectValue placeholder="Select" />
               {options.map(option => (
                 <SelectItem key={option} value={option}>{option}</SelectItem>
               ))}
             </Select>
-          </div>
-          <div className="col-span-1 flex justify-end">
-            {isFav ? (
-              <button
-                type="button"
-                onClick={() => {
-                  removeFavouriteField(reportType, fieldName)
-                  alert(`${label} removed from favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 rounded text-xs text-white transition-colors"
-                title="Remove from favourites"
-              >
-                <Trash2 className="w-3 h-3" />
-                Remove
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  addFavouriteField(reportType, reportName, fieldName, label)
-                  alert(`${label} added to favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-yellow-500 hover:bg-yellow-600 rounded text-xs text-white transition-colors"
-                title="Add to favourites"
-              >
-                <Star className="w-3 h-3" />
-                Add Fav
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -199,7 +136,6 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
 
   const renderTextAreaField = (fieldName: string, label: string, index: number) => {
     const colorClass = fieldColors[index % fieldColors.length]
-    const isFav = isFieldFavourite(reportType, fieldName)
     
     return (
       <div className={`p-2 rounded ${colorClass}`}>
@@ -208,39 +144,10 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
             <Label className="text-sm">{label}</Label>
             <textarea
               value={getFieldValue(fieldName)}
-              onChange={(e) => updateField(fieldName, e.target.value, 'value')}
-              className="w-full px-3 py-2 border rounded-md min-h-20 bg-white"
+              onChange={(e) => updateField(fieldName, e.target.value)}
+              className="w-full px-4 py-4 border rounded-md min-h-32 bg-white text-xl"
               placeholder="Enter report"
             />
-          </div>
-          <div className="pt-6">
-            {isFav ? (
-              <button
-                type="button"
-                onClick={() => {
-                  removeFavouriteField(reportType, fieldName)
-                  alert(`${label} removed from favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 rounded text-xs text-white transition-colors"
-                title="Remove from favourites"
-              >
-                <Trash2 className="w-3 h-3" />
-                Remove
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  addFavouriteField(reportType, reportName, fieldName, label)
-                  alert(`${label} added to favourites!`)
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 bg-yellow-500 hover:bg-yellow-600 rounded text-xs text-white transition-colors"
-                title="Add to favourites"
-              >
-                <Star className="w-3 h-3" />
-                Add Fav
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -251,7 +158,7 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
     e.preventDefault()
     
     const hasData = Object.keys(formData).length > 0 && 
-      Object.values(formData).some(f => f.value || f.notes)
+      Object.values(formData).some(v => v && v.trim().length > 0)
     
     if (!hasData) {
       alert("Please enter at least one field value before saving.")
@@ -301,27 +208,42 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
               defaultDate={defaultDate}
             />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex gap-2 mr-2">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-white border-white/40">
+                Cancel
+              </Button>
+              <Button type="button" size="sm" onClick={() => {
+                const form = document.getElementById('cardiology-form')
+                form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+              }} disabled={saving} className="bg-amber-400 hover:bg-amber-500 text-blue-900">
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <div className="overflow-y-auto p-6 flex-1">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form id="cardiology-form" onSubmit={handleSubmit} className="space-y-4">
             {/* Cardiovascular Tests */}
             <div className="mb-6 pb-4 border-b">
               <h3 className="font-semibold text-lg mb-3 text-blue-700">Cardiovascular Tests</h3>
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-4">
-                  {renderSelectField("ecg", "ECG", fieldIndex++, ["Normal", "Abnormal", "Not Done"])}
-                  <div></div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4">
+                  {renderField("ecgReport", "ECG", fieldIndex++)}
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  {renderSelectField("echocardiogramType", "Echocardiogram - Type", fieldIndex++, ["2D Echo", "3D Echo", "Stress Echo", "TEE"])}
-                  {renderTextAreaField("echocardiogramReport", "Echocardiogram - Report", fieldIndex++)}
+                  <div className="col-span-1">
+                    {renderSelectField("echocardiogramType", "Echocardiogram - Type", fieldIndex++, ["2D", "3D", "4D"])}
+                  </div>
+                  <div className="col-span-2">
+                    {renderField("echocardiogramReport", "Echocardiogram", fieldIndex++)}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  {renderSelectField("ettReport", "ETT - Report", fieldIndex++, ["Normal", "Abnormal", "Positive", "Negative", "Not Done"])}
-                  {renderTextAreaField("ettReportDetails", "ETT - Report Details", fieldIndex++)}
+                <div className="grid grid-cols-1 gap-4">
+                  {renderField("ettReport", "ETT", fieldIndex++)}
                 </div>
               </div>
             </div>
@@ -344,7 +266,7 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
                     const colorClass = fieldColors[currentIndex % fieldColors.length]
                     return (
                       <div key={test.name} className={`p-2 rounded ${colorClass}`}>
-                        <div className="grid grid-cols-4 gap-2 items-end">
+                        <div className="grid grid-cols-3 gap-2 items-end">
                           <div className="col-span-1">
                             <Label className="text-sm">{test.label}</Label>
                           </div>
@@ -352,9 +274,9 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
                             <Label className="text-sm">Value (mg/dL)</Label>
                             <Input
                               value={getFieldValue(test.name)}
-                              onChange={(e) => updateField(test.name, e.target.value, 'value')}
+                              onChange={(e) => updateField(test.name, e.target.value)}
                               placeholder="mg/dL"
-                              className="bg-white"
+                              className="bg-white h-12 text-base"
                             />
                           </div>
                           {test.hasMmol && (
@@ -362,22 +284,13 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
                               <Label className="text-sm">Value (mmol/L)</Label>
                               <Input
                                 value={getFieldValue(`${test.name}Mmol`)}
-                                onChange={(e) => updateField(`${test.name}Mmol`, e.target.value, 'value')}
+                                onChange={(e) => updateField(`${test.name}Mmol`, e.target.value)}
                                 placeholder="mmol/L"
-                                className="bg-white"
+                                className="bg-white h-12 text-base"
                               />
                             </div>
                           )}
                           {!test.hasMmol && <div></div>}
-                          <div>
-                            <Label className="text-sm">Notes</Label>
-                            <Input
-                              value={getFieldNotes(test.name)}
-                              onChange={(e) => updateField(test.name, e.target.value, 'notes')}
-                              placeholder="Notes"
-                              className="bg-white"
-                            />
-                          </div>
                         </div>
                       </div>
                     )
@@ -390,10 +303,10 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
             <div className="mb-6 pb-4 border-b">
               <h3 className="font-semibold text-lg mb-3 text-blue-700">Cardiac Markers</h3>
               <div className="space-y-2">
-                {renderField("lpPla2", "Lp-PLA2", fieldIndex++, "nmol/min/mL", true)}
-                {renderField("tropI", "Trop I", fieldIndex++, undefined, true)}
-                {renderField("highSensitiveTropI", "High Sensitive Trop I", fieldIndex++, undefined, true)}
-                {renderField("ckMb", "CK MB", fieldIndex++, undefined, true)}
+                {renderField("lpPla2", "Lp-PLA2", fieldIndex++, "nmol/min/mL")}
+                {renderField("tropI", "Trop I", fieldIndex++)}
+                {renderField("highSensitiveTropI", "High Sensitive Trop I", fieldIndex++)}
+                {renderField("ckMb", "CK MB", fieldIndex++)}
               </div>
             </div>
 
