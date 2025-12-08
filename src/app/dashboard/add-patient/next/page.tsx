@@ -383,6 +383,14 @@ function NextPageContent() {
     }
   }
 
+  // Transform savedTestData for DiseaseHistoryModal (convert null to undefined)
+  const transformedSavedDataForDiseaseHistory = useMemo(() => {
+    return savedTestData.map(test => ({
+      sampleDate: test.sampleDate,
+      diseaseHistory: test.diseaseHistory === null ? undefined : test.diseaseHistory as any
+    }))
+  }, [savedTestData])
+
   const sectionColors = [
     "bg-blue-50 border-blue-200",
     "bg-green-50 border-green-200",
@@ -487,7 +495,7 @@ function NextPageContent() {
               onClose={() => setOpenModal(null)} 
               defaultDate={selectedDate}
               patientId={patientId}
-              savedData={savedTestData}
+              savedData={transformedSavedDataForDiseaseHistory}
               onDataChange={(data, date) => updateTestData('diseaseHistory', data, date)}
               onSaveSuccess={fetchSavedTestData}
             />
