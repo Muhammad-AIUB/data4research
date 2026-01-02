@@ -14,35 +14,43 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#ffe4fa] relative overflow-hidden">
+      {/* Animated SVG background for wow effect */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <svg width="100%" height="100%" className="opacity-20 animate-pulse" style={{position:'absolute',top:0,left:0}}>
+          <defs>
+            <linearGradient id="login-bg-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#6366f1" />
+              <stop offset="100%" stopColor="#a21caf" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#login-bg-grad)" />
+          <circle cx="20%" cy="15%" r="120" fill="#6366f1" opacity="0.18" />
+          <circle cx="80%" cy="80%" r="180" fill="#a21caf" opacity="0.13" />
+        </svg>
       </div>
-
-      <div className="relative z-10 w-full max-w-md px-6">
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 md:p-10">
+      <div className="relative z-10 w-full max-w-md px-4 md:px-8">
+        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 px-6 py-10 md:px-12 md:py-14 transition-all duration-300">
           {/* Logo/Brand Section */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-4">
-              <span className="text-2xl font-bold text-white">DR</span>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-3xl shadow-xl mb-5 animate-bounce-slow">
+              <span className="text-3xl font-extrabold text-white tracking-tight drop-shadow-lg select-none">DR</span>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-              Data4Research
-            </h1>
-            <p className="text-gray-500 text-sm">Sign in to access your dashboard</p>
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-700 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-2 tracking-tight drop-shadow-lg">Data4Research</h1>
+            <p className="text-gray-600 text-base font-medium">Sign in to access your dashboard</p>
           </div>
-
           <LoginForm />
         </div>
-
         {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-gray-500 text-sm mt-8">
           Secure medical data management system
         </p>
       </div>
+      {/* Custom animation for logo bounce */}
+      <style>{`
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        .animate-bounce-slow { animation: bounce-slow 2.5s infinite cubic-bezier(.68,-0.55,.27,1.55); }
+      `}</style>
     </div>
   )
 }
