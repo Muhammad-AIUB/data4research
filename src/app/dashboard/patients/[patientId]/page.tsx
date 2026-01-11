@@ -74,79 +74,68 @@ export default async function PatientDetailPage({
           </Link>
         </div>
 
-        {/* Patient Information */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800">Patient Information</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {/* Patient Information - redesigned for clarity */}
+        <div className="bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-extrabold shadow-md">
+                {patient.name ? patient.name.split(' ').slice(0,2).map(n=>n[0]).join('') : 'P'}
+              </div>
+              <div>
+                <div className="text-2xl font-extrabold text-gray-900 truncate">{patient.name}</div>
+                <div className="mt-1 text-sm text-gray-500">{patient.district || ''} • Registered {new Date(patient.createdAt).toLocaleDateString()}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-500">ID</div>
+              <div className="px-3 py-1 rounded-full bg-gray-100 text-sm font-semibold text-gray-800">{patient.patientId}</div>
+              <div className="text-sm text-gray-500">Age</div>
+              <div className="px-3 py-1 rounded-full bg-gray-100 text-sm font-semibold text-gray-800">{patient.age}</div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-700">
             <div>
-              <p className="text-sm text-gray-500">Patient ID</p>
-              <p className="font-medium">{patient.patientId}</p>
+              <div className="text-xs text-gray-400">Mobile</div>
+              <div className="font-medium text-gray-800">{patient.mobile}</div>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Name</p>
-              <p className="font-medium">{patient.name}</p>
+              <div className="text-xs text-gray-400">NID</div>
+              <div className="font-medium text-gray-800">{patient.nid || '-'}</div>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Age</p>
-              <p className="font-medium">{patient.age}</p>
+              <div className="text-xs text-gray-400">Ethnicity</div>
+              <div className="font-medium text-gray-800 capitalize">{patient.ethnicity || '-'}</div>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Ethnicity</p>
-              <p className="font-medium capitalize">{patient.ethnicity || '-'}</p>
+              <div className="text-xs text-gray-400">Spouse Mobile</div>
+              <div className="font-medium text-gray-800">{patient.spouseMobile || '-'}</div>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Religion</p>
-              <p className="font-medium capitalize">{patient.religion || '-'}</p>
+              <div className="text-xs text-gray-400">Relative Mobile</div>
+              <div className="font-medium text-gray-800">{patient.relativeMobile || '-'}</div>
             </div>
             <div>
-              <p className="text-sm text-gray-500">NID</p>
-              <p className="font-medium">{patient.nid || '-'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Mobile</p>
-              <p className="font-medium">{patient.mobile}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Spouse Mobile</p>
-              <p className="font-medium">{patient.spouseMobile || '-'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Relative Mobile</p>
-              <p className="font-medium">{patient.relativeMobile || '-'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">District</p>
-              <p className="font-medium">{patient.district || '-'}</p>
+              <div className="text-xs text-gray-400">District</div>
+              <div className="font-medium text-gray-800">{patient.district || '-'}</div>
             </div>
             {patient.address && (
-              <div className="col-span-2 md:col-span-3">
-                <p className="text-sm text-gray-500">Address</p>
-                <p className="font-medium">{patient.address}</p>
+              <div className="sm:col-span-3">
+                <div className="text-xs text-gray-400">Address</div>
+                <div className="font-medium text-gray-800">{patient.address}</div>
               </div>
             )}
-            <div>
-              <p className="text-sm text-gray-500">Created At</p>
-              <p className="font-medium">
-                {new Date(patient.createdAt).toLocaleString('en-GB', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
           </div>
 
           {/* Tags */}
           {patient.tags && patient.tags.length > 0 && (
             <div className="mt-4">
-              <p className="text-sm text-gray-500 mb-1">Tags</p>
+              <div className="text-xs text-gray-400 mb-2">Tags</div>
               <div className="flex flex-wrap gap-2">
                 {patient.tags.map((tag: string, idx: number) => (
                   <span
                     key={idx}
-                    className="bg-blue-50 text-blue-800 px-2 py-1 rounded-full text-xs border border-blue-200"
+                    className="bg-blue-50 text-blue-800 px-3 py-1 rounded-full text-sm border border-blue-100"
                   >
                     {tag}
                   </span>
@@ -274,23 +263,24 @@ export default async function PatientDetailPage({
                   const sortedTests = tests
                   
                   return (
-                    <div key={date} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-4 border-b pb-2">
-                        <h3 className="text-lg font-semibold text-blue-600">Date: {date}</h3>
+                    <div key={date} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">{date}</h3>
+                        <div className="text-sm text-gray-500">{tests.length} report{tests.length>1 ? 's' : ''}</div>
                       </div>
                       <div className="space-y-4">
                         {sortedTests.map((test, index) => (
-                          <div key={index} className="bg-gray-50 rounded p-4 border-l-4 border-blue-500">
+                          <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-50">
                             {test.autoimmunoProfile && (
                               <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h4 className="font-semibold text-blue-700">Autoimmuno Profile</h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800">Autoimmuno Profile</h4>
                                 </div>
-                                <div className="bg-white p-3 rounded space-y-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
                                   {formatTestData(test.autoimmunoProfile, 'autoimmunoProfile').map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="font-medium text-gray-700">{item.label}:</span>
-                                      <span className="text-gray-900">{item.value}</span>
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-500">{item.label}</span>
+                                      <span className="text-gray-900 font-medium">{item.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -298,14 +288,14 @@ export default async function PatientDetailPage({
                             )}
                             {test.cardiology && (
                               <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h4 className="font-semibold text-green-700">Cardiology</h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800">Cardiology</h4>
                                 </div>
-                                <div className="bg-white p-3 rounded space-y-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
                                   {formatTestData(test.cardiology, 'cardiology').map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="font-medium text-gray-700">{item.label}:</span>
-                                      <span className="text-gray-900">{item.value}</span>
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-500">{item.label}</span>
+                                      <span className="text-gray-900 font-medium">{item.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -313,14 +303,14 @@ export default async function PatientDetailPage({
                             )}
                             {test.rft && (
                               <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h4 className="font-semibold text-purple-700">RFT</h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800">RFT</h4>
                                 </div>
-                                <div className="bg-white p-3 rounded space-y-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
                                   {formatTestData(test.rft, 'rft').map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="font-medium text-gray-700">{item.label}:</span>
-                                      <span className="text-gray-900">{item.value}</span>
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-500">{item.label}</span>
+                                      <span className="text-gray-900 font-medium">{item.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -328,14 +318,14 @@ export default async function PatientDetailPage({
                             )}
                             {test.lft && (
                               <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h4 className="font-semibold text-yellow-700">LFT</h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800">LFT</h4>
                                 </div>
-                                <div className="bg-white p-3 rounded space-y-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
                                   {formatTestData(test.lft, 'lft').map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="font-medium text-gray-700">{item.label}:</span>
-                                      <span className="text-gray-900">{item.value}</span>
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-500">{item.label}</span>
+                                      <span className="text-gray-900 font-medium">{item.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -343,14 +333,14 @@ export default async function PatientDetailPage({
                             )}
                             {test.diseaseHistory && (
                               <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h4 className="font-semibold text-pink-700">Disease History</h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800">Disease History</h4>
                                 </div>
-                                <div className="bg-white p-3 rounded space-y-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
                                   {formatTestData(test.diseaseHistory, 'diseaseHistory').map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="font-medium text-gray-700">{item.label}:</span>
-                                      <span className="text-gray-900">{item.value}</span>
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-500">{item.label}</span>
+                                      <span className="text-gray-900 font-medium">{item.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -358,14 +348,14 @@ export default async function PatientDetailPage({
                             )}
                             {test.imaging && (
                               <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h4 className="font-semibold text-indigo-700">Imaging, Histopathology</h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800">Imaging, Histopathology</h4>
                                 </div>
-                                <div className="bg-white p-3 rounded space-y-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
                                   {formatTestData(test.imaging, 'imaging').map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="font-medium text-gray-700">{item.label}:</span>
-                                      <span className="text-gray-900">{item.value}</span>
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-500">{item.label}</span>
+                                      <span className="text-gray-900 font-medium">{item.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -373,14 +363,14 @@ export default async function PatientDetailPage({
                             )}
                             {test.hematology && (
                               <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h4 className="font-semibold text-orange-700">Hematology</h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800">Hematology</h4>
                                 </div>
-                                <div className="bg-white p-3 rounded space-y-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
                                   {formatTestData(test.hematology, 'hematology').map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="font-medium text-gray-700">{item.label}:</span>
-                                      <span className="text-gray-900">{item.value}</span>
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-500">{item.label}</span>
+                                      <span className="text-gray-900 font-medium">{item.value}</span>
                                     </div>
                                   ))}
                                 </div>
