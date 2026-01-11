@@ -14,41 +14,50 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#ffe4fa] relative overflow-hidden">
-      {/* Animated SVG background for wow effect */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <svg width="100%" height="100%" className="opacity-20 animate-pulse" style={{position:'absolute',top:0,left:0}}>
-          <defs>
-            <linearGradient id="login-bg-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="100%" stopColor="#a21caf" />
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="100%" height="100%" fill="url(#login-bg-grad)" />
-          <circle cx="20%" cy="15%" r="120" fill="#6366f1" opacity="0.18" />
-          <circle cx="80%" cy="80%" r="180" fill="#a21caf" opacity="0.13" />
-        </svg>
+    <div className="min-h-screen flex items-stretch bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#ffe4fa] relative overflow-hidden">
+      {/* Left Poster Section */}
+      <div className="hidden md:flex flex-col justify-center items-start w-1/2 px-12 bg-gradient-to-br from-blue-700 via-purple-600 to-pink-400 text-white relative z-10 shadow-2xl">
+        <div className="mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-3xl shadow-xl mb-6 animate-bounce-slow">
+            <span className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg select-none">DR</span>
+          </div>
+          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-white via-pink-200 to-yellow-100 bg-clip-text text-transparent mb-4 tracking-tight drop-shadow-lg">Data4Research</h1>
+          <p className="text-lg font-medium text-white/90 max-w-lg mb-6 drop-shadow-lg">
+            Advanced Patient Management System for Medical Professionals
+          </p>
+        </div>
+        <div className="bg-white/10 rounded-xl p-6 shadow-lg max-w-xl">
+          <h2 className="text-2xl font-bold mb-2">Why Data4Research?</h2>
+          <ul className="list-disc pl-5 space-y-1 text-base">
+            <li>⭐ Field-level favourites for quick access</li>
+            <li>🔄 Real-time unit conversion (mg/dL↔mmol/L, °C↔°F, kg↔lbs)</li>
+            <li>🧮 Auto-calculations: BMI, MAP, TSAT, eGFR</li>
+            <li>🔍 Advanced multi-field search</li>
+            <li>🛡️ Secure, validated, and optimized for research</li>
+          </ul>
+        </div>
       </div>
-      <div className="relative z-10 w-full max-w-md px-4 md:px-8">
-        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 px-6 py-10 md:px-12 md:py-14 transition-all duration-300">
-          {/* Logo/Brand Section */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-3xl shadow-xl mb-5 animate-bounce-slow">
-              <span className="text-3xl font-extrabold text-white tracking-tight drop-shadow-lg select-none">DR</span>
+      {/* Right Login Card Section */}
+      <div className="flex flex-1 items-center justify-center relative z-10 w-full max-w-md px-2 md:px-0">
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 px-7 py-8 md:px-12 md:py-14 transition-all duration-300 flex flex-col items-center w-full max-w-md">
+          {/* Logo/Brand Section (mobile only) */}
+          <div className="text-center mb-6 md:hidden">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-2xl shadow-lg mb-3 animate-bounce-slow">
+              <span className="text-2xl font-extrabold text-white tracking-tight drop-shadow-lg select-none">DR</span>
             </div>
-            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-700 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-2 tracking-tight drop-shadow-lg">Data4Research</h1>
-            <p className="text-gray-600 text-base font-medium">Sign in to access your dashboard</p>
+            <h1 className="text-2xl font-extrabold bg-gradient-to-r from-blue-700 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-1 tracking-tight drop-shadow-lg">Data4Research</h1>
+            <p className="text-gray-600 text-sm font-medium">Sign in to access your dashboard</p>
           </div>
           <LoginForm />
         </div>
         {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-8">
+        <p className="text-center text-gray-500 text-xs mt-6">
           Secure medical data management system
         </p>
       </div>
       {/* Custom animation for logo bounce */}
       <style>{`
-        @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .animate-bounce-slow { animation: bounce-slow 2.5s infinite cubic-bezier(.68,-0.55,.27,1.55); }
       `}</style>
     </div>
