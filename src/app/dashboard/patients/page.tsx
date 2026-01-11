@@ -58,34 +58,35 @@ export default function AllPatientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">All Patients Data</h1>
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#e0e7ef] to-[#f4f7fa]">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">All Patients</h1>
           <Link 
             href="/dashboard/add-patient"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-700 hover:to-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-md transition-all"
           >
-            + Add New Patient
+            <span className="text-lg">+</span> Add New Patient
           </Link>
         </div>
 
         {/* Search Box */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-gray-100 p-5 mb-8">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
                 placeholder="Search with patient name, mobile number, diagnosis or tags..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="pl-10 w-full"
+                className="pl-12 w-full h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-200 text-base"
               />
             </div>
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-xl font-semibold shadow transition-all"
             >
               Search
             </button>
@@ -96,67 +97,51 @@ export default function AllPatientsPage() {
                   setSearchQuery('')
                   fetchPatients('')
                 }}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg font-medium"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all"
               >
                 Clear
               </button>
             )}
           </form>
-          <p className="text-sm text-gray-500 mt-2">
-            Search by patient name, mobile number, diagnosis, or tags
-          </p>
         </div>
 
+        {/* Patient List */}
         {loading ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-600">Loading patients...</p>
+          <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-gray-100 p-16 text-center">
+            <p className="text-gray-500 text-lg">Loading patients...</p>
           </div>
         ) : patients.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-600 text-lg mb-4">No patients found.</p>
+          <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-gray-100 p-16 text-center">
+            <p className="text-gray-500 text-lg mb-4">No patients found.</p>
             <Link 
               href="/dashboard/add-patient"
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-600 hover:text-blue-700 font-semibold"
             >
               Add your first patient →
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Patient Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {patients.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div className="font-medium">{patient.name}</div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          ID: {patient.patientId} • Mobile: {patient.mobile}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Link
-                          href={`/dashboard/patients/${patient.patientId}`}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          View Details
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="flex flex-col gap-4">
+            {patients.map((patient) => (
+              <div
+                key={patient.id}
+                className="bg-white rounded-2xl shadow-md border border-gray-100 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-lg hover:border-blue-200 transition-all"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-lg font-bold text-gray-900 truncate">{patient.name}</div>
+                  <div className="text-sm text-gray-400 mt-1">
+                    <span className="inline-block mr-4">ID: <span className="text-gray-500">{patient.patientId}</span></span>
+                    <span className="inline-block">Mobile: <span className="text-gray-500">{patient.mobile}</span></span>
+                  </div>
+                </div>
+                <Link
+                  href={`/dashboard/patients/${patient.patientId}`}
+                  className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-400 hover:from-green-600 hover:to-emerald-500 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all text-sm"
+                >
+                  View Details
+                </Link>
+              </div>
+            ))}
           </div>
         )}
       </div>
