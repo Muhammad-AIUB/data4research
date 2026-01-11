@@ -79,7 +79,7 @@ export default async function PatientDetailPage({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-extrabold shadow-md">
-                {patient.name ? patient.name.split(' ').slice(0,2).map(n=>n[0]).join('') : 'P'}
+                {patient.name ? patient.name.split(' ').slice(0,2).map((n: string) => n?.[0] ?? '').join('') : 'P'}
               </div>
               <div>
                 <div className="text-2xl font-extrabold text-gray-900 truncate">{patient.name}</div>
