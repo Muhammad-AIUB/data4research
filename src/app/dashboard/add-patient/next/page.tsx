@@ -44,37 +44,37 @@ type PatientTest = {
 // Separate component for saved reports to avoid conditional hook
 function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }) {
   const groupedAndSorted = useMemo(() => {
-      // First, sort all tests by createdAt (latest first) to maintain serial order
-      const sortedByCreatedAt = [...savedTestData].sort((a: PatientTest & { createdAt?: Date | string }, b: PatientTest & { createdAt?: Date | string }) => {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.id ? 0 : -1)
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.id ? 0 : -1)
-        return timeB - timeA // Latest first
-      })
-      
-      // Then group by date while maintaining the order
-      const grouped = sortedByCreatedAt.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
-        // Fix timezone issue - use local date components
-        const sampleDate = test.sampleDate instanceof Date 
-          ? test.sampleDate 
-          : new Date(test.sampleDate)
-        
-        // Get local date components to avoid timezone conversion issues
-        const year = sampleDate.getFullYear()
-        const month = String(sampleDate.getMonth() + 1).padStart(2, '0')
-        const day = String(sampleDate.getDate()).padStart(2, '0')
-        const date = `${day}/${month}/${year}`
-        
-        if (!acc[date]) acc[date] = []
-        acc[date].push(test) // Maintain order - latest saves will be first in each group
-        return acc
-      }, {} as Record<string, PatientTest[]>)
-    
+    // First, sort all tests by createdAt (latest first) to maintain serial order
+    const sortedByCreatedAt = [...savedTestData].sort((a: PatientTest & { createdAt?: Date | string }, b: PatientTest & { createdAt?: Date | string }) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.id ? 0 : -1)
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.id ? 0 : -1)
+      return timeB - timeA // Latest first
+    })
+
+    // Then group by date while maintaining the order
+    const grouped = sortedByCreatedAt.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
+      // Fix timezone issue - use local date components
+      const sampleDate = test.sampleDate instanceof Date
+        ? test.sampleDate
+        : new Date(test.sampleDate)
+
+      // Get local date components to avoid timezone conversion issues
+      const year = sampleDate.getFullYear()
+      const month = String(sampleDate.getMonth() + 1).padStart(2, '0')
+      const day = String(sampleDate.getDate()).padStart(2, '0')
+      const date = `${day}/${month}/${year}`
+
+      if (!acc[date]) acc[date] = []
+      acc[date].push(test) // Maintain order - latest saves will be first in each group
+      return acc
+    }, {} as Record<string, PatientTest[]>)
+
     // Sort date groups by latest createdAt in each group (not by date itself)
     // This ensures latest saves appear first regardless of date
     return Object.entries(grouped).sort(([, testsA], [, testsB]) => {
       // Get the latest createdAt from each group
       const getLatestTime = (tests: PatientTest[]) => {
-        return Math.max(...tests.map((t: PatientTest & { createdAt?: Date | string }) => 
+        return Math.max(...tests.map((t: PatientTest & { createdAt?: Date | string }) =>
           t.createdAt ? new Date(t.createdAt).getTime() : 0
         ))
       }
@@ -90,7 +90,7 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
         // Tests are already sorted by createdAt (latest first) from the grouping step
         // No need to sort again - maintain the order
         const sortedTests = tests
-        
+
         return (
           <div key={date} className="bg-white border rounded-lg p-4 shadow-sm">
             <div className="flex justify-between items-center mb-4 border-b pb-2">
@@ -281,13 +281,13 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
 function NextPageContent() {
   const searchParams = useSearchParams()
   const patientId = searchParams.get('patientId')
-  
+
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [openModal, setOpenModal] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [savedTestData, setSavedTestData] = useState<PatientTest[]>([])
   const [loadingSavedData, setLoadingSavedData] = useState(false)
-  
+
   // Store all test data from modals
   const [testData, setTestData] = useState<TestData>({
     patientId: patientId || '',
@@ -315,10 +315,10 @@ function NextPageContent() {
     try {
       const currentPatientId = patientId || testData.patientId
       // Fetch all tests if no patientId, or filter by patientId if provided
-      const url = currentPatientId 
+      const url = currentPatientId
         ? `/api/patient-tests?patientId=${currentPatientId}`
         : `/api/patient-tests`
-      
+
       const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
@@ -339,8 +339,8 @@ function NextPageContent() {
   }
 
   const updateTestData = (section: keyof TestData, data: TestDataSection, date?: Date) => {
-    setTestData(prev => ({ 
-      ...prev, 
+    setTestData(prev => ({
+      ...prev,
       [section]: {
         data,
         date: date ? date.toISOString() : selectedDate.toISOString()
@@ -410,9 +410,9 @@ function NextPageContent() {
 
         {/* Calendar Section */}
         <div className="mb-8">
-          <CalendarWithNavigation 
-            selectedDate={selectedDate} 
-            onDateChange={handleDateChange} 
+          <CalendarWithNavigation
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
           />
           <div className="mt-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 rounded">
             <p className="text-sm text-yellow-800 font-medium">
@@ -429,7 +429,7 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "my-favorites" ? null : "my-favorites")}
             colorClass={sectionColors[0]}
           >
-            <MyFavoritesModal 
+            <MyFavoritesModal
               onClose={() => setOpenModal(null)}
               savedData={savedTestData}
             />
@@ -441,8 +441,8 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "autoimmuno" ? null : "autoimmuno")}
             colorClass={sectionColors[1]}
           >
-            <AutoimmunoProfileModal 
-              onClose={() => setOpenModal(null)} 
+            <AutoimmunoProfileModal
+              onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
@@ -457,8 +457,8 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "cardiology" ? null : "cardiology")}
             colorClass={sectionColors[2]}
           >
-            <CardiologyModal 
-              onClose={() => setOpenModal(null)} 
+            <CardiologyModal
+              onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
@@ -473,8 +473,8 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "rft" ? null : "rft")}
             colorClass={sectionColors[3]}
           >
-            <RFTModal 
-              onClose={() => setOpenModal(null)} 
+            <RFTModal
+              onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
@@ -489,8 +489,8 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "lft" ? null : "lft")}
             colorClass={sectionColors[4]}
           >
-            <LFTModal 
-              onClose={() => setOpenModal(null)} 
+            <LFTModal
+              onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
@@ -505,8 +505,8 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "disease-history" ? null : "disease-history")}
             colorClass={sectionColors[5]}
           >
-            <DiseaseHistoryModal 
-              onClose={() => setOpenModal(null)} 
+            <DiseaseHistoryModal
+              onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={transformedSavedDataForDiseaseHistory}
@@ -521,8 +521,8 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "imaging" ? null : "imaging")}
             colorClass={sectionColors[6]}
           >
-            <ImagingHistopathologyModal 
-              onClose={() => setOpenModal(null)} 
+            <ImagingHistopathologyModal
+              onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
@@ -537,8 +537,8 @@ function NextPageContent() {
             onToggle={() => setOpenModal(openModal === "hematology" ? null : "hematology")}
             colorClass={sectionColors[7]}
           >
-            <HematologyModal 
-              onClose={() => setOpenModal(null)} 
+            <HematologyModal
+              onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
@@ -566,7 +566,7 @@ function NextPageContent() {
         {/* Saved Test Data Section */}
         <div className="mt-6">
           <h2 className="text-2xl font-bold mb-4">Saved Test Reports</h2>
-          
+
           {loadingSavedData ? (
             <div className="text-center py-8 text-gray-500">Loading saved data...</div>
           ) : savedTestData.length === 0 ? (
@@ -577,8 +577,8 @@ function NextPageContent() {
         </div>
       </div>
     </div>
-    )
-  }
+  )
+}
 
 export default function NextPage() {
   return (

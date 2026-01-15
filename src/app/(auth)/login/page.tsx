@@ -26,17 +26,8 @@ export default async function LoginPage() {
             Advanced Patient Management System for Medical Professionals
           </p>
         </div>
-        <div className="bg-white/10 rounded-xl p-6 shadow-lg max-w-xl">
-          <h2 className="text-2xl font-bold mb-2">Why Data4Research?</h2>
-          <ul className="list-disc pl-5 space-y-1 text-base">
-            <li>⭐ Field-level favourites for quick access</li>
-            <li>🔄 Real-time unit conversion (mg/dL↔mmol/L, °C↔°F, kg↔lbs)</li>
-            <li>🧮 Auto-calculations: BMI, MAP, TSAT, eGFR</li>
-            <li>🔍 Advanced multi-field search</li>
-            <li>🛡️ Secure, validated, and optimized for research</li>
-          </ul>
         </div>
-      </div>
+      
       {/* Right Login Card Section */}
       <div className="flex flex-1 items-center justify-center relative z-10 w-full max-w-md px-2 md:px-0">
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 px-7 py-8 md:px-12 md:py-14 transition-all duration-300 flex flex-col items-center w-full max-w-md">
