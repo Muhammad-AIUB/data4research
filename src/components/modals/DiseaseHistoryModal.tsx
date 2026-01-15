@@ -207,18 +207,28 @@ export default function DiseaseHistoryModal({
   useEffect(() => {
     const lb = parseFloat(form.weightLb)
     if (lb > 0) {
-      update("weightKg", (lb * 0.453592).toFixed(2))
+      const nextKg = (lb * 0.453592).toFixed(2)
+      if (form.weightKg !== nextKg) {
+        update("weightKg", nextKg)
+      }
     } else if (form.weightLb === "") {
-      update("weightKg", "")
+      if (form.weightKg !== "") {
+        update("weightKg", "")
+      }
     }
   }, [form.weightLb, update])
 
   useEffect(() => {
     const kg = parseFloat(form.weightKg)
     if (kg > 0) {
-      update("weightLb", (kg / 0.453592).toFixed(2))
+      const nextLb = (kg / 0.453592).toFixed(2)
+      if (form.weightLb !== nextLb) {
+        update("weightLb", nextLb)
+      }
     } else if (form.weightKg === "") {
-      update("weightLb", "")
+      if (form.weightLb !== "") {
+        update("weightLb", "")
+      }
     }
   }, [form.weightKg, update])
 
@@ -486,7 +496,7 @@ export default function DiseaseHistoryModal({
             <div>
               <Label>Anaemia</Label>
               <Select value={form.anaemia ?? ""} onValueChange={(v) => update("anaemia", v)}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectValue placeholder="Select" />
                 <SelectContent>
                   <SelectItem value="">Select</SelectItem>
                   <SelectItem value="+">+</SelectItem>
@@ -498,7 +508,7 @@ export default function DiseaseHistoryModal({
             <div>
               <Label>Jaundice</Label>
               <Select value={form.jaundice ?? ""} onValueChange={(v) => update("jaundice", v)}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectValue placeholder="Select" />
                 <SelectContent>
                   <SelectItem value="">Select</SelectItem>
                   <SelectItem value="+">+</SelectItem>
@@ -510,7 +520,7 @@ export default function DiseaseHistoryModal({
             <div>
               <Label>Ascites</Label>
               <Select value={form.ascites ?? ""} onValueChange={(v) => update("ascites", v)}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectValue placeholder="Select" />
                 <SelectContent>
                   <SelectItem value="">Select</SelectItem>
                   <SelectItem value="absent">absent</SelectItem>

@@ -161,15 +161,14 @@ export default function AddPatient() {
             </div>
             <div className="space-y-2">
               <Label className="text-base font-semibold text-gray-800">Sex <span className="text-pink-500">*</span></Label>
-              <Select onValueChange={(value) => setValue("sex", value as "MALE" | "FEMALE" | "OTHERS")}> 
-                <SelectTrigger className="backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl">
-                  <SelectValue placeholder="Select sex" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MALE">MALE</SelectItem>
-                  <SelectItem value="FEMALE">FEMALE</SelectItem>
-                  <SelectItem value="OTHERS">OTHERS</SelectItem>
-                </SelectContent>
+              <Select
+                onValueChange={(value) => setValue("sex", value as "MALE" | "FEMALE" | "OTHERS")}
+                className="w-full backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl"
+              >
+                <SelectValue placeholder="Select sex" />
+                <SelectItem value="MALE">MALE</SelectItem>
+                <SelectItem value="FEMALE">FEMALE</SelectItem>
+                <SelectItem value="OTHERS">OTHERS</SelectItem>
               </Select>
               {errors.sex && <p className="text-pink-600 text-sm mt-1 font-medium">{errors.sex.message as string}</p>}
             </div>
@@ -233,10 +232,12 @@ export default function AddPatient() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
               <Label className="text-base font-semibold text-gray-800">Ethnicity</Label>
-              <Select defaultValue="south-asian" onValueChange={v => setValue("ethnicity", v)}>
-                <SelectTrigger className="backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl">
-                  <SelectValue placeholder="Select Ethnicity" />
-                </SelectTrigger>
+              <Select
+                defaultValue="south-asian"
+                onValueChange={v => setValue("ethnicity", v)}
+                className="backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl"
+              >
+                <SelectValue placeholder="Select Ethnicity" />
                 <SelectContent>
                   {data.ethnicities?.map((e: OptionItem) => (
                     <SelectItem key={e.id} value={e.value}>{e.label}</SelectItem>
@@ -246,10 +247,12 @@ export default function AddPatient() {
             </div>
             <div className="space-y-2">
               <Label className="text-base font-semibold text-gray-800">Religion</Label>
-              <Select defaultValue="islam" onValueChange={v => setValue("religion", v)}>
-                <SelectTrigger className="backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl">
-                  <SelectValue placeholder="Select Religion" />
-                </SelectTrigger>
+              <Select
+                defaultValue="islam"
+                onValueChange={v => setValue("religion", v)}
+                className="w-full backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl"
+              >
+                <SelectValue placeholder="Select Religion" />
                 <SelectContent>
                   {data.religions?.map((r: OptionItem) => (
                     <SelectItem key={r.id} value={r.value}>{r.label}</SelectItem>
@@ -307,10 +310,11 @@ export default function AddPatient() {
             </div>
             <div className="space-y-2">
               <Label className="text-base font-semibold text-gray-800">District</Label>
-              <Select onValueChange={v => setValue("district", v)}>
-                <SelectTrigger className="backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl">
-                  <SelectValue placeholder="Select District" />
-                </SelectTrigger>
+              <Select
+                onValueChange={v => setValue("district", v)}
+                className="backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl"
+              >
+                <SelectValue placeholder="Select District" />
                 <SelectContent>
                   {data.districts?.map((d: OptionItem) => (
                     <SelectItem key={d.id} value={d.value}>{d.label}</SelectItem>
