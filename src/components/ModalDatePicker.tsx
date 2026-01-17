@@ -20,6 +20,14 @@ export default function ModalDatePicker({ selectedDate, onDateChange, defaultDat
     return `${day}/${month}/${year}`
   }
 
+  const formatFullDate = (date: Date) => {
+    const day = date.getDate()
+    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+    const month = monthNames[date.getMonth()]
+    const year = date.getFullYear()
+    return `${day} ${month} ${year}`
+  }
+
   const handleDateSelect = (date: Date) => {
     setLocalDate(date)
     onDateChange(date)
@@ -60,7 +68,10 @@ export default function ModalDatePicker({ selectedDate, onDateChange, defaultDat
         className="flex items-center gap-3 px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-md border border-blue-300 text-base font-semibold shadow-sm"
       >
         <Calendar className="w-5 h-5 text-blue-700" />
-        <span className="text-blue-800 font-semibold tracking-wide">{formatDate(localDate)}</span>
+        <div className="flex flex-col items-start">
+          <span className="text-blue-800 font-semibold tracking-wide">{formatDate(localDate)}</span>
+          <span className="text-sm text-blue-700/80">{formatFullDate(localDate)}</span>
+        </div>
       </button>
 
       {isOpen && (

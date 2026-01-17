@@ -23,6 +23,14 @@ export default function CalendarWithNavigation({ selectedDate, onDateChange }: P
     return `${day}/${month}/${year}`
   }
 
+  const formatFullDate = (date: Date) => {
+    const day = date.getDate()
+    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+    const month = monthNames[date.getMonth()]
+    const year = date.getFullYear()
+    return `${day} ${month} ${year}`
+  }
+
   const resetToToday = () => {
     const now = new Date()
     setCurrentDate(now)
@@ -124,6 +132,7 @@ export default function CalendarWithNavigation({ selectedDate, onDateChange }: P
               className="text-sm font-bold text-center border-b-2 border-blue-500 focus:outline-none w-20"
               placeholder="DD/MM/YY"
             />
+            <div className="text-sm text-gray-700 mt-1">{formatFullDate(currentDate)}</div>
           </div>
           <button
             onClick={() => adjustDate(1, 'day')}
