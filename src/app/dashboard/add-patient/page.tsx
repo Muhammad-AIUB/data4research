@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import useSWR from "swr"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import DateOfBirthSelector from "@/components/DateOfBirthSelector"
 import TagInput from "@/components/TagInput"
@@ -63,6 +63,13 @@ export default function AddPatient() {
       age: 0
     }
   })
+
+  const handleAgeChange = useCallback((newAge: number | "") => {
+    setAge(newAge)
+    if (typeof newAge === 'number') {
+      setValue("age", newAge, { shouldValidate: true })
+    }
+  }, [setValue])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -123,7 +130,7 @@ export default function AddPatient() {
   if (!data) return <div className="p-8">Loading...</div>
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#ffe4fa] p-0 md:p-8 flex items-center justify-center relative overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#ffe4fa] p-0 md:p-8 flex items-center justify-center relative overflow-x-hidden text-gray-900">
       {/* Animated background pattern */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <svg width="100%" height="100%" className="opacity-10 animate-pulse" style={{position:'absolute',top:0,left:0}}>
@@ -188,12 +195,7 @@ export default function AddPatient() {
                   setMonth={setMonth} 
                   year={year} 
                   setYear={setYear} 
-                  onAgeChange={(newAge) => {
-                    setAge(newAge)
-                    if (typeof newAge === 'number') {
-                      setValue("age", newAge, { shouldValidate: true })
-                    }
-                  }} 
+                  onAgeChange={handleAgeChange}
                 />
               </div>
             </div>
