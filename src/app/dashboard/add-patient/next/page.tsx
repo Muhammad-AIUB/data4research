@@ -284,6 +284,8 @@ function NextPageContent() {
 
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [openModal, setOpenModal] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [loading, setLoading] = useState(false)
   const [savedTestData, setSavedTestData] = useState<PatientTest[]>([])
   const [loadingSavedData, setLoadingSavedData] = useState(false)
@@ -392,6 +394,21 @@ function NextPageContent() {
     }))
   }, [savedTestData])
 
+  // use centralized search index (includes fields from all modals)
+  const { default: searchIndex } = require('@/lib/searchIndex') as { default: Array<{ key: string; label: string; modal: string }> }
+
+  const suggestions = useMemo(() => {
+    if (!searchTerm) return []
+    const q = searchTerm.trim().toLowerCase()
+    return searchIndex.filter(item => item.key.toLowerCase().includes(q) || item.label.toLowerCase().includes(q)).slice(0, 8)
+  }, [searchTerm, searchIndex])
+
+  const openModalForSuggestion = (modalId: string) => {
+    setOpenModal(modalId)
+    setShowSuggestions(false)
+    setSearchTerm("")
+  }
+
   const sectionColors = [
     "bg-red-50 border-red-200",
     "bg-blue-50 border-blue-200",
@@ -406,7 +423,9 @@ function NextPageContent() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Patient Test Information</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Patient Test Information</h1>
+        </div>
 
         {/* Calendar Section */}
         <div className="mb-8">
@@ -418,6 +437,33 @@ function NextPageContent() {
             <p className="text-sm text-yellow-800 font-medium">
               <strong>Note:</strong> Please check for sample received date or given date, not report delivery date.
             </p>
+          </div>
+          {/* Search box placed under the Note as requested */}
+          <div className="mt-4">
+            <div className="relative w-full md:w-1/3 mx-auto">
+              <input
+                aria-label="Search tests"
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setShowSuggestions(true) }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (suggestions.length > 0) openModalForSuggestion(suggestions[0].modal)
+                  } else if (e.key === 'Escape') {
+                    setShowSuggestions(false)
+                  }
+                }}
+                placeholder="Search (e.g. RBC, creatinine, ANA)"
+                className="w-full px-3 py-2 border rounded-md shadow-sm"
+              />
+              {showSuggestions && suggestions.length > 0 && (
+                <ul className="absolute z-40 left-0 right-0 bg-white border rounded-md mt-1 max-h-48 overflow-auto shadow">
+                  {suggestions.map(s => (
+                    <li key={s.key} className="px-3 py-2 hover:bg-gray-100 cursor-pointer" onMouseDown={() => openModalForSuggestion(s.modal)}>{s.label}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
 
