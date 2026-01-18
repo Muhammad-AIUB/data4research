@@ -31,9 +31,9 @@ export default function FavouritesPage() {
   ]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen text-gray-900">
       <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Customize your favourites</h1>
+        <h1 className="text-3xl font-bold mb-6 text-white">Customize your favourites</h1>
 
         <div className="space-y-4">
           <ExpandableSection

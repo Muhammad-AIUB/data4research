@@ -17,7 +17,7 @@ export default function ExpandableSection({ title, isOpen, onToggle, children, c
         onClick={onToggle}
         className={`w-full flex items-center justify-between p-4 ${colorClass} hover:opacity-80 transition-opacity`}
       >
-        <span className="font-medium text-lg">{title}</span>
+        <span className="font-medium text-lg text-gray-900">{title}</span>
         {isOpen ? (
           <ChevronUp className="w-5 h-5" />
         ) : (
