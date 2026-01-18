@@ -56,6 +56,11 @@ export const searchIndex: SearchItem[] = [
   // Disease history and misc
   { key: 'disease', label: 'Disease History', modal: 'disease-history' },
   { key: 'favorites', label: 'My Favorites', modal: 'my-favorites' },
+  
+  // BASDAI
+  { key: 'basdai', label: 'BASDAI Score', modal: 'basdai' },
+  { key: 'fatigue', label: 'Fatigue/tiredness (BASDAI)', modal: 'basdai' },
+  { key: 'morning stiffness', label: 'Morning stiffness (BASDAI)', modal: 'basdai' },
 ]
 
 export default searchIndex

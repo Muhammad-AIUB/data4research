@@ -86,7 +86,16 @@ const fieldLabels: Record<string, Record<string, string>> = {
     'antiBp180': 'Anti-BP180 (Collagen XVII)',
     'antiBp230': 'Anti-BP230',
   },
-  // Add more report types as needed
+  basdai: {
+    q1Fatigue: "Fatigue/tiredness",
+    q2SpinalPain: "AS neck/back/hip pain",
+    q3JointPain: "Pain/swelling in joints",
+    q4TenderAreas: "Tender areas discomfort",
+    q5MorningStiffness: "Morning stiffness severity",
+    q6StiffnessDuration: "Morning stiffness duration",
+    q6Label: "Duration label",
+    basdaiScore: "BASDAI Score",
+  },
 }
 
 // Units mapping for display in saved reports
@@ -170,6 +179,7 @@ const unitMeta: Record<
   cardiology: {},
   autoimmunoProfile: {},
   imaging: {},
+  basdai: {},
 }
 
 function getFieldLabel(key: string, reportType: string): string {

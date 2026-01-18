@@ -12,6 +12,7 @@ import DiseaseHistoryModal, { type DiseaseHistoryData } from "@/components/modal
 import ImagingHistopathologyModal from "@/components/modals/ImagingHistopathologyModal"
 import HematologyModal from "@/components/modals/HematologyModal"
 import MyFavoritesModal from "@/components/modals/MyFavoritesModal"
+import BASDAIModal from "@/components/modals/BASDAIModal"
 import { Button } from "@/components/ui/button"
 import { formatTestData } from "@/lib/formatTestData"
 
@@ -27,6 +28,7 @@ type TestData = {
   diseaseHistory: TestDataSection
   imaging: TestDataSection
   hematology: TestDataSection
+  basdai: TestDataSection
 }
 
 type PatientTest = {
@@ -39,6 +41,7 @@ type PatientTest = {
   diseaseHistory?: TestDataSection
   imaging?: TestDataSection
   hematology?: TestDataSection
+  basdai?: TestDataSection
 }
 
 // Separate component for saved reports to avoid conditional hook
@@ -268,6 +271,30 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                       </div>
                     </div>
                   )}
+                  {test.basdai && (
+                    <div className="mb-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-semibold text-pink-700">BASDAI Score</h4>
+                        <span className="text-xs text-gray-500">
+                          {(() => {
+                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
+                            const year = d.getFullYear()
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            return `${day}/${month}/${year}`
+                          })()}
+                        </span>
+                      </div>
+                      <div className="bg-white p-3 rounded space-y-1">
+                        {formatTestData(test.basdai, 'basdai').map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="font-medium text-gray-700">{item.label}:</span>
+                            <span className="text-gray-900">{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -301,6 +328,7 @@ function NextPageContent() {
     diseaseHistory: null,
     imaging: null,
     hematology: null,
+    basdai: null,
   })
 
   useEffect(() => {
@@ -478,6 +506,22 @@ function NextPageContent() {
             <MyFavoritesModal
               onClose={() => setOpenModal(null)}
               savedData={savedTestData}
+            />
+          </ExpandableSection>
+
+          <ExpandableSection
+            title="BASDAI Score"
+            isOpen={openModal === "basdai"}
+            onToggle={() => setOpenModal(openModal === "basdai" ? null : "basdai")}
+            colorClass={sectionColors[0]}
+          >
+            <BASDAIModal
+              onClose={() => setOpenModal(null)}
+              defaultDate={selectedDate}
+              patientId={patientId}
+              savedData={savedTestData}
+              onDataChange={(data, date) => updateTestData('basdai', data, date)}
+              onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
 

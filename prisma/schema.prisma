@@ -11,50 +11,49 @@ model User {
   name      String?
   email     String    @unique
   password  String
-  role      String    @default("DOCTOR") // ADMIN or DOCTOR
+  role      String    @default("DOCTOR")
   createdAt DateTime  @default(now())
   patients  Patient[]
 }
 
 model Option {
   id       String @id @default(uuid())
-  category String // "ethnicity", "religion", "district"
+  category String
   label    String
   value    String
   order    Int    @default(0)
 }
 
 model Patient {
-  id             String        @id @default(uuid())
-  name           String
-  dateOfBirth    DateTime
-  age            Int
-  ethnicity      String
-  religion       String        @default("Islam")
-  nid            String?
-  patientId      String        @unique
-  mobile         String
-  spouseMobile   String?
-  relativeMobile String?
-  district       String
-  address        String
-  shortHistory   String?
+  id              String        @id @default(uuid())
+  name            String
+  age             Int
+  createdBy       String
+  createdAt       DateTime      @default(now())
+  address         String
+  dateOfBirth     DateTime
+  district        String
+  ethnicity       String
+  familyHistory   String?
+  finalDiagnosis  String?
+  mobile          String
+  nid             String?
+  pastIllness     String?
+  patientId       String        @unique
+  relativeMobile  String?
+  religion        String        @default("Islam")
+  shortHistory    String?
+  specialNotes    String?
+  spouseMobile    String?
   surgicalHistory String?
-  familyHistory  String?
-  pastIllness    String?
-  tags           String[]      @default([])
-  specialNotes   String?
-  finalDiagnosis String?
-  createdBy      String
-  createdByUser  User          @relation(fields: [createdBy], references: [id])
-  createdAt      DateTime      @default(now())
-  tests          PatientTest[]
+  tags            String[]      @default([])
+  createdByUser   User          @relation(fields: [createdBy], references: [id])
+  tests           PatientTest[]
 }
 
 model PatientTest {
   id                String   @id @default(uuid())
   patientId         String?
-  patient           Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade)
   sampleDate        DateTime
   autoimmunoProfile Json?
   cardiology        Json?
@@ -65,4 +64,5 @@ model PatientTest {
   hematology        Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  patient           Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }

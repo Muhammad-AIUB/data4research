@@ -105,6 +105,9 @@ export async function POST(request: Request) {
     if (testData.hematology) {
       parsedTestData.hematology = testData.hematology.data || testData.hematology
     }
+    if (testData.basdai) {
+      parsedTestData.basdai = testData.basdai.data || testData.basdai
+    }
 
     // Use sampleDate from testData or body, default to now
     const reportDate = testData.sampleDate || sampleDate || new Date().toISOString()
@@ -140,6 +143,7 @@ export async function POST(request: Request) {
         diseaseHistory: parsedTestData.diseaseHistory || null,
         imaging: parsedTestData.imaging || null,
         hematology: parsedTestData.hematology || null,
+        basdai: parsedTestData.basdai || null,
       }
     })
 
