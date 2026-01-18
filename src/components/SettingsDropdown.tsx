@@ -29,7 +29,7 @@ export function SettingsDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-blue-700 rounded-full transition-colors"
+        className="p-2 hover:bg-amber-800 rounded-full transition-colors"
         aria-label="Settings"
       >
         <Settings className="w-5 h-5" />
