@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#e0e7ef] to-[#f4f7fa]">
+    <div className="min-h-screen bg-yellow-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-10 tracking-tight drop-shadow-sm">Dashboard</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

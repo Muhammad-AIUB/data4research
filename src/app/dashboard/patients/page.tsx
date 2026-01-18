@@ -58,7 +58,7 @@ export default function AllPatientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#e0e7ef] to-[#f4f7fa]">
+    <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">

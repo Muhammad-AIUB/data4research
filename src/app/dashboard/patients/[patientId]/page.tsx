@@ -36,7 +36,7 @@ export default async function PatientDetailPage({
 
   if (!patient) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-300/40 via-amber-300/50 to-yellow-400/40 p-8">
+      <div className="min-h-screen p-8">
         <div className="max-w-6xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Patient Not Found</h1>
@@ -54,7 +54,7 @@ export default async function PatientDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-300/40 via-amber-300/50 to-yellow-400/40">
+    <div className="min-h-screen">
       <div className="max-w-6xl mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
           <div>

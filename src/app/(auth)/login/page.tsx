@@ -14,9 +14,9 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-stretch bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#ffe4fa] relative overflow-hidden">
+    <div className="min-h-screen flex items-stretch bg-yellow-600 relative overflow-hidden">
       {/* Left Poster Section */}
-      <div className="hidden md:flex flex-col justify-center items-start w-1/2 px-12 bg-gradient-to-br from-blue-700 via-purple-600 to-pink-400 text-white relative z-10 shadow-2xl">
+      <div className="hidden md:flex flex-col justify-center items-start w-1/2 px-12 bg-yellow-700 text-white relative z-10 shadow-2xl">
         <div className="mb-10">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-3xl shadow-xl mb-6 animate-bounce-slow">
             <span className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg select-none">DR</span>
@@ -33,10 +33,10 @@ export default async function LoginPage() {
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 px-7 py-8 md:px-12 md:py-14 transition-all duration-300 flex flex-col items-center w-full max-w-md">
           {/* Logo/Brand Section (mobile only) */}
           <div className="text-center mb-6 md:hidden">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-2xl shadow-lg mb-3 animate-bounce-slow">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-yellow-700 rounded-2xl shadow-lg mb-3 animate-bounce-slow">
               <span className="text-2xl font-extrabold text-white tracking-tight drop-shadow-lg select-none">DR</span>
             </div>
-            <h1 className="text-2xl font-extrabold bg-gradient-to-r from-blue-700 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-1 tracking-tight drop-shadow-lg">Data4Research</h1>
+            <h1 className="text-2xl font-extrabold bg-gradient-to-r from-yellow-200 via-yellow-100 to-white bg-clip-text text-transparent mb-1 tracking-tight drop-shadow-lg">Data4Research</h1>
             <p className="text-gray-600 text-sm font-medium">Sign in to access your dashboard</p>
           </div>
           <LoginForm />

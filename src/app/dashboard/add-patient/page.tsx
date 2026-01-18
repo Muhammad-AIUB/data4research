@@ -130,21 +130,7 @@ export default function AddPatient() {
   if (!data) return <div className="p-8">Loading...</div>
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#ffe4fa] p-0 md:p-8 flex items-center justify-center relative overflow-x-hidden text-gray-900">
-      {/* Animated background pattern */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <svg width="100%" height="100%" className="opacity-10 animate-pulse" style={{position:'absolute',top:0,left:0}}>
-          <defs>
-            <linearGradient id="bg-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#a5b4fc" />
-              <stop offset="100%" stopColor="#f0abfc" />
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="100%" height="100%" fill="url(#bg-grad)" />
-          <circle cx="30%" cy="20%" r="120" fill="#a5b4fc" opacity="0.15" />
-          <circle cx="80%" cy="80%" r="180" fill="#f0abfc" opacity="0.12" />
-        </svg>
-      </div>
+    <div className="min-h-screen p-0 md:p-8 flex items-center justify-center relative overflow-x-hidden text-gray-900">
       <div className="w-full max-w-4xl z-10">
         {/* Sticky Glassy Header */}
         <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-lg rounded-t-3xl shadow-md border-b border-white/30 px-8 py-6 flex flex-col items-center mb-0" style={{backdropFilter:'blur(24px)'}}>
