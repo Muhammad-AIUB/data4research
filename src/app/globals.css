@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Eye-comfortable blue theme */
+  --background: #e8f1f8;
+  --foreground: #1e3a5f;
+  --primary-blue: #2563eb;
+  --primary-blue-dark: #1d4ed8;
+  --accent-blue: #3b82f6;
+  --surface: #f0f7fc;
+  --surface-card: #ffffff;
+  --text-primary: #1e3a5f;
+  --text-secondary: #64748b;
+  --border-color: #cbd5e1;
 }
 
 @theme inline {
@@ -12,17 +21,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #e8f1f8 0%, #dbeafe 50%, #e0f2fe 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+  min-height: 100vh;
 }
 
 @keyframes blob {

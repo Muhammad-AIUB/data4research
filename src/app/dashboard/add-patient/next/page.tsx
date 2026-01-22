@@ -449,10 +449,10 @@ function NextPageContent() {
   ]
 
   return (
-    <div className="min-h-screen bg-yellow-600 text-gray-900">
+    <div className="min-h-screen text-slate-800">
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Patient Test Information</h1>
+          <h1 className="text-3xl font-bold text-slate-800">Patient Test Information</h1>
         </div>
 
         {/* Calendar Section */}
@@ -461,8 +461,8 @@ function NextPageContent() {
             selectedDate={selectedDate}
             onDateChange={handleDateChange}
           />
-          <div className="mt-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 rounded">
-            <p className="text-sm text-yellow-800 font-medium">
+          <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+            <p className="text-sm text-blue-800 font-medium">
               <strong>Note:</strong> Please check for sample received date or given date, not report delivery date.
             </p>
           </div>
@@ -673,9 +673,9 @@ function NextPageContent() {
 export default function NextPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-yellow-600 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-slate-600">Loading...</p>
         </div>
       </div>
     }>

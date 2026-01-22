@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-yellow-600">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-sky-100">
       <Sidebar session={session} />
       <main className="flex-1 p-6">
         {children}

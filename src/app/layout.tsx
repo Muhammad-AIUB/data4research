@@ -12,7 +12,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-yellow-600">
+      <body className="bg-gradient-to-br from-slate-100 via-blue-50 to-sky-100">
         <Navbar />
         {children}
       </body>

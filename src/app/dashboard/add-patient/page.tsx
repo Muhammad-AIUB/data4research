@@ -99,6 +99,9 @@ export default function AddPatient() {
       address: data.address || "",
     }
 
+    // Debug: Log data being sent (remove in production)
+    console.log('Submitting patient data:', finalData)
+
     try {
       const res = await fetch('/api/patients', {
         method: 'POST',
@@ -111,17 +114,41 @@ export default function AddPatient() {
         // Show success message
         alert("Patient saved successfully!")
         // Navigate immediately without waiting - optimistic navigation
+        // Use patientId if available, otherwise use database id
         const patientIdToUse = result.patient?.patientId || result.patient?.id
-        router.push(`/dashboard/add-patient/next?patientId=${patientIdToUse}`)
+        if (patientIdToUse) {
+          router.push(`/dashboard/add-patient/next?patientId=${patientIdToUse}`)
+        } else {
+          // If no ID available, go to patients list
+          router.push('/dashboard/patients')
+        }
         // Don't set loading to false here - let navigation handle it
       } else {
-        const errorData = await res.json().catch(() => ({ message: 'Unknown error occurred' }))
-        alert(errorData.message || "Failed to add patient. Please check all required fields.")
+        let errorData: { message?: string; error?: string } = {}
+        try {
+          const text = await res.text()
+          if (text) {
+            errorData = JSON.parse(text)
+          }
+        } catch (e) {
+          console.error('Failed to parse error response:', e)
+        }
+        
+        console.error('API Error Response:', {
+          status: res.status,
+          statusText: res.statusText,
+          errorData,
+          url: res.url
+        })
+        
+        const errorMsg = errorData?.message || errorData?.error || `Failed to add patient (Status: ${res.status}). Please check all required fields and try again.`
+        alert(errorMsg)
         setLoading(false)
       }
     } catch (err) {
       console.error('Error submitting form:', err)
-      alert("Failed to add patient. Please check your connection and try again.")
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      alert(`Failed to add patient: ${errorMessage}. Please check your connection and try again.`)
       setLoading(false)
     }
   }
@@ -130,15 +157,15 @@ export default function AddPatient() {
   if (!data) return <div className="p-8">Loading...</div>
 
   return (
-    <div className="min-h-screen p-0 md:p-8 flex items-center justify-center relative overflow-x-hidden text-gray-900">
+    <div className="min-h-screen p-0 md:p-8 flex items-center justify-center relative overflow-x-hidden text-slate-800">
       <div className="w-full max-w-4xl z-10">
         {/* Sticky Glassy Header */}
-        <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-lg rounded-t-3xl shadow-md border-b border-white/30 px-8 py-6 flex flex-col items-center mb-0" style={{backdropFilter:'blur(24px)'}}>
-          <h1 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-purple-600 to-pink-500 drop-shadow-lg tracking-tight mb-2">Add New Patient</h1>
-          <p className="text-lg text-gray-700/80 font-medium">Enter patient information to create a new record</p>
+        <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg rounded-t-3xl shadow-md border-b border-blue-100 px-8 py-6 flex flex-col items-center mb-0">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-700 tracking-tight mb-2">Add New Patient</h1>
+          <p className="text-lg text-slate-600 font-medium">Enter patient information to create a new record</p>
         </div>
         {/* Glassmorphism Form Container */}
-        <div className="backdrop-blur-2xl bg-white/60 rounded-b-3xl shadow-2xl border border-white/30 px-4 md:px-12 py-10 md:py-14 mt-0 space-y-12 transition-all duration-300">
+        <div className="backdrop-blur-sm bg-white/90 rounded-b-3xl shadow-xl border border-blue-100 px-4 md:px-12 py-10 md:py-14 mt-0 space-y-12 transition-all duration-300">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
         {/* Name and Sex */}
         <section className="space-y-8">
@@ -297,7 +324,7 @@ export default function AddPatient() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-base font-semibold text-gray-800">District</Label>
+              <Label className="text-base font-semibold text-gray-800 mb-4 block">District</Label>
               <Select
                 onValueChange={v => setValue("district", v)}
                 className="backdrop-blur-lg bg-white/70 border border-white/40 rounded-2xl px-5 py-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-transparent transition-all duration-200 shadow-md focus:shadow-xl"
@@ -395,7 +422,7 @@ export default function AddPatient() {
         <div className="pt-8 flex justify-center">
           <Button 
             type="submit" 
-            className="w-full md:w-2/3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:to-pink-600 text-white font-bold py-5 px-8 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-[1.03] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg tracking-wide"
+            className="w-full md:w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg tracking-wide"
             size="lg" 
             disabled={loading}
           >

@@ -35,21 +35,21 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 w-full">
       {/* Email Field */}
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="text-sm font-medium text-slate-700">
           Email Address
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
           <Input
             id="email"
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            className="pl-10 h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 bg-white"
             required
             disabled={loading}
           />
@@ -58,18 +58,18 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
 
       {/* Password Field */}
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="text-sm font-medium text-slate-700">
           Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
           <Input
             id="password"
             type="password"
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            className="pl-10 h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 bg-white"
             required
             disabled={loading}
           />
@@ -88,7 +88,7 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
         <Button
           type="submit"
           disabled={loading}
-          className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           size="lg"
         >
           {loading ? (
@@ -103,8 +103,8 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
       )}
 
       {/* Additional Info */}
-      <div className="text-center pt-4 border-t border-gray-200">
-        <p className="text-xs text-gray-500">
+      <div className="text-center pt-4 border-t border-slate-200">
+        <p className="text-xs text-slate-500">
           Protected by secure authentication
         </p>
       </div>

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const searchQuery = searchParams.get('search')
 
     // Build where clause for search
-    let whereClause: any = {}
+    let whereClause: Record<string, unknown> = {}
 
     if (searchQuery && searchQuery.trim() !== '') {
       const searchTerm = searchQuery.trim()
@@ -53,10 +53,11 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json({ patients }, { status: 200 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching patients:', error)
+    const message = error instanceof Error ? error.message : 'Failed to fetch patients'
     return NextResponse.json(
-      { message: error.message || 'Failed to fetch patients' },
+      { message },
       { status: 500 }
     )
   }
@@ -69,6 +70,20 @@ export async function POST(request: Request) {
     
     if (!session || !session.user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Verify user exists in database
+    const userId = session.user.id as string
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+
+    if (!user) {
+      console.error('User not found in database:', userId)
+      return NextResponse.json(
+        { message: 'User account not found. Please log in again.' },
+        { status: 401 }
+      )
     }
 
     const body = await request.json()
@@ -102,15 +117,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Auto-generate patientId if not provided
-    let finalPatientId = patientId
-    if (!finalPatientId || finalPatientId.trim() === '') {
-      // Generate a unique patient ID: P + timestamp + random 4 digits
-      const timestamp = Date.now().toString(36).toUpperCase()
-      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-      finalPatientId = `P${timestamp}${random}`
-    }
-
     // Validate age is a valid number
     const ageNum = parseInt(age)
     if (isNaN(ageNum) || ageNum < 0 || ageNum > 120) {
@@ -120,46 +126,89 @@ export async function POST(request: Request) {
       )
     }
 
+    // Prepare patient data
+    const patientData = {
+      name,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
+      age: ageNum,
+      ethnicity: ethnicity || '',
+      religion: religion || 'islam',
+      nid: nid || null,
+      patientId: patientId && patientId.trim() !== '' ? patientId.trim() : null,
+      mobile,
+      spouseMobile: spouseMobile || null,
+      relativeMobile: relativeMobile || null,
+      district: district || '',
+      address: address || '',
+      shortHistory: shortHistory || null,
+      surgicalHistory: surgicalHistory || null,
+      familyHistory: familyHistory || null,
+      pastIllness: pastIllness || null,
+      tags: tags || [],
+      specialNotes: specialNotes || null,
+      finalDiagnosis: finalDiagnosis || null,
+      createdBy: userId,
+    }
+
+    console.log('Creating patient with data:', JSON.stringify(patientData, null, 2))
+
     // Create patient
     const patient = await prisma.patient.create({
-      data: {
-        name,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
-        age: ageNum,
-        ethnicity: ethnicity || '',
-        religion: religion || 'islam',
-        nid: nid || null,
-        patientId: finalPatientId,
-        mobile,
-        spouseMobile: spouseMobile || null,
-        relativeMobile: relativeMobile || null,
-        district: district || '',
-        address: address || '',
-        shortHistory: shortHistory || null,
-        surgicalHistory: surgicalHistory || null,
-        familyHistory: familyHistory || null,
-        pastIllness: pastIllness || null,
-        tags: tags || [],
-        specialNotes: specialNotes || null,
-        finalDiagnosis: finalDiagnosis || null,
-        createdBy: session.user.id as string,
-      }
+      data: patientData
     })
 
     return NextResponse.json({ success: true, patient }, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating patient:', error)
-
-    // Handle duplicate patientId gracefully
-    if (error?.code === 'P2002') {
-      return NextResponse.json(
-        { message: 'Patient ID already exists. Please use a different Patient ID.' },
-        { status: 409 }
-      )
+    
+    // Log full error details for debugging
+    if (error && typeof error === 'object') {
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      if ('code' in error) {
+        console.error('Prisma error code:', error.code)
+      }
+      if ('meta' in error) {
+        console.error('Prisma error meta:', error.meta)
+      }
     }
 
+    // Handle Prisma errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const prismaError = error as { code: string; meta?: Record<string, unknown>; message?: string }
+      
+      // Duplicate patientId
+      if (prismaError.code === 'P2002') {
+        return NextResponse.json(
+          { message: 'Patient ID already exists. Please use a different Patient ID.' },
+          { status: 409 }
+        )
+      }
+      
+      // Foreign key constraint (user doesn't exist)
+      if (prismaError.code === 'P2003') {
+        return NextResponse.json(
+          { message: 'User account not found. Please log out and log in again.' },
+          { status: 401 }
+        )
+      }
+    }
+
+    // Get detailed error message
+    let message = 'Failed to create patient'
+    if (error instanceof Error) {
+      message = error.message
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      message = String(error.message)
+    }
+    
+    // Don't expose stack trace in production
+    const errorResponse: { message: string; error?: string } = { message }
+    if (process.env.NODE_ENV === 'development') {
+      errorResponse.error = error instanceof Error ? error.stack : String(error)
+    }
+    
     return NextResponse.json(
-      { message: error.message || 'Failed to create patient' },
+      errorResponse,
       { status: 500 }
     )
   }

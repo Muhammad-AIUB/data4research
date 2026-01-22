@@ -39,7 +39,7 @@ model Patient {
   mobile          String
   nid             String?
   pastIllness     String?
-  patientId       String        @unique
+  patientId       String?       @unique
   relativeMobile  String?
   religion        String        @default("Islam")
   shortHistory    String?
