@@ -39,7 +39,7 @@ export default async function LoginPage() {
             <h1 className="text-2xl font-extrabold bg-gradient-to-r from-yellow-200 via-yellow-100 to-white bg-clip-text text-transparent mb-1 tracking-tight drop-shadow-lg">Data4Research</h1>
             <p className="text-gray-600 text-sm font-medium">Sign in to access your dashboard</p>
           </div>
-          <LoginForm />
+          <LoginForm showButton={false} />
         </div>
         {/* Footer */}
         <p className="text-center text-gray-500 text-xs mt-6">

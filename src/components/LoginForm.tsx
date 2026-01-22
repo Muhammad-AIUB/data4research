@@ -5,7 +5,7 @@ import { Mail, Lock, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-export default function LoginForm() {
+export default function LoginForm({ showButton = true }: { showButton?: boolean }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -83,22 +83,24 @@ export default function LoginForm() {
         </div>
       )}
 
-      {/* Submit Button */}
-      <Button
-        type="submit"
-        disabled={loading}
-        className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        size="lg"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            Signing in...
-          </>
-        ) : (
-          'Sign In'
-        )}
-      </Button>
+      {/* Submit Button (optional) */}
+      {showButton && (
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          size="lg"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            'Sign In'
+          )}
+        </Button>
+      )}
 
       {/* Additional Info */}
       <div className="text-center pt-4 border-t border-gray-200">
