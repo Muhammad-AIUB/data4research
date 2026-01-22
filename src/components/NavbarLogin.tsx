@@ -11,6 +11,10 @@ export default function NavbarLogin() {
     return null
   }
 
-  return <Link href="/login">Login</Link>
+  return (
+    <Link href="/login" className="text-white hover:text-yellow-200 transition-colors">
+      Login
+    </Link>
+  )
 }
 

@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
+import NavbarLogin from '@/components/NavbarLogin'
 import type { Session } from 'next-auth'
 
 export default async function Navbar() {
@@ -13,12 +14,8 @@ export default async function Navbar() {
         <Link href={session && session.user ? "/dashboard" : "/"} className="text-xl font-bold hover:text-yellow-200 transition-colors cursor-pointer">
           Data4Research
         </Link>
-        {/* Show nothing when user is logged in */}
-        {!session && (
-          <Link href="/login" className="text-white hover:text-yellow-200 transition-colors">
-            Login
-          </Link>
-        )}
+        {/* Show nothing when user is logged in; hide link on /login via NavbarLogin */}
+        {!session && <NavbarLogin />}
       </div>
     </nav>
   )
