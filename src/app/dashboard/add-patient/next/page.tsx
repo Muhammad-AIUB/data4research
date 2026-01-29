@@ -15,6 +15,7 @@ import MyFavoritesModal from "@/components/modals/MyFavoritesModal"
 import BASDAIModal from "@/components/modals/BASDAIModal"
 import { Button } from "@/components/ui/button"
 import { formatTestData } from "@/lib/formatTestData"
+import searchIndex from '@/lib/searchIndex'
 
 // Type definitions for test data
 type TestDataSection = Record<string, unknown> | null
@@ -423,7 +424,6 @@ function NextPageContent() {
   }, [savedTestData])
 
   // use centralized search index (includes fields from all modals)
-  const { default: searchIndex } = require('@/lib/searchIndex') as { default: Array<{ key: string; label: string; modal: string }> }
 
   const suggestions = useMemo(() => {
     if (!searchTerm) return []
