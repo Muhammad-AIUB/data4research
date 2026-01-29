@@ -16,7 +16,6 @@ export default function Sidebar({ session }: SidebarProps) {
 
   return (
     <div className="w-64 bg-gray-800 text-white shadow-lg flex flex-col">
-      {/* User Info Section */}
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center space-x-3 mb-3">
           <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
@@ -46,8 +45,6 @@ export default function Sidebar({ session }: SidebarProps) {
           <span className="text-sm font-medium">Logout</span>
         </button>
       </div>
-
-      {/* Navigation Links */}
       <nav className="flex-1 p-4 space-y-2">
         <Link
           href="/dashboard"

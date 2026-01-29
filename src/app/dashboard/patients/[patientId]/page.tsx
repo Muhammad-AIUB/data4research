@@ -6,6 +6,9 @@ import Link from "next/link";
 import type { Session } from "next-auth";
 import { formatTestData } from "@/lib/formatTestData";
 
+export const revalidate = 60;
+export const dynamic = "force-dynamic";
+
 export default async function PatientDetailPage({
   params,
 }: {
@@ -13,50 +16,75 @@ export default async function PatientDetailPage({
 }) {
   const { patientId } = await params;
 
-  // @ts-expect-error - getServerSession type inference issue with custom callbacks
-  const session = (await getServerSession(authOptions)) as Session | null;
+  const [session, isUUID] = await Promise.all([
+    // @ts-expect-error
+    getServerSession(authOptions) as Promise<Session | null>,
+    Promise.resolve(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        patientId,
+      ),
+    ),
+  ]);
 
-  // Redirect to login if not authenticated
+  
   if (!session || !session.user) {
     redirect("/login");
   }
 
-  // Fetch patient by patientId or database id
-  // UUID format check: if it looks like a UUID (database id), search by id
-  // Otherwise, search by patientId field
-  const isUUID =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      patientId,
-    );
+  
+  
+  const whereClause =
+    isUUID || patientId === "null" || !patientId
+      ? { id: patientId }
+      : { patientId };
 
-  let patient = null;
-  if (isUUID || patientId === "null" || !patientId) {
-    // Search by database id
-    patient = await prisma.patient.findUnique({
-      where: { id: patientId },
-      include: {
-        tests: {
-          orderBy: [
-            { createdAt: "desc" }, // Latest saves first
-            { sampleDate: "desc" }, // Then by sample date
-          ],
+  const patient = await prisma.patient.findUnique({
+    where: whereClause,
+    select: {
+      id: true,
+      name: true,
+      age: true,
+      mobile: true,
+      patientId: true,
+      dateOfBirth: true,
+      ethnicity: true,
+      religion: true,
+      nid: true,
+      spouseMobile: true,
+      relativeMobile: true,
+      district: true,
+      address: true,
+      shortHistory: true,
+      surgicalHistory: true,
+      familyHistory: true,
+      pastIllness: true,
+      tags: true,
+      specialNotes: true,
+      finalDiagnosis: true,
+      createdAt: true,
+      tests: {
+        select: {
+          id: true,
+          sampleDate: true,
+          autoimmunoProfile: true,
+          cardiology: true,
+          rft: true,
+          lft: true,
+          diseaseHistory: true,
+          imaging: true,
+          hematology: true,
+          basdai: true,
+          createdAt: true,
+          updatedAt: true,
         },
+        orderBy: [
+          { createdAt: "desc" },
+          { sampleDate: "desc" },
+        ],
+        take: 100,
       },
-    });
-  } else {
-    // Search by patientId field
-    patient = await prisma.patient.findUnique({
-      where: { patientId },
-      include: {
-        tests: {
-          orderBy: [
-            { createdAt: "desc" }, // Latest saves first
-            { sampleDate: "desc" }, // Then by sample date
-          ],
-        },
-      },
-    });
-  }
+    },
+  });
 
   if (!patient) {
     return (
@@ -103,8 +131,6 @@ export default async function PatientDetailPage({
             + Add Test Report
           </Link>
         </div>
-
-        {/* Patient Information - redesigned for clarity */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-blue-100 p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -184,7 +210,6 @@ export default async function PatientDetailPage({
             )}
           </div>
 
-          {/* Tags */}
           {patient.tags && patient.tags.length > 0 && (
             <div className="mt-4">
               <div className="text-xs text-gray-400 mb-2">Tags</div>
@@ -202,7 +227,6 @@ export default async function PatientDetailPage({
           )}
         </div>
 
-        {/* Clinical Information from Add Patient Form */}
         {(patient.shortHistory ||
           patient.surgicalHistory ||
           patient.familyHistory ||
@@ -268,7 +292,6 @@ export default async function PatientDetailPage({
           </div>
         )}
 
-        {/* Test Reports */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-blue-100 p-6">
           <h2 className="text-2xl font-semibold mb-4 text-slate-800">
             Test Reports ({patient.tests.length})
@@ -288,7 +311,7 @@ export default async function PatientDetailPage({
             <div className="space-y-6">
               {(
                 Object.entries(
-                  // First, sort all tests by createdAt (latest first) to maintain serial order
+                  
                   [...patient.tests]
                     .sort((a, b) => {
                       const timeA = a.createdAt
@@ -297,7 +320,7 @@ export default async function PatientDetailPage({
                       const timeB = b.createdAt
                         ? new Date(b.createdAt).getTime()
                         : 0;
-                      return timeB - timeA; // Latest first
+                      return timeB - timeA; 
                     })
                     .reduce(
                       (acc: Record<string, Array<{
@@ -323,13 +346,13 @@ export default async function PatientDetailPage({
                         hematology?: unknown;
                         basdai?: unknown;
                       }) => {
-                        // Fix timezone issue - use local date components
+                        
                         const sampleDate =
                           test.sampleDate instanceof Date
                             ? test.sampleDate
                             : new Date(test.sampleDate);
 
-                        // Get local date components to avoid timezone conversion issues
+                        
                         const year = sampleDate.getFullYear();
                         const month = String(
                           sampleDate.getMonth() + 1,
@@ -341,7 +364,7 @@ export default async function PatientDetailPage({
                         const date = `${day}/${month}/${year}`;
 
                         if (!acc[date]) acc[date] = [];
-                        acc[date].push(test); // Maintain order - latest saves will be first in each group
+                        acc[date].push(test); 
                         return acc;
                       },
                       {} as Record<string, Array<{
@@ -371,7 +394,7 @@ export default async function PatientDetailPage({
                 }>][]
               )
                 .sort(([, testsA], [, testsB]) => {
-                  // Sort date groups by latest createdAt in each group (not by date itself)
+                  
                   const getLatestTime = (tests: Array<{ createdAt?: Date | string; [key: string]: unknown }>) => {
                     return Math.max(
                       ...tests.map((t) =>
@@ -381,11 +404,11 @@ export default async function PatientDetailPage({
                   };
                   const timeA = getLatestTime(testsA);
                   const timeB = getLatestTime(testsB);
-                  return timeB - timeA; // Latest first
+                  return timeB - timeA; 
                 })
                 .map(([date, tests]) => {
-                  // Tests are already sorted by createdAt (latest first) from the grouping step
-                  // No need to sort again - maintain the order
+                  
+                  
                   const sortedTests = tests;
 
                   return (

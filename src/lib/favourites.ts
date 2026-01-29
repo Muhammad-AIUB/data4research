@@ -1,11 +1,11 @@
-// Utility functions for managing field-level favourites
+
 
 export interface FavouriteField {
   reportType: string
   reportName: string
   fieldName: string
   fieldLabel: string
-  sectionTitle?: string  // Section title like "ANA PROFILE (Anti-Nuclear Antibody Panel)"
+  sectionTitle?: string  
   createdAt: string
 }
 
@@ -27,7 +27,7 @@ export function addFavouriteField(
   if (typeof window === 'undefined') return
   const favourites = getFavourites()
   
-  // Check if already exists
+  
   const exists = favourites.find(
     f => f.reportType === reportType && f.fieldName === fieldName
   )
@@ -44,7 +44,7 @@ export function addFavouriteField(
     favourites.push(newFavourite)
     localStorage.setItem(FAVOURITES_KEY, JSON.stringify(favourites))
   } else if (sectionTitle) {
-    // Update sectionTitle if field already exists
+    
     const index = favourites.findIndex(
       f => f.reportType === reportType && f.fieldName === fieldName
     )
@@ -62,7 +62,7 @@ export function removeFavouriteField(reportType: string, fieldName: string): voi
     f => !(f.reportType === reportType && f.fieldName === fieldName)
   )
   localStorage.setItem(FAVOURITES_KEY, JSON.stringify(filtered))
-  // Also remove the associated value
+  
   removeFavouriteFieldValue(reportType, fieldName)
 }
 
@@ -92,11 +92,11 @@ export function getAllFavouritesGrouped(): Record<string, FavouriteField[]> {
   }, {} as Record<string, FavouriteField[]>)
 }
 
-// Bulk add all fields in a section to favorites
+
 export function addSectionFieldsToFavourites(
   reportType: string,
   reportName: string,
-  fields: Array<[string, string]>, // Array of [fieldName, fieldLabel]
+  fields: Array<[string, string]>, 
   sectionTitle?: string
 ): void {
   if (typeof window === 'undefined') return
@@ -105,10 +105,10 @@ export function addSectionFieldsToFavourites(
   })
 }
 
-// Bulk remove all fields in a section from favorites
+
 export function removeSectionFieldsFromFavourites(
   reportType: string,
-  fields: Array<[string, string]> // Array of [fieldName, fieldLabel]
+  fields: Array<[string, string]> 
 ): void {
   if (typeof window === 'undefined') return
   fields.forEach(([fieldName]) => {
@@ -116,7 +116,7 @@ export function removeSectionFieldsFromFavourites(
   })
 }
 
-// Check if all fields in a section are favorites
+
 export function areAllSectionFieldsFavourite(
   reportType: string,
   fields: Array<[string, string]>
@@ -126,7 +126,7 @@ export function areAllSectionFieldsFavourite(
   return fields.every(([fieldName]) => isFieldFavourite(reportType, fieldName))
 }
 
-// Check if any fields in a section are favorites
+
 export function areAnySectionFieldsFavourite(
   reportType: string,
   fields: Array<[string, string]>
@@ -135,7 +135,7 @@ export function areAnySectionFieldsFavourite(
   return fields.some(([fieldName]) => isFieldFavourite(reportType, fieldName))
 }
 
-// Store favorite field value
+
 const FAVOURITE_VALUES_KEY = 'data4research_favourite_values'
 
 export function setFavouriteFieldValue(

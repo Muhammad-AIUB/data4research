@@ -44,7 +44,7 @@ export default function CardiologyModal({
     return `${year}-${month}-${day}`;
   };
 
-  // Load saved data when modal opens
+  
   useEffect(() => {
     if (savedData && savedData.length > 0) {
       const dateStr = formatDateString(reportDate);
@@ -97,8 +97,8 @@ export default function CardiologyModal({
         setReportDate(testDate);
       }
     }
-    // Only run when savedData changes, not on every reportDate change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
   }, [savedData]);
 
   const updateField = (fieldName: string, value: string) => {
@@ -253,18 +253,18 @@ export default function CardiologyModal({
     const reportType = "cardiology";
     const reportName = "Cardiology";
 
-    // Check if all fields are favorites
+    
     const allFavourite = fields.every(([fieldName]) =>
       isFieldFavourite(reportType, fieldName),
     );
 
     if (allFavourite) {
-      // Remove all fields
+      
       fields.forEach(([fieldName]) => {
         removeFavouriteField(reportType, fieldName);
       });
     } else {
-      // Add all fields - in Cardiology, fields are already separate (fieldName and fieldNameMmol)
+      
       addSectionFieldsToFavourites(
         reportType,
         reportName,
@@ -280,7 +280,7 @@ export default function CardiologyModal({
     fields: Array<[string, string]>,
   ) => {
     const reportType = "cardiology";
-    // Check if all fields are favorites
+    
     const allFavourite = fields.every(([fieldName]) =>
       isFieldFavourite(reportType, fieldName),
     );

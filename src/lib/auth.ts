@@ -46,7 +46,6 @@ export const authOptions = {
         token.id = user.id
         token.role = user.role
       }
-      // Ensure id is always present in token
       if (!token.id && token.sub) {
         token.id = token.sub
       }

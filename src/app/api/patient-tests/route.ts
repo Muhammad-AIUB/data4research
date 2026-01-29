@@ -6,50 +6,74 @@ import type { Session } from "next-auth";
 
 export async function GET(request: Request) {
   try {
-    // @ts-expect-error - getServerSession type inference issue
+    // @ts-expect-error
     const session = (await getServerSession(authOptions)) as Session | null;
-
     if (!session || !session.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get("patientId");
-
-    // Build where clause - if patientId provided, filter by it, otherwise get all
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const offset = (page - 1) * limit;
     let whereClause: Record<string, unknown> = {};
+    let patientDbId: string | null = null;
     if (patientId && patientId.trim() !== "") {
       const patient = await prisma.patient.findUnique({
         where: { patientId },
+        select: { id: true },
       });
-
       if (patient) {
+        patientDbId = patient.id;
         whereClause.patientId = patient.id;
       } else {
-        // If patientId provided but not found, return empty
-        return NextResponse.json({ tests: [] }, { status: 200 });
+        return NextResponse.json(
+          { tests: [], total: 0, page, limit },
+          {
+            status: 200,
+            headers: {
+              "Cache-Control": "private, s-maxage=60, stale-while-revalidate=120",
+            },
+          },
+        );
       }
-    } else {
-      // If no patientId, get all tests (including those without patientId)
-      // This allows showing tests saved without patient ID
-      whereClause = {};
     }
-
-    // Fetch all tests (filtered by patientId if provided, or all if not)
-    // Sort by createdAt (latest first) to ensure newest saves appear first
-    const tests = await prisma.patientTest.findMany({
-      where: whereClause,
-      orderBy: [
-        { createdAt: "desc" }, // Latest saves first
-        { sampleDate: "desc" }, // Then by sample date
-      ],
-    });
-
-    console.log(
-      `Fetched ${tests.length} tests for patientId: ${patientId || "all"}`,
+    const [tests, total] = await Promise.all([
+      prisma.patientTest.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          patientId: true,
+          sampleDate: true,
+          autoimmunoProfile: true,
+          cardiology: true,
+          rft: true,
+          lft: true,
+          diseaseHistory: true,
+          imaging: true,
+          hematology: true,
+          basdai: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: [
+          { createdAt: "desc" },
+          { sampleDate: "desc" },
+        ],
+        skip: offset,
+        take: limit,
+      }),
+      prisma.patientTest.count({ where: whereClause }),
+    ]);
+    return NextResponse.json(
+      { tests, total, page, limit },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "private, s-maxage=60, stale-while-revalidate=120",
+        },
+      },
     );
-
-    return NextResponse.json({ tests }, { status: 200 });
   } catch (error: unknown) {
     console.error("Error fetching patient test data:", error);
     const message =
@@ -62,31 +86,21 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // @ts-expect-error - getServerSession type inference issue
+    // @ts-expect-error
     const session = (await getServerSession(authOptions)) as Session | null;
-
     if (!session || !session.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-
     const body = await request.json();
     const { patientId, sampleDate, ...testData } = body;
-
-    // Patient ID is optional - if provided, link to patient, otherwise save without link
     let patient = null;
     if (patientId && patientId.trim() !== "") {
       patient = await prisma.patient.findUnique({
         where: { patientId },
+        select: { id: true },
       });
-
-      // If patientId provided but not found, still allow saving (don't block)
-      // Just won't link to patient
     }
-
-    // Parse the test data - each section has { data, date } structure
     const parsedTestData: Record<string, unknown> = {};
-
-    // Extract data from each test section
     if (testData.autoimmunoProfile) {
       parsedTestData.autoimmunoProfile =
         testData.autoimmunoProfile.data || testData.autoimmunoProfile;
@@ -116,20 +130,14 @@ export async function POST(request: Request) {
       parsedTestData.basdai = testData.basdai.data || testData.basdai;
     }
 
-    // Use sampleDate from testData or body, default to now
     const reportDate =
       testData.sampleDate || sampleDate || new Date().toISOString();
-
-    // Fix timezone issue - parse date string (YYYY-MM-DD format) and create local date at midnight
     let localDate: Date;
     if (typeof reportDate === "string") {
-      // Check if it's YYYY-MM-DD format (from modals) or ISO string
       if (/^\d{4}-\d{2}-\d{2}$/.test(reportDate)) {
-        // YYYY-MM-DD format - parse directly to avoid timezone issues
         const [year, month, day] = reportDate.split("-").map(Number);
         localDate = new Date(year, month - 1, day);
       } else {
-        // ISO string - parse and use local components
         const dateObj = new Date(reportDate);
         localDate = new Date(
           dateObj.getFullYear(),
@@ -138,7 +146,6 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // If it's already a Date object, use local components
       const dateObj = new Date(reportDate);
       localDate = new Date(
         dateObj.getFullYear(),
@@ -146,11 +153,9 @@ export async function POST(request: Request) {
         dateObj.getDate(),
       );
     }
-
-    // Store test data in database
     const savedTest = await prisma.patientTest.create({
       data: {
-        patientId: patient?.id || null, // Use null if no patient (optional field)
+        patientId: patient?.id || null,
         sampleDate: localDate,
         autoimmunoProfile: parsedTestData.autoimmunoProfile || null,
         cardiology: parsedTestData.cardiology || null,

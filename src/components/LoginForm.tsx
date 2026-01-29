@@ -22,7 +22,6 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
       })
       
       if (res?.ok) {
-        // Use window.location for full page reload to refresh server components
         window.location.href = '/dashboard'
       } else {
         setError('Invalid email or password. Please try again.')
@@ -55,8 +54,6 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
           />
         </div>
       </div>
-
-      {/* Password Field */}
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium text-slate-700">
           Password
@@ -75,15 +72,11 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
           />
         </div>
       </div>
-
-      {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       )}
-
-      {/* Submit Button (optional) */}
       {showButton && (
         <Button
           type="submit"
@@ -101,8 +94,6 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
           )}
         </Button>
       )}
-
-      {/* Additional Info */}
       <div className="text-center pt-4 border-t border-slate-200">
         <p className="text-xs text-slate-500">
           Protected by secure authentication

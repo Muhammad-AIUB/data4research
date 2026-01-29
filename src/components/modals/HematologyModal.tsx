@@ -31,17 +31,17 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
   const [saving, setSaving] = useState(false)
   const [favoritesUpdated, setFavoritesUpdated] = useState(0)
   
-  // Define which fields are dual (have value1 and value2)
+  
   const dualFields = new Set([
     'neutrophils', 'lymphocytes', 'monocytes', 'eosinophils', 'basophils',
-    'serumIron' // Has µmol/L and µg/dL
+    'serumIron' 
   ])
 
   const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
     const reportType = 'hematology'
     const reportName = 'Hematology'
     
-    // Check if all fields are favorites (check value1 for dual fields)
+    
     const fieldsToCheck = fields.map(([fieldName]) => 
       dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName
     )
@@ -51,7 +51,7 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
     )
     
     if (allFavourite) {
-      // Remove all fields
+      
       fields.forEach(([fieldName]) => {
         if (dualFields.has(fieldName)) {
           removeFavouriteField(reportType, `${fieldName}_value1`)
@@ -61,11 +61,11 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         }
       })
     } else {
-      // Add all fields - for dual fields, add value1 and value2
+      
       const allFieldsToAdd: Array<[string, string]> = []
       fields.forEach(([fieldName, fieldLabel]) => {
         if (dualFields.has(fieldName)) {
-          // Determine units based on field name
+          
           let unit1 = "%"
           let unit2 = "cells/µL"
           
@@ -87,7 +87,7 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
 
   const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
     const reportType = 'hematology'
-    // Check if all fields are favorites (check value1 for dual fields)
+    
     const fieldsToCheck = fields.map(([fieldName]) => 
       dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName
     )
@@ -114,7 +114,7 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
     )
   }
 
-  // Load saved data when modal opens (only once when savedData changes, not on every reportDate change)
+  
   useEffect(() => {
     if (savedData && savedData.length > 0) {
       const dateStr = reportDate.toISOString().split('T')[0]
@@ -135,8 +135,8 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         })[0]
       
       if (testToLoad?.hematology && typeof testToLoad.hematology === 'object' && testToLoad.hematology !== null) {
-        // Load saved data - this will only include fields that were saved
-        // Empty fields will be handled by getFieldValue returning ""
+        
+        
         const savedHematologyData = testToLoad.hematology as Record<string, string | DualValue>
         setFormData(savedHematologyData)
         const testDate = testToLoad.sampleDate instanceof Date 
@@ -145,8 +145,8 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         setReportDate(testDate)
       }
     }
-    // Only run when savedData changes, not on every reportDate change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
   }, [savedData])
 
   const updateField = (field: string, value: string, key?: keyof DualValue) => {
@@ -241,7 +241,7 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
     const feUgdl = parseFloat(serumIronUgdl)
     const tibc = parseFloat(tibcUgl)
     if (!isNaN(feUgdl) && !isNaN(tibc) && tibc !== 0) {
-      const feUgl = feUgdl * 10 // convert µg/dL -> µg/L
+      const feUgl = feUgdl * 10 
       return ((feUgl / tibc) * 100).toFixed(2)
     }
     return ""

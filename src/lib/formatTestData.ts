@@ -1,6 +1,6 @@
-// Utility function to format test data for display
 
-// Field labels mapping for all report types
+
+
 const fieldLabels: Record<string, Record<string, string>> = {
   autoimmunoProfile: {
     ana: "ANA (IFA, ELISA, or multiplex)",
@@ -98,7 +98,7 @@ const fieldLabels: Record<string, Record<string, string>> = {
   },
 };
 
-// Units mapping for display in saved reports
+
 const unitMeta: Record<
   string,
   Record<string, { unit?: string; unit1?: string; unit2?: string }>
@@ -188,7 +188,7 @@ function getFieldLabel(key: string, reportType: string): string {
     return reportLabels[key];
   }
 
-  // Fallback: convert camelCase to readable format
+  
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (str) => str.toUpperCase())
@@ -204,7 +204,7 @@ export function formatTestData(
   const formatted: { label: string; value: string }[] = [];
   const units = unitMeta[reportType] || {};
 
-  // Handle different data structures
+  
   if (Array.isArray(data)) {
     return [];
   }
@@ -215,9 +215,9 @@ export function formatTestData(
     let displayValue = "";
     const label = getFieldLabel(key, reportType);
 
-    // Handle different value types
+    
     if (typeof value === "object" && value !== null) {
-      // Handle { value: "...", notes: "..." } structure
+      
       if ("value" in value || "value1" in value || "value2" in value) {
         const parts: string[] = [];
         const val = value as Record<string, unknown>;
@@ -239,7 +239,7 @@ export function formatTestData(
           parts.push(`Notes: ${String(val.notes)}`);
         displayValue = parts.join(" / ");
       } else {
-        // For other object types, try to format nicely
+        
         const objEntries = Object.entries(value).filter(
           ([key, v]) => v !== null && v !== undefined && v !== "",
         );

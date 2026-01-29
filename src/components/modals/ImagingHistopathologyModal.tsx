@@ -41,18 +41,18 @@ export default function ImagingHistopathologyModal({
     fields: Array<[string, string]>,
     sectionTitle: string,
   ) => {
-    // Check if all fields are favorites
+    
     const allFavourite = fields.every(([fieldName]) =>
       isFieldFavourite(reportType, fieldName),
     );
 
     if (allFavourite) {
-      // Remove all fields
+      
       fields.forEach(([fieldName]) => {
         removeFavouriteField(reportType, fieldName);
       });
     } else {
-      // Add all fields
+      
       addSectionFieldsToFavourites(
         reportType,
         reportName,
@@ -67,7 +67,7 @@ export default function ImagingHistopathologyModal({
     title: string,
     fields: Array<[string, string]>,
   ) => {
-    // Check if all fields are favorites
+    
     const allFavourite = fields.every(([fieldName]) =>
       isFieldFavourite(reportType, fieldName),
     );
@@ -108,7 +108,7 @@ export default function ImagingHistopathologyModal({
     notes: "",
   });
 
-  // Load saved data when modal opens
+  
   useEffect(() => {
     if (savedData && savedData.length > 0) {
       const dateStr = reportDate.toISOString().split("T")[0];
@@ -146,8 +146,8 @@ export default function ImagingHistopathologyModal({
         setReportDate(testDate);
       }
     }
-    // Only run when savedData changes, not on every reportDate change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
   }, [savedData]);
 
   const handleSubmit = async (e: React.FormEvent) => {

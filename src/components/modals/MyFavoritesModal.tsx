@@ -35,12 +35,12 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
   const groupedFavourites = useMemo(() => {
     const grouped: Record<string, Record<string, FavouriteField[]>> = {};
     favourites.forEach((fav) => {
-      if (!fav || !fav.reportType || !fav.fieldName) return; // Skip invalid entries
+      if (!fav || !fav.reportType || !fav.fieldName) return; 
 
       if (!grouped[fav.reportType]) {
         grouped[fav.reportType] = {};
       }
-      // Use sectionTitle if available, otherwise use 'Other'
+      
       const sectionKey =
         fav.sectionTitle && fav.sectionTitle.trim() !== ""
           ? fav.sectionTitle
@@ -65,7 +65,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
   const [fieldValues, setFieldValues] =
     useState<Record<string, string>>(initialFieldValues);
 
-  // Field colors matching modals
+  
   const fieldColors = [
     "bg-blue-50 border-blue-200",
     "bg-green-50 border-green-200",
@@ -116,7 +116,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
     sectionTitle: string,
     fields: FavouriteField[],
   ) => {
-    // Remove all fields in the section
+    
     fields.forEach((fav) => {
       removeFavouriteField(fav.reportType, fav.fieldName);
       const key = `${fav.reportType}:${fav.fieldName}`;
@@ -126,7 +126,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
         return updated;
       });
 
-      // For AutoimmunoProfile, also remove corresponding notes field if it exists
+      
       if (
         fav.reportType === "autoimmunoProfile" &&
         !fav.fieldName.endsWith("_notes")
@@ -141,7 +141,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
         });
       }
 
-      // For RFT/LFT, also remove corresponding value2 field if value1 exists
+      
       if (
         (fav.reportType === "rft" || fav.reportType === "lft") &&
         fav.fieldName.endsWith("_value1")
@@ -156,7 +156,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
         });
       }
 
-      // For RFT/LFT, also remove corresponding value1 field if value2 exists
+      
       if (
         (fav.reportType === "rft" || fav.reportType === "lft") &&
         fav.fieldName.endsWith("_value2")
@@ -172,7 +172,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
       }
     });
     loadFavourites();
-    // Field values will be updated automatically via useEffect when favourites change
+    
   };
 
   const reportTypeLabels: Record<string, string> = {
@@ -217,7 +217,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
             <div className="space-y-6">
               {Object.entries(groupedFavourites).map(
                 ([reportType, sections]) => {
-                  // Ensure sections is an object
+                  
                   if (
                     !sections ||
                     typeof sections !== "object" ||
@@ -237,7 +237,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                       <div className="space-y-6">
                         {Object.entries(sections).map(
                           ([sectionTitle, fields], sectionIndex) => {
-                            // Ensure fields is an array
+                            
                             if (!Array.isArray(fields)) {
                               return null;
                             }
@@ -278,7 +278,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                       fieldColors.length;
                                     const colorClass = fieldColors[colorIndex];
 
-                                    // Check if this is a notes field or value2 field
+                                    
                                     const isNotesField =
                                       fav.fieldName.endsWith("_notes");
                                     const isValue2Field =
@@ -286,7 +286,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                     const isValue1Field =
                                       fav.fieldName.endsWith("_value1");
 
-                                    // Skip value2 fields - they will be shown with value1 fields
+                                    
                                     if (isValue2Field) {
                                       const mainFieldName =
                                         fav.fieldName.replace("_value2", "");
@@ -296,7 +296,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                           `${mainFieldName}_value1`,
                                       );
                                       if (value1FieldExists) {
-                                        return null; // Skip value2 field, will be shown with value1 field
+                                        return null; 
                                       }
                                     }
 
@@ -314,7 +314,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                     const savedNotes =
                                       fieldValues[notesKey] || "";
 
-                                    // For dual value fields (RFT, LFT, etc.), get value2
+                                    
                                     const value2Key = isValue1Field
                                       ? `${fav.reportType}:${mainFieldName}_value2`
                                       : null;
@@ -322,7 +322,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                       ? fieldValues[value2Key] || ""
                                       : "";
 
-                                    // Extract unit from field label
+                                    
                                     const getUnitFromLabel = (
                                       label: string,
                                     ) => {
@@ -330,18 +330,18 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                       return match ? match[1] : "";
                                     };
 
-                                    // For AutoimmunoProfile, group value and notes fields together
-                                    // Only show main field, and include notes field if it exists
+                                    
+                                    
                                     if (
                                       fav.reportType === "autoimmunoProfile" &&
                                       isNotesField
                                     ) {
-                                      // Skip notes field here, it will be shown with the main field
+                                      
                                       const mainFieldExists = fields.find(
                                         (f) => f.fieldName === mainFieldName,
                                       );
                                       if (mainFieldExists) {
-                                        return null; // Skip notes field, will be shown with main field
+                                        return null; 
                                       }
                                     }
 
@@ -364,7 +364,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                                     isValue1Field ||
                                                     isValue2Field
                                                   ) {
-                                                    // For value1/value2 fields, extract main field name
+                                                    
                                                     return fav.fieldLabel.split(
                                                       " - ",
                                                     )[0];

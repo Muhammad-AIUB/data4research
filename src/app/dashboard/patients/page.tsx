@@ -1,22 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url, {
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+};
 
 export default function AllPatientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300); 
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  
   const { data, isLoading } = useSWR(
-    searchQuery
-      ? `/api/patients?search=${encodeURIComponent(searchQuery)}`
-      : "/api/patients",
+    debouncedQuery
+      ? `/api/patients?search=${encodeURIComponent(debouncedQuery)}&page=1&limit=50`
+      : "/api/patients?page=1&limit=50",
     fetcher,
-    { revalidateOnFocus: false },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 5000,
+      keepPreviousData: true,
+    },
   );
 
   const patients = data?.patients || [];
@@ -24,7 +46,7 @@ export default function AllPatientsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // SWR will handle the fetch automatically when searchQuery changes
+    
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +56,6 @@ export default function AllPatientsPage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
             All Patients
@@ -81,7 +102,6 @@ export default function AllPatientsPage() {
           </form>
         </div>
 
-        {/* Patient List */}
         {loading ? (
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-blue-100 p-16 text-center">
             <p className="text-slate-500 text-lg">Loading patients...</p>

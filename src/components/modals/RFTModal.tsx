@@ -38,10 +38,10 @@ export default function RFTModal({
   const [saving, setSaving] = useState(false);
   const [favoritesUpdated, setFavoritesUpdated] = useState(0);
 
-  // Load saved data when modal opens
+  
   useEffect(() => {
     if (savedData && savedData.length > 0) {
-      // Find the most recent RFT data for the selected date or closest date
+      
       const dateStr = reportDate.toISOString().split("T")[0];
       const matchingTest = savedData.find((test) => {
         if (!test.rft) return false;
@@ -52,7 +52,7 @@ export default function RFTModal({
         return testDate === dateStr;
       });
 
-      // If no exact match, get the most recent one
+      
       const testToLoad =
         matchingTest ||
         savedData
@@ -80,8 +80,8 @@ export default function RFTModal({
         setReportDate(testDate);
       }
     }
-    // Only run when savedData changes, not on every reportDate change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
   }, [savedData]);
 
   const updateField = (
@@ -100,21 +100,21 @@ export default function RFTModal({
         },
       };
 
-      // Auto calculate based on formulas
+      
       if (fieldName === "creatinine") {
         if (type === "value1" && value) {
-          // mg/dL to µmol/L: mg/dL × 88.42 = µmol/L
+          
           const calculated = (numValue * 88.42).toFixed(2);
           updated[fieldName].value2 = calculated;
         } else if (type === "value2" && value) {
-          // µmol/L to mg/dL: µmol/L ÷ 88.42 = mg/dL
+          
           const calculated = (numValue / 88.42).toFixed(2);
           updated[fieldName].value1 = calculated;
         }
       } else if (
         ["sodium", "potassium", "chloride", "bicarbonate"].includes(fieldName)
       ) {
-        // mmol/L = mEq/L (same value)
+        
         if (type === "value1" && value) {
           updated[fieldName].value2 = value;
         } else if (type === "value2" && value) {
@@ -229,7 +229,7 @@ export default function RFTModal({
     const reportType = "rft";
     const reportName = "RFT";
 
-    // Check if all fields are already favorites (check value1 fields for dual value fields)
+    
     const fieldsToCheck = hasDualValues
       ? fields.map(([fieldName]) => `${fieldName}_value1`)
       : fields.map(([fieldName]) => fieldName);
@@ -239,10 +239,10 @@ export default function RFTModal({
     );
 
     if (allFavourite) {
-      // Remove all fields including value1 and value2 for dual value fields
+      
       fields.forEach(([fieldName, fieldLabel]) => {
         if (hasDualValues) {
-          // Remove value1 and value2 (not main field)
+          
           removeFavouriteField(reportType, `${fieldName}_value1`);
           removeFavouriteField(reportType, `${fieldName}_value2`);
         } else {
@@ -250,13 +250,13 @@ export default function RFTModal({
         }
       });
     } else {
-      // Add all fields - for dual value fields, add value1 and value2 separately with proper units
+      
       const allFieldsToAdd: Array<[string, string]> = [];
       fields.forEach(([fieldName, fieldLabel], idx) => {
         if (hasDualValues) {
-          // Use actual units from the renderField calls
-          // For S. Creatinine: mg/dL, µmol/L
-          // For S. Electrolyte: mmol/L, mEq/L
+          
+          
+          
           let unit1 = "Unit 1";
           let unit2 = "Unit 2";
 
@@ -300,7 +300,7 @@ export default function RFTModal({
     hasDualValues: boolean = true,
   ) => {
     const reportType = "rft";
-    // Check only main fields (not value1/value2)
+    
     const allFavourite = areAllSectionFieldsFavourite(reportType, fields);
 
     return (

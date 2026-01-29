@@ -37,7 +37,7 @@ export default function LFTModal({
   const [saving, setSaving] = useState(false);
   const [favoritesUpdated, setFavoritesUpdated] = useState(0);
 
-  // Load saved data when modal opens
+  
   useEffect(() => {
     if (savedData && savedData.length > 0) {
       const dateStr = reportDate.toISOString().split("T")[0];
@@ -75,8 +75,8 @@ export default function LFTModal({
         setReportDate(testDate);
       }
     }
-    // Only run when savedData changes, not on every reportDate change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
   }, [savedData]);
 
   const updateField = (fieldName: string, value: string, type?: string) => {
@@ -281,7 +281,7 @@ export default function LFTModal({
     }
   };
 
-  // Define which fields are dual (have value1 and value2)
+  
   const dualFields = new Set([
     "bilirubinTotal",
     "bilirubinDirect",
@@ -297,7 +297,7 @@ export default function LFTModal({
     const reportType = "lft";
     const reportName = "LFT";
 
-    // Check if all fields are favorites (check value1 for dual fields)
+    
     const fieldsToCheck = fields.map(([fieldName]) =>
       dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName,
     );
@@ -307,7 +307,7 @@ export default function LFTModal({
     );
 
     if (allFavourite) {
-      // Remove all fields
+      
       fields.forEach(([fieldName]) => {
         if (dualFields.has(fieldName)) {
           removeFavouriteField(reportType, `${fieldName}_value1`);
@@ -317,11 +317,11 @@ export default function LFTModal({
         }
       });
     } else {
-      // Add all fields - for dual fields, add value1 and value2
+      
       const allFieldsToAdd: Array<[string, string]> = [];
       fields.forEach(([fieldName, fieldLabel]) => {
         if (dualFields.has(fieldName)) {
-          // Determine units based on field name
+          
           let unit1 = "Unit 1";
           let unit2 = "Unit 2";
 
@@ -360,7 +360,7 @@ export default function LFTModal({
     fields: Array<[string, string]>,
   ) => {
     const reportType = "lft";
-    // Check if all fields are favorites (check value1 for dual fields)
+    
     const fieldsToCheck = fields.map(([fieldName]) =>
       dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName,
     );

@@ -4,15 +4,14 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import type { Session } from 'next-auth'
 
+export const dynamic = 'force-dynamic'
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // @ts-expect-error - getServerSession type inference issue with custom callbacks
+  // @ts-expect-error
   const session = await getServerSession(authOptions) as Session | null
-  
-  // Redirect to login if not authenticated
   if (!session || !session.user) {
     redirect('/login')
   }

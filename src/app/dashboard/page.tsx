@@ -5,10 +5,8 @@ import Link from "next/link";
 import type { Session } from "next-auth";
 
 export default async function DashboardPage() {
-  // @ts-expect-error - getServerSession type inference issue with custom callbacks
+  // @ts-expect-error
   const session = (await getServerSession(authOptions)) as Session | null;
-
-  // Redirect to login if not authenticated
   if (!session || !session.user) {
     redirect("/login");
   }
@@ -41,7 +39,6 @@ export default async function DashboardPage() {
               </div>
             </div>
           </Link>
-          {/* All Patients Data Card */}
           <Link href="/dashboard/patients" className="group">
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-blue-200/50 group-hover:border-blue-400 group-hover:shadow-xl transition-all duration-200 p-8 flex flex-col justify-between min-h-[180px] relative overflow-hidden hover:scale-[1.02] cursor-pointer">
               <div className="flex items-center justify-between">

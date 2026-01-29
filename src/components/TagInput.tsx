@@ -20,7 +20,7 @@ export default function TagInput({ tags, setTags }: Props) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && input.trim()) {
       e.preventDefault()
-      // Support comma-separated tags
+      
       const tagsToAdd = input.split(',').map(t => t.trim()).filter(t => t)
       tagsToAdd.forEach(tag => addTag(tag))
       setInput("")

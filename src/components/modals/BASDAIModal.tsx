@@ -79,7 +79,7 @@ export default function BASDAIModal({
     basdaiScore: 0,
   })
 
-  // Load saved data (same-day or latest) if exists
+  
   useEffect(() => {
     if (savedData.length === 0) return
     const today = reportDate.toISOString().split("T")[0]
@@ -104,7 +104,7 @@ export default function BASDAIModal({
     }
   }, [savedData, reportDate])
 
-  // Recalculate BASDAI whenever inputs change
+  
   useEffect(() => {
     const sumQ1toQ4 = form.q1Fatigue + form.q2SpinalPain + form.q3JointPain + form.q4TenderAreas
     const avgQ5Q6 = (form.q5MorningStiffness + form.q6StiffnessDuration) / 2
@@ -290,7 +290,7 @@ export default function BASDAIModal({
             <div className={`rounded-lg border border-indigo-200 bg-indigo-50 p-4`}>
               <p className="font-semibold text-lg">BASDAI Score: <span className="text-blue-700">{form.basdaiScore}</span></p>
               <p className="text-sm text-gray-600 mt-1">Formula: [(Q1 + Q2 + Q3 + Q4) + ((Q5 + Q6) / 2)] / 5</p>
-              <a className="text-sm text-blue-600 mt-1 inline-block" href="https://www.omnicalculator.com/health/basdai" target="_blank" rel="noreferrer">Check calculation (omnicalculator)</a>
+              <a className="text-sm text-blue-600 mt-1 inline-block" href="https://www.physio-pedia.com/BASDAI" target="_blank" rel="noopener noreferrer">Learn more about BASDAI</a>
             </div>
 
             <div className="flex gap-2 justify-end pt-4 border-t mt-4">

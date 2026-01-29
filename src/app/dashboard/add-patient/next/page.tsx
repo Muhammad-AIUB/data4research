@@ -19,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { formatTestData } from "@/lib/formatTestData";
 import searchIndex from "@/lib/searchIndex";
 
-// Type definitions for test data
 type TestDataSection = Record<string, unknown> | null;
 type TestData = {
   patientId: string;
@@ -37,6 +36,7 @@ type TestData = {
 type PatientTest = {
   id: string;
   sampleDate: Date | string;
+  createdAt?: Date | string;
   autoimmunoProfile?: TestDataSection;
   cardiology?: TestDataSection;
   rft?: TestDataSection;
@@ -47,14 +47,12 @@ type PatientTest = {
   basdai?: TestDataSection;
 };
 
-// Separate component for saved reports to avoid conditional hook
 function SavedReportsDisplay({
   savedTestData,
 }: {
   savedTestData: PatientTest[];
 }) {
   const groupedAndSorted = useMemo(() => {
-    // First, sort all tests by createdAt (latest first) to maintain serial order
     const sortedByCreatedAt = [...savedTestData].sort(
       (
         a: PatientTest & { createdAt?: Date | string },
@@ -70,36 +68,27 @@ function SavedReportsDisplay({
           : b.id
             ? 0
             : -1;
-        return timeB - timeA; // Latest first
+        return timeB - timeA; 
       },
     );
 
-    // Then group by date while maintaining the order
     const grouped = sortedByCreatedAt.reduce(
       (acc: Record<string, PatientTest[]>, test: PatientTest) => {
-        // Fix timezone issue - use local date components
         const sampleDate =
           test.sampleDate instanceof Date
             ? test.sampleDate
             : new Date(test.sampleDate);
-
-        // Get local date components to avoid timezone conversion issues
         const year = sampleDate.getFullYear();
         const month = String(sampleDate.getMonth() + 1).padStart(2, "0");
         const day = String(sampleDate.getDate()).padStart(2, "0");
         const date = `${day}/${month}/${year}`;
-
         if (!acc[date]) acc[date] = [];
-        acc[date].push(test); // Maintain order - latest saves will be first in each group
+        acc[date].push(test);
         return acc;
       },
       {} as Record<string, PatientTest[]>,
     );
-
-    // Sort date groups by latest createdAt in each group (not by date itself)
-    // This ensures latest saves appear first regardless of date
     return Object.entries(grouped).sort(([, testsA], [, testsB]) => {
-      // Get the latest createdAt from each group
       const getLatestTime = (tests: PatientTest[]) => {
         return Math.max(
           ...tests.map((t: PatientTest & { createdAt?: Date | string }) =>
@@ -109,15 +98,13 @@ function SavedReportsDisplay({
       };
       const timeA = getLatestTime(testsA);
       const timeB = getLatestTime(testsB);
-      return timeB - timeA; // Latest first
+      return timeB - timeA;
     }) as [string, PatientTest[]][];
   }, [savedTestData]);
 
   return (
     <div className="space-y-6">
       {groupedAndSorted.map(([date, tests]) => {
-        // Tests are already sorted by createdAt (latest first) from the grouping step
-        // No need to sort again - maintain the order
         const sortedTests = tests;
 
         return (
@@ -470,7 +457,6 @@ function NextPageContent() {
   const [savedTestData, setSavedTestData] = useState<PatientTest[]>([]);
   const [loadingSavedData, setLoadingSavedData] = useState(false);
 
-  // Store all test data from modals
   const [testData, setTestData] = useState<TestData>({
     patientId: patientId || "",
     sampleDate: new Date().toISOString(),
@@ -484,37 +470,39 @@ function NextPageContent() {
     basdai: null,
   });
 
-  useEffect(() => {
-    if (patientId) {
-      setTestData((prev) => ({ ...prev, patientId }));
-    }
-    // Always fetch saved data on mount and when patientId changes
-    fetchSavedTestData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patientId]);
-
   const fetchSavedTestData = useCallback(async () => {
     setLoadingSavedData(true);
     try {
       const currentPatientId = patientId || testData.patientId;
-      // Fetch all tests if no patientId, or filter by patientId if provided
       const url = currentPatientId
-        ? `/api/patient-tests?patientId=${currentPatientId}`
-        : `/api/patient-tests`;
-
-      const response = await fetch(url);
+        ? `/api/patient-tests?patientId=${currentPatientId}&page=1&limit=100`
+        : `/api/patient-tests?page=1&limit=100`;
+      const response = await fetch(url, {
+        next: { revalidate: 30 },
+      });
       if (response.ok) {
         const data = await response.json();
         setSavedTestData(data.tests || []);
       } else {
-        console.error("Failed to fetch saved test data:", response.status);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to fetch saved test data:", response.status);
+        }
       }
     } catch (error) {
-      console.error("Error fetching saved test data:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error fetching saved test data:", error);
+      }
     } finally {
       setLoadingSavedData(false);
     }
   }, [patientId, testData.patientId]);
+
+  useEffect(() => {
+    if (patientId) {
+      setTestData((prev) => ({ ...prev, patientId }));
+    }
+    fetchSavedTestData();
+  }, [patientId, fetchSavedTestData]);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
@@ -536,15 +524,21 @@ function NextPageContent() {
   };
 
   const handleSubmit = async () => {
-    // Validate patientId exists before submitting
     if (!patientId || patientId.trim() === "") {
       alert(
         "Patient ID is missing. Please go back and create the patient first.",
       );
       return;
     }
-
     setLoading(true);
+    const optimisticTest = {
+      ...testData,
+      id: `temp-${Date.now()}`,
+      createdAt: new Date(),
+      sampleDate: testData.sampleDate,
+    };
+    setSavedTestData((prev) => [optimisticTest as PatientTest, ...prev]);
+    
     try {
       const response = await fetch("/api/patient-tests", {
         method: "POST",
@@ -557,11 +551,10 @@ function NextPageContent() {
 
       if (response.ok) {
         alert("Patient test data submitted successfully!");
-        // Refresh saved test data in background (don't wait)
-        fetchSavedTestData().catch(console.error);
+        fetchSavedTestData().catch(() => {});
         setLoading(false);
-        // Don't redirect, stay on page to see the saved data
       } else {
+        setSavedTestData((prev) => prev.filter((t) => t.id !== optimisticTest.id));
         const error = await response.json();
         alert(
           error.message ||
@@ -570,13 +563,15 @@ function NextPageContent() {
         setLoading(false);
       }
     } catch (error) {
-      console.error("Error submitting patient test data:", error);
+      setSavedTestData((prev) => prev.filter((t) => t.id !== optimisticTest.id));
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error submitting patient test data:", error);
+      }
       alert("Failed to submit patient test data. Please try again.");
       setLoading(false);
     }
   };
 
-  // Transform savedTestData for DiseaseHistoryModal (convert null to undefined)
   const transformedSavedDataForDiseaseHistory = useMemo(() => {
     return savedTestData.map((test) => ({
       sampleDate: test.sampleDate,
@@ -587,7 +582,7 @@ function NextPageContent() {
     }));
   }, [savedTestData]);
 
-  // use centralized search index (includes fields from all modals)
+  
 
   const suggestions = useMemo(() => {
     if (!searchTerm) return [];
@@ -627,7 +622,6 @@ function NextPageContent() {
           </h1>
         </div>
 
-        {/* Calendar Section */}
         <div className="mb-8">
           <CalendarWithNavigation
             selectedDate={selectedDate}
@@ -639,7 +633,6 @@ function NextPageContent() {
               given date, not report delivery date.
             </p>
           </div>
-          {/* Search box placed under the Note as requested */}
           <div className="mt-4">
             <div className="relative w-full md:w-1/3 mx-auto">
               <input
@@ -678,7 +671,6 @@ function NextPageContent() {
           </div>
         </div>
 
-        {/* Expandable Sections */}
         <div className="space-y-4">
           <ExpandableSection
             title="My Favorites"
@@ -857,7 +849,6 @@ function NextPageContent() {
           </ExpandableSection>
         </div>
 
-        {/* Submit Button */}
         <div className="mt-8 flex justify-center">
           <Button
             onClick={handleSubmit}
@@ -869,10 +860,7 @@ function NextPageContent() {
           </Button>
         </div>
 
-        {/* Border Divider */}
         <div className="mt-8 mb-6 border-t-2 border-gray-300"></div>
-
-        {/* Saved Test Data Section */}
         <div className="mt-6">
           <h2 className="text-2xl font-bold mb-4">Saved Test Reports</h2>
 

@@ -1,6 +1,4 @@
 "use client";
-
-// TypeScript fixes applied
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -34,7 +32,13 @@ const months = [
   "December",
 ];
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+};
 
 const schema = z.object({
   name: z.string().min(2, "Name required"),
@@ -72,7 +76,11 @@ type OptionItem = {
 };
 
 export default function AddPatient() {
-  const { data, error } = useSWR("/api/options", fetcher);
+  const { data, error } = useSWR("/api/options", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000,
+  });
   const router = useRouter();
   const [day, setDay] = useState("");
   const [month, setMonth] = useState("");
@@ -106,16 +114,16 @@ export default function AddPatient() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
 
-    // Use age from form data, fallback to state if needed
+    
     const finalAge = data.age || (typeof age === "number" ? age : 0);
 
-    // Calculate date of birth from age if calendar is filled, otherwise use a default date
+    
     let dateOfBirth: Date;
     if (day && month && year) {
       const monthIndex = months.indexOf(month) + 1;
       dateOfBirth = new Date(parseInt(year), monthIndex - 1, parseInt(day));
     } else {
-      // If no date of birth provided, estimate from age (use January 1st of estimated year)
+      
       const currentYear = new Date().getFullYear();
       dateOfBirth = new Date(currentYear - finalAge, 0, 1);
     }
@@ -131,8 +139,9 @@ export default function AddPatient() {
       address: data.address || "",
     };
 
-    // Debug: Log data being sent (remove in production)
-    console.log("Submitting patient data:", finalData);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Submitting patient data:", finalData);
+    }
 
     try {
       const res = await fetch("/api/patients", {
@@ -143,20 +152,15 @@ export default function AddPatient() {
 
       if (res.ok) {
         const result = await res.json();
-        // Show success message
         alert("Patient saved successfully!");
-        // Navigate immediately without waiting - optimistic navigation
-        // Use patientId if available, otherwise use database id
         const patientIdToUse = result.patient?.patientId || result.patient?.id;
         if (patientIdToUse) {
           router.push(
             `/dashboard/add-patient/next?patientId=${patientIdToUse}`,
           );
         } else {
-          // If no ID available, go to patients list
           router.push("/dashboard/patients");
         }
-        // Don't set loading to false here - let navigation handle it
       } else {
         let errorData: { message?: string; error?: string } = {};
         try {
@@ -198,7 +202,6 @@ export default function AddPatient() {
   return (
     <div className="min-h-screen p-0 md:p-8 flex items-center justify-center relative overflow-x-hidden text-slate-800">
       <div className="w-full max-w-4xl z-10">
-        {/* Sticky Glassy Header */}
         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg rounded-t-3xl shadow-md border-b border-blue-100 px-8 py-6 flex flex-col items-center mb-0">
           <h1 className="text-4xl md:text-5xl font-extrabold text-blue-700 tracking-tight mb-2">
             Add New Patient
@@ -207,10 +210,8 @@ export default function AddPatient() {
             Enter patient information to create a new record
           </p>
         </div>
-        {/* Glassmorphism Form Container */}
         <div className="backdrop-blur-sm bg-white/90 rounded-b-3xl shadow-xl border border-blue-100 px-4 md:px-12 py-10 md:py-14 mt-0 space-y-12 transition-all duration-300">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
-            {/* Name and Sex */}
             <section className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
@@ -251,8 +252,6 @@ export default function AddPatient() {
                 </div>
               </div>
             </section>
-
-            {/* Date of Birth + Age */}
             <section className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
@@ -296,8 +295,6 @@ export default function AddPatient() {
                 </div>
               </div>
             </section>
-
-            {/* Patient ID */}
             <section className="space-y-2">
               <Label className="text-base font-semibold text-gray-800">
                 Patient ID
@@ -308,8 +305,6 @@ export default function AddPatient() {
                 placeholder="Enter patient ID"
               />
             </section>
-
-            {/* Ethnicity and Religion */}
             <section className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
@@ -352,8 +347,6 @@ export default function AddPatient() {
                 </div>
               </div>
             </section>
-
-            {/* Contact Information */}
             <section className="space-y-8">
               <h3 className="text-2xl font-bold text-blue-700/80 border-b border-blue-100 pb-2 mb-4 tracking-tight">
                 Contact Information
@@ -406,8 +399,6 @@ export default function AddPatient() {
                 )}
               </div>
             </section>
-
-            {/* Location Information */}
             <section className="space-y-8">
               <h3 className="text-2xl font-bold text-blue-700/80 border-b border-blue-100 pb-2 mb-4 tracking-tight">
                 Location Information
@@ -463,8 +454,6 @@ export default function AddPatient() {
                 <TagInput tags={tags} setTags={setTags} />
               </div>
             </section>
-
-            {/* Medical History */}
             <section className="space-y-8">
               <h3 className="text-2xl font-bold text-blue-700/80 border-b border-blue-100 pb-2 mb-4 tracking-tight">
                 Medical History
@@ -512,8 +501,6 @@ export default function AddPatient() {
                 </div>
               </div>
             </section>
-
-            {/* Additional Information */}
             <section className="space-y-8">
               <h3 className="text-2xl font-bold text-blue-700/80 border-b border-blue-100 pb-2 mb-4 tracking-tight">
                 Additional Information
@@ -541,8 +528,6 @@ export default function AddPatient() {
                 </div>
               </div>
             </section>
-
-            {/* Submit Button */}
             <div className="pt-8 flex justify-center">
               <Button
                 type="submit"

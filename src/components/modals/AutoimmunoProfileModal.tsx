@@ -36,9 +36,9 @@ export default function AutoimmunoProfileModal({
   >({});
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
-  const [favoritesUpdated, setFavoritesUpdated] = useState(0); // Force re-render when favorites change
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0); 
 
-  // Load saved data when modal opens
+  
   useEffect(() => {
     if (savedData && savedData.length > 0) {
       const dateStr = reportDate.toISOString().split("T")[0];
@@ -81,8 +81,8 @@ export default function AutoimmunoProfileModal({
         setReportDate(testDate);
       }
     }
-    // Only run when savedData changes, not on every reportDate change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
   }, [savedData]);
 
   const updateField = (
@@ -153,7 +153,7 @@ export default function AutoimmunoProfileModal({
     const reportName = "Autoimmuno Profile";
 
     if (areAllSectionFieldsFavourite(reportType, fields)) {
-      // Remove both value and notes fields
+      
       const fieldsToRemove: Array<[string, string]> = [];
       fields.forEach(([fieldName, fieldLabel]) => {
         fieldsToRemove.push([fieldName, fieldLabel]);
@@ -163,12 +163,12 @@ export default function AutoimmunoProfileModal({
         removeFavouriteField(reportType, fieldName);
       });
     } else {
-      // Add both value and notes fields for each field
+      
       const fieldsToAdd: Array<[string, string]> = [];
       fields.forEach(([fieldName, fieldLabel]) => {
-        // Add value field
+        
         fieldsToAdd.push([fieldName, fieldLabel]);
-        // Add notes field
+        
         fieldsToAdd.push([`${fieldName}_notes`, `${fieldLabel} - Notes`]);
       });
       addSectionFieldsToFavourites(
@@ -178,7 +178,7 @@ export default function AutoimmunoProfileModal({
         sectionTitle,
       );
     }
-    setFavoritesUpdated((prev) => prev + 1); // Force re-render
+    setFavoritesUpdated((prev) => prev + 1); 
   };
 
   const renderSection = (
@@ -187,7 +187,7 @@ export default function AutoimmunoProfileModal({
     startIndex: number,
   ) => {
     const reportType = "autoimmunoProfile";
-    // Check if all main fields (not notes fields) are favorites
+    
     const mainFields = fields.filter(
       ([fieldName]) => !fieldName.endsWith("_notes"),
     );
@@ -228,7 +228,7 @@ export default function AutoimmunoProfileModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if there's any data to save
+    
     const hasData =
       Object.keys(formData).length > 0 &&
       Object.values(formData).some((f) => f.value || f.notes);
@@ -240,7 +240,7 @@ export default function AutoimmunoProfileModal({
 
     setSaving(true);
     try {
-      // Save to database immediately
+      
       const response = await fetch("/api/patient-tests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -252,7 +252,7 @@ export default function AutoimmunoProfileModal({
       });
 
       if (response.ok) {
-        // Notify parent to refresh saved data
+        
         if (onSaveSuccess) {
           onSaveSuccess();
         }

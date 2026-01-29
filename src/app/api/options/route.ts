@@ -1,23 +1,39 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-
 export async function GET() {
   try {
-    const religions = await prisma.option.findMany({
-      where: { category: "religion" },
-      orderBy: { order: "asc" },
-    });
-
-    const ethnicities = await prisma.option.findMany({
-      where: { category: "ethnicity" },
-      orderBy: { order: "asc" },
-    });
-
-    const districts = await prisma.option.findMany({
-      where: { category: "district" },
-      orderBy: { order: "asc" },
-    });
-
+    const [religions, ethnicities, districts] = await Promise.all([
+      prisma.option.findMany({
+        where: { category: "religion" },
+        select: {
+          id: true,
+          label: true,
+          value: true,
+          order: true,
+        },
+        orderBy: { order: "asc" },
+      }),
+      prisma.option.findMany({
+        where: { category: "ethnicity" },
+        select: {
+          id: true,
+          label: true,
+          value: true,
+          order: true,
+        },
+        orderBy: { order: "asc" },
+      }),
+      prisma.option.findMany({
+        where: { category: "district" },
+        select: {
+          id: true,
+          label: true,
+          value: true,
+          order: true,
+        },
+        orderBy: { order: "asc" },
+      }),
+    ]);
     return NextResponse.json(
       { religions, ethnicities, districts },
       {

@@ -77,18 +77,18 @@ export default function DiseaseHistoryModal({
     const reportType = 'diseaseHistory'
     const reportName = 'Disease History'
     
-    // Check if all fields are favorites
+    
     const allFavourite = fields.every(([fieldName]) => 
       isFieldFavourite(reportType, fieldName)
     )
     
     if (allFavourite) {
-      // Remove all fields
+      
       fields.forEach(([fieldName]) => {
         removeFavouriteField(reportType, fieldName)
       })
     } else {
-      // Add all fields
+      
       addSectionFieldsToFavourites(reportType, reportName, fields, sectionTitle)
     }
     setFavoritesUpdated(prev => prev + 1)
@@ -96,7 +96,7 @@ export default function DiseaseHistoryModal({
 
   const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
     const reportType = 'diseaseHistory'
-    // Check if all fields are favorites
+    
     const allFavourite = fields.every(([fieldName]) => 
       isFieldFavourite(reportType, fieldName)
     )
@@ -151,7 +151,7 @@ export default function DiseaseHistoryModal({
     setForm((prev) => ({ ...prev, [key]: value }))
   }, [])
 
-  // Height handlers (from provided calculator logic)
+  
   const handleFeetChange = useCallback(
     (value: string) => {
       update("heightFeet", value)
@@ -203,7 +203,7 @@ export default function DiseaseHistoryModal({
     [update]
   )
 
-  // Weight lb ↔ kg
+  
   useEffect(() => {
     const lb = parseFloat(form.weightLb)
     if (lb > 0) {
@@ -232,7 +232,7 @@ export default function DiseaseHistoryModal({
     }
   }, [form.weightKg, update])
 
-  // MAP = (SBP + 2×DBP)/3
+  
   useEffect(() => {
     const s = parseFloat(form.sbp)
     const d = parseFloat(form.dbp)
@@ -243,7 +243,7 @@ export default function DiseaseHistoryModal({
     }
   }, [form.sbp, form.dbp, update])
 
-  // BMI
+  
   useEffect(() => {
     const kg = parseFloat(form.weightKg)
     const cm = parseFloat(form.heightCm)
@@ -254,7 +254,7 @@ export default function DiseaseHistoryModal({
     }
   }, [form.weightKg, form.heightCm, update])
 
-  // Ideal Body Weight (19.5 – 25 BMI)
+  
   useEffect(() => {
     const cm = parseFloat(form.heightCm)
     if (cm > 0) {
@@ -269,7 +269,7 @@ export default function DiseaseHistoryModal({
     }
   }, [form.heightCm, update])
 
-  // Load saved data
+  
   useEffect(() => {
     if (savedData.length === 0) return
     const today = reportDate.toISOString().split("T")[0]
