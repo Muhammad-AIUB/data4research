@@ -99,9 +99,14 @@ export default function LFTModal({
 
   const getFieldValue = (fieldName: string, type?: string) => {
     if (type && formData[fieldName]) {
-      return formData[fieldName][type] || "";
+      const fieldValue = formData[fieldName];
+      if (typeof fieldValue === 'object' && fieldValue !== null && !Array.isArray(fieldValue)) {
+        const fieldObj = fieldValue as Record<string, unknown>;
+        return (fieldObj[type] as string) || "";
+      }
+      return "";
     }
-    return formData[fieldName] || "";
+    return (formData[fieldName] as string) || "";
   };
 
   const fieldColors = [
@@ -235,7 +240,10 @@ export default function LFTModal({
       Object.keys(formData).length > 0 &&
       Object.values(formData).some((f) => {
         if (typeof f === "string") return f.trim() !== "";
-        if (f && typeof f === "object") return f.value1 || f.value2;
+        if (f && typeof f === "object" && f !== null && !Array.isArray(f)) {
+          const fieldObj = f as { value1?: unknown; value2?: unknown };
+          return Boolean(fieldObj.value1) || Boolean(fieldObj.value2);
+        }
         return false;
       });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { X, Heart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,7 +172,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
       }
     });
     loadFavourites();
-    loadFieldValues();
+    // Field values will be updated automatically via useEffect when favourites change
   };
 
   const reportTypeLabels: Record<string, string> = {

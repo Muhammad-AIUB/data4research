@@ -290,7 +290,7 @@ export default async function PatientDetailPage({
                 Object.entries(
                   // First, sort all tests by createdAt (latest first) to maintain serial order
                   [...patient.tests]
-                    .sort((a: any, b: any) => {
+                    .sort((a, b) => {
                       const timeA = a.createdAt
                         ? new Date(a.createdAt).getTime()
                         : 0;
@@ -300,7 +300,29 @@ export default async function PatientDetailPage({
                       return timeB - timeA; // Latest first
                     })
                     .reduce(
-                      (acc: Record<string, any[]>, test: any) => {
+                      (acc: Record<string, Array<{
+                        sampleDate: Date | string;
+                        createdAt?: Date | string;
+                        autoimmunoProfile?: unknown;
+                        cardiology?: unknown;
+                        rft?: unknown;
+                        lft?: unknown;
+                        diseaseHistory?: unknown;
+                        imaging?: unknown;
+                        hematology?: unknown;
+                        basdai?: unknown;
+                      }>>, test: {
+                        sampleDate: Date | string;
+                        createdAt?: Date | string;
+                        autoimmunoProfile?: unknown;
+                        cardiology?: unknown;
+                        rft?: unknown;
+                        lft?: unknown;
+                        diseaseHistory?: unknown;
+                        imaging?: unknown;
+                        hematology?: unknown;
+                        basdai?: unknown;
+                      }) => {
                         // Fix timezone issue - use local date components
                         const sampleDate =
                           test.sampleDate instanceof Date
@@ -322,15 +344,37 @@ export default async function PatientDetailPage({
                         acc[date].push(test); // Maintain order - latest saves will be first in each group
                         return acc;
                       },
-                      {} as Record<string, any[]>,
+                      {} as Record<string, Array<{
+                        sampleDate: Date | string;
+                        createdAt?: Date | string;
+                        autoimmunoProfile?: unknown;
+                        cardiology?: unknown;
+                        rft?: unknown;
+                        lft?: unknown;
+                        diseaseHistory?: unknown;
+                        imaging?: unknown;
+                        hematology?: unknown;
+                        basdai?: unknown;
+                      }>>,
                     ),
-                ) as [string, any[]][]
+                ) as [string, Array<{
+                  sampleDate: Date | string;
+                  createdAt?: Date | string;
+                  autoimmunoProfile?: unknown;
+                  cardiology?: unknown;
+                  rft?: unknown;
+                  lft?: unknown;
+                  diseaseHistory?: unknown;
+                  imaging?: unknown;
+                  hematology?: unknown;
+                  basdai?: unknown;
+                }>][]
               )
                 .sort(([, testsA], [, testsB]) => {
                   // Sort date groups by latest createdAt in each group (not by date itself)
-                  const getLatestTime = (tests: any[]) => {
+                  const getLatestTime = (tests: Array<{ createdAt?: Date | string; [key: string]: unknown }>) => {
                     return Math.max(
-                      ...tests.map((t: any) =>
+                      ...tests.map((t) =>
                         t.createdAt ? new Date(t.createdAt).getTime() : 0,
                       ),
                     );
@@ -363,7 +407,7 @@ export default async function PatientDetailPage({
                             key={index}
                             className="bg-white rounded-xl p-4 shadow-sm border border-blue-50"
                           >
-                            {test.autoimmunoProfile && (
+                            {test.autoimmunoProfile != null && (
                               <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="font-semibold text-slate-800">
@@ -390,7 +434,7 @@ export default async function PatientDetailPage({
                                 </div>
                               </div>
                             )}
-                            {test.cardiology && (
+                            {test.cardiology != null && Boolean(test.cardiology) && (
                               <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="font-semibold text-slate-800">
@@ -417,7 +461,7 @@ export default async function PatientDetailPage({
                                 </div>
                               </div>
                             )}
-                            {test.rft && (
+                            {test.rft != null && (
                               <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="font-semibold text-slate-800">
@@ -443,7 +487,7 @@ export default async function PatientDetailPage({
                                 </div>
                               </div>
                             )}
-                            {test.lft && (
+                            {test.lft != null && Boolean(test.lft) && (
                               <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="font-semibold text-slate-800">
@@ -469,7 +513,7 @@ export default async function PatientDetailPage({
                                 </div>
                               </div>
                             )}
-                            {test.diseaseHistory && (
+                            {test.diseaseHistory != null && (
                               <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="font-semibold text-slate-800">
@@ -496,7 +540,7 @@ export default async function PatientDetailPage({
                                 </div>
                               </div>
                             )}
-                            {test.imaging && (
+                            {test.imaging != null && Boolean(test.imaging) && (
                               <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="font-semibold text-slate-800">
@@ -522,7 +566,7 @@ export default async function PatientDetailPage({
                                 </div>
                               </div>
                             )}
-                            {test.hematology && (
+                            {test.hematology != null && Boolean(test.hematology) && (
                               <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="font-semibold text-slate-800">
