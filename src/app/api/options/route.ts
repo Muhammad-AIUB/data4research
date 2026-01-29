@@ -1,29 +1,37 @@
-import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const religions = await prisma.option.findMany({
       where: { category: "religion" },
-      orderBy: { order: "asc" }
-    })
-    
+      orderBy: { order: "asc" },
+    });
+
     const ethnicities = await prisma.option.findMany({
       where: { category: "ethnicity" },
-      orderBy: { order: "asc" }
-    })
-    
+      orderBy: { order: "asc" },
+    });
+
     const districts = await prisma.option.findMany({
       where: { category: "district" },
-      orderBy: { order: "asc" }
-    })
+      orderBy: { order: "asc" },
+    });
 
-    return NextResponse.json({ religions, ethnicities, districts })
-  } catch (error: any) {
-    console.error('Error fetching options:', error)
     return NextResponse.json(
-      { message: error.message || 'Failed to fetch options' },
-      { status: 500 }
-    )
+      { religions, ethnicities, districts },
+      {
+        headers: {
+          "Cache-Control":
+            "public, s-maxage=3600, stale-while-revalidate=86400",
+        },
+      },
+    );
+  } catch (error: any) {
+    console.error("Error fetching options:", error);
+    return NextResponse.json(
+      { message: error.message || "Failed to fetch options" },
+      { status: 500 },
+    );
   }
 }

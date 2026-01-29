@@ -1,92 +1,106 @@
-import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
-import { NextResponse } from 'next/server'
-import type { Session } from 'next-auth'
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 
 export async function GET(request: Request) {
   try {
     // @ts-expect-error - getServerSession type inference issue
-    const session = await getServerSession(authOptions) as Session | null
-    
+    const session = (await getServerSession(authOptions)) as Session | null;
+
     if (!session || !session.user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const searchQuery = searchParams.get('search')
+    const { searchParams } = new URL(request.url);
+    const searchQuery = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const offset = (page - 1) * limit;
 
     // Build where clause for search
-    let whereClause: Record<string, unknown> = {}
+    let whereClause: Record<string, unknown> = {};
 
-    if (searchQuery && searchQuery.trim() !== '') {
-      const searchTerm = searchQuery.trim()
-      
+    if (searchQuery && searchQuery.trim() !== "") {
+      const searchTerm = searchQuery.trim();
+
       // Search in multiple fields: name, mobile, finalDiagnosis, and tags
       whereClause = {
         OR: [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
-          { mobile: { contains: searchTerm, mode: 'insensitive' } },
-          { patientId: { contains: searchTerm, mode: 'insensitive' } },
-          { finalDiagnosis: { contains: searchTerm, mode: 'insensitive' } },
+          { name: { contains: searchTerm, mode: "insensitive" } },
+          { mobile: { contains: searchTerm, mode: "insensitive" } },
+          { patientId: { contains: searchTerm, mode: "insensitive" } },
+          { finalDiagnosis: { contains: searchTerm, mode: "insensitive" } },
           { tags: { has: searchTerm } }, // Search in tags array
-          { relativeMobile: { contains: searchTerm, mode: 'insensitive' } },
-          { spouseMobile: { contains: searchTerm, mode: 'insensitive' } },
-        ]
-      }
+          { relativeMobile: { contains: searchTerm, mode: "insensitive" } },
+          { spouseMobile: { contains: searchTerm, mode: "insensitive" } },
+        ],
+      };
     }
 
     // Fetch all patients with search filter
     const patients = await prisma.patient.findMany({
       where: whereClause,
       orderBy: {
-        createdAt: 'desc'
+        createdAt: "desc",
       },
       include: {
         tests: {
           orderBy: {
-            sampleDate: 'desc'
+            sampleDate: "desc",
           },
-          take: 1 // Get latest test for each patient
-        }
-      }
-    })
+          take: 1, // Get latest test for each patient
+        },
+      },
+      skip: offset,
+      take: limit,
+    });
 
-    return NextResponse.json({ patients }, { status: 200 })
-  } catch (error: unknown) {
-    console.error('Error fetching patients:', error)
-    const message = error instanceof Error ? error.message : 'Failed to fetch patients'
+    // Get total count for pagination
+    const total = await prisma.patient.count({ where: whereClause });
+
     return NextResponse.json(
-      { message },
-      { status: 500 }
-    )
+      { patients, total, page, limit },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "private, s-maxage=300, stale-while-revalidate=600",
+        },
+      },
+    );
+  } catch (error: unknown) {
+    console.error("Error fetching patients:", error);
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch patients";
+    return NextResponse.json({ message }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     // @ts-expect-error - getServerSession type inference issue
-    const session = await getServerSession(authOptions) as Session | null
-    
+    const session = (await getServerSession(authOptions)) as Session | null;
+
     if (!session || !session.user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Verify user exists in database
-    const userId = session.user.id as string
+    const userId = session.user.id as string;
     const user = await prisma.user.findUnique({
-      where: { id: userId }
-    })
+      where: { id: userId },
+    });
 
     if (!user) {
-      console.error('User not found in database:', userId)
+      console.error("User not found in database:", userId);
       return NextResponse.json(
-        { message: 'User account not found. Please log in again.' },
-        { status: 401 }
-      )
+        { message: "User account not found. Please log in again." },
+        { status: 401 },
+      );
     }
 
-    const body = await request.json()
+    const body = await request.json();
     const {
       name,
       dateOfBirth,
@@ -107,23 +121,26 @@ export async function POST(request: Request) {
       tags,
       specialNotes,
       finalDiagnosis,
-    } = body
+    } = body;
 
     // Validate required fields
     if (!name || !age || !mobile || !relativeMobile) {
       return NextResponse.json(
-        { message: 'Missing required fields: Name, Age, Mobile, and Relative Mobile are required' },
-        { status: 400 }
-      )
+        {
+          message:
+            "Missing required fields: Name, Age, Mobile, and Relative Mobile are required",
+        },
+        { status: 400 },
+      );
     }
 
     // Validate age is a valid number
-    const ageNum = parseInt(age)
+    const ageNum = parseInt(age);
     if (isNaN(ageNum) || ageNum < 0 || ageNum > 120) {
       return NextResponse.json(
-        { message: 'Age must be a valid number between 0 and 120' },
-        { status: 400 }
-      )
+        { message: "Age must be a valid number between 0 and 120" },
+        { status: 400 },
+      );
     }
 
     // Prepare patient data
@@ -131,15 +148,15 @@ export async function POST(request: Request) {
       name,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
       age: ageNum,
-      ethnicity: ethnicity || '',
-      religion: religion || 'islam',
+      ethnicity: ethnicity || "",
+      religion: religion || "islam",
       nid: nid || null,
-      patientId: patientId && patientId.trim() !== '' ? patientId.trim() : null,
+      patientId: patientId && patientId.trim() !== "" ? patientId.trim() : null,
       mobile,
       spouseMobile: spouseMobile || null,
       relativeMobile: relativeMobile || null,
-      district: district || '',
-      address: address || '',
+      district: district || "",
+      address: address || "",
       shortHistory: shortHistory || null,
       surgicalHistory: surgicalHistory || null,
       familyHistory: familyHistory || null,
@@ -148,68 +165,78 @@ export async function POST(request: Request) {
       specialNotes: specialNotes || null,
       finalDiagnosis: finalDiagnosis || null,
       createdBy: userId,
-    }
+    };
 
-    console.log('Creating patient with data:', JSON.stringify(patientData, null, 2))
+    console.log(
+      "Creating patient with data:",
+      JSON.stringify(patientData, null, 2),
+    );
 
     // Create patient
     const patient = await prisma.patient.create({
-      data: patientData
-    })
+      data: patientData,
+    });
 
-    return NextResponse.json({ success: true, patient }, { status: 201 })
+    return NextResponse.json({ success: true, patient }, { status: 201 });
   } catch (error: unknown) {
-    console.error('Error creating patient:', error)
-    
+    console.error("Error creating patient:", error);
+
     // Log full error details for debugging
-    if (error && typeof error === 'object') {
-      console.error('Error details:', JSON.stringify(error, null, 2))
-      if ('code' in error) {
-        console.error('Prisma error code:', error.code)
+    if (error && typeof error === "object") {
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      if ("code" in error) {
+        console.error("Prisma error code:", error.code);
       }
-      if ('meta' in error) {
-        console.error('Prisma error meta:', error.meta)
+      if ("meta" in error) {
+        console.error("Prisma error meta:", error.meta);
       }
     }
 
     // Handle Prisma errors
-    if (error && typeof error === 'object' && 'code' in error) {
-      const prismaError = error as { code: string; meta?: Record<string, unknown>; message?: string }
-      
+    if (error && typeof error === "object" && "code" in error) {
+      const prismaError = error as {
+        code: string;
+        meta?: Record<string, unknown>;
+        message?: string;
+      };
+
       // Duplicate patientId
-      if (prismaError.code === 'P2002') {
+      if (prismaError.code === "P2002") {
         return NextResponse.json(
-          { message: 'Patient ID already exists. Please use a different Patient ID.' },
-          { status: 409 }
-        )
+          {
+            message:
+              "Patient ID already exists. Please use a different Patient ID.",
+          },
+          { status: 409 },
+        );
       }
-      
+
       // Foreign key constraint (user doesn't exist)
-      if (prismaError.code === 'P2003') {
+      if (prismaError.code === "P2003") {
         return NextResponse.json(
-          { message: 'User account not found. Please log out and log in again.' },
-          { status: 401 }
-        )
+          {
+            message: "User account not found. Please log out and log in again.",
+          },
+          { status: 401 },
+        );
       }
     }
 
     // Get detailed error message
-    let message = 'Failed to create patient'
+    let message = "Failed to create patient";
     if (error instanceof Error) {
-      message = error.message
-    } else if (error && typeof error === 'object' && 'message' in error) {
-      message = String(error.message)
+      message = error.message;
+    } else if (error && typeof error === "object" && "message" in error) {
+      message = String(error.message);
     }
-    
+
     // Don't expose stack trace in production
-    const errorResponse: { message: string; error?: string } = { message }
-    if (process.env.NODE_ENV === 'development') {
-      errorResponse.error = error instanceof Error ? error.stack : String(error)
+    const errorResponse: { message: string; error?: string } = { message };
+    if (process.env.NODE_ENV === "development") {
+      errorResponse.error =
+        error instanceof Error ? error.stack : String(error);
     }
-    
-    return NextResponse.json(
-      errorResponse,
-      { status: 500 }
-    )
+
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }

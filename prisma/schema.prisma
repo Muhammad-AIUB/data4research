@@ -49,6 +49,13 @@ model Patient {
   tags            String[]      @default([])
   createdByUser   User          @relation(fields: [createdBy], references: [id])
   tests           PatientTest[]
+
+  @@index([name])
+  @@index([mobile])
+  @@index([patientId])
+  @@index([finalDiagnosis])
+  @@index([relativeMobile])
+  @@index([spouseMobile])
 }
 
 model PatientTest {
