@@ -1,15 +1,16 @@
-import { config } from 'dotenv'
-import { resolve } from 'path'
+import { config } from "dotenv";
+import { resolve } from "path";
 
 // Load .env file
-config({ path: resolve(process.cwd(), '.env') })
+config({ path: resolve(process.cwd(), ".env") });
 
-export default {
+const prismaConfig = {
   datasource: {
-    url: process.env.DATABASE_URL || '',
+    url: process.env.DATABASE_URL || "",
   },
   migrations: {
-    seed: 'npx tsx prisma/seed.ts'
+    seed: "npx tsx prisma/seed.ts",
   },
-}
+};
 
+export default prismaConfig;

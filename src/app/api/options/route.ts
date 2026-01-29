@@ -27,11 +27,10 @@ export async function GET() {
         },
       },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching options:", error);
-    return NextResponse.json(
-      { message: error.message || "Failed to fetch options" },
-      { status: 500 },
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch options";
+    return NextResponse.json({ message }, { status: 500 });
   }
 }

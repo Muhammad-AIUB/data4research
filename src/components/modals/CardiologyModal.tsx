@@ -1,91 +1,114 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from "react"
-import { X, Heart } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Select, SelectItem, SelectValue } from "@/components/ui/select"
-import ModalDatePicker from "@/components/ModalDatePicker"
-import { 
-  addSectionFieldsToFavourites, 
-  removeSectionFieldsFromFavourites, 
+import { useState, useEffect } from "react";
+import { X, Heart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectItem, SelectValue } from "@/components/ui/select";
+import ModalDatePicker from "@/components/ModalDatePicker";
+import {
+  addSectionFieldsToFavourites,
+  removeSectionFieldsFromFavourites,
   areAllSectionFieldsFavourite,
   isFieldFavourite,
-  removeFavouriteField
-} from "@/lib/favourites"
+  removeFavouriteField,
+} from "@/lib/favourites";
 
 interface Props {
-  onClose: () => void
-  defaultDate: Date
-  onDataChange?: (data: any, date: Date) => void
-  patientId?: string | null
-  onSaveSuccess?: () => void
-  savedData?: Array<{ sampleDate: Date | string; cardiology?: any }>
+  onClose: () => void;
+  defaultDate: Date;
+  onDataChange?: (data: unknown, date: Date) => void;
+  patientId?: string | null;
+  onSaveSuccess?: () => void;
+  savedData?: Array<{ sampleDate: Date | string; cardiology?: unknown }>;
 }
 
-export default function CardiologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [] }: Props) {
-  const [formData, setFormData] = useState<Record<string, string>>({})
-  const [reportDate, setReportDate] = useState(defaultDate)
-  const [saving, setSaving] = useState(false)
-  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
+export default function CardiologyModal({
+  onClose,
+  defaultDate,
+  onDataChange,
+  patientId,
+  onSaveSuccess,
+  savedData = [],
+}: Props) {
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [reportDate, setReportDate] = useState(defaultDate);
+  const [saving, setSaving] = useState(false);
+  const [favoritesUpdated, setFavoritesUpdated] = useState(0);
 
   const formatDateString = (date: Date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   // Load saved data when modal opens
   useEffect(() => {
     if (savedData && savedData.length > 0) {
-      const dateStr = formatDateString(reportDate)
-      const matchingTest = savedData.find(test => {
-        if (!test.cardiology) return false
-        const testDateObj = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-        const testDate = formatDateString(testDateObj)
-        return testDate === dateStr
-      })
-      
-      const testToLoad = matchingTest || savedData
-        .filter(test => test.cardiology)
-        .sort((a, b) => {
-          const dateA = a.sampleDate instanceof Date ? a.sampleDate : new Date(a.sampleDate)
-          const dateB = b.sampleDate instanceof Date ? b.sampleDate : new Date(b.sampleDate)
-          return dateB.getTime() - dateA.getTime()
-        })[0]
-      
+      const dateStr = formatDateString(reportDate);
+      const matchingTest = savedData.find((test) => {
+        if (!test.cardiology) return false;
+        const testDateObj =
+          test.sampleDate instanceof Date
+            ? test.sampleDate
+            : new Date(test.sampleDate);
+        const testDate = formatDateString(testDateObj);
+        return testDate === dateStr;
+      });
+
+      const testToLoad =
+        matchingTest ||
+        savedData
+          .filter((test) => test.cardiology)
+          .sort((a, b) => {
+            const dateA =
+              a.sampleDate instanceof Date
+                ? a.sampleDate
+                : new Date(a.sampleDate);
+            const dateB =
+              b.sampleDate instanceof Date
+                ? b.sampleDate
+                : new Date(b.sampleDate);
+            return dateB.getTime() - dateA.getTime();
+          })[0];
+
       if (testToLoad?.cardiology) {
-        const rawData = testToLoad.cardiology as Record<string, unknown>
-        const flattened: Record<string, string> = {}
+        const rawData = testToLoad.cardiology as Record<string, unknown>;
+        const flattened: Record<string, string> = {};
         Object.entries(rawData).forEach(([key, val]) => {
           if (typeof val === "string") {
-            flattened[key] = val
-          } else if (val && typeof val === "object" && "value" in (val as Record<string, unknown>)) {
-            const v = (val as Record<string, unknown>).value
-            if (typeof v === "string") flattened[key] = v
+            flattened[key] = val;
+          } else if (
+            val &&
+            typeof val === "object" &&
+            "value" in (val as Record<string, unknown>)
+          ) {
+            const v = (val as Record<string, unknown>).value;
+            if (typeof v === "string") flattened[key] = v;
           }
-        })
-        setFormData(flattened)
-        const testDate = testToLoad.sampleDate instanceof Date 
-          ? testToLoad.sampleDate 
-          : new Date(testToLoad.sampleDate)
-        setReportDate(testDate)
+        });
+        setFormData(flattened);
+        const testDate =
+          testToLoad.sampleDate instanceof Date
+            ? testToLoad.sampleDate
+            : new Date(testToLoad.sampleDate);
+        setReportDate(testDate);
       }
     }
     // Only run when savedData changes, not on every reportDate change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedData])
+  }, [savedData]);
 
   const updateField = (fieldName: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: value
-    }))
-  }
+      [fieldName]: value,
+    }));
+  };
 
-  const getFieldValue = (fieldName: string) => formData[fieldName] || ""
+  const getFieldValue = (fieldName: string) => formData[fieldName] || "";
 
   const fieldColors = [
     "bg-blue-50 border-blue-200",
@@ -96,16 +119,24 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
     "bg-indigo-50 border-indigo-200",
     "bg-orange-50 border-orange-200",
     "bg-cyan-50 border-cyan-200",
-  ]
+  ];
 
-  const renderField = (fieldName: string, label: string, index: number, unit?: string, inputClass?: string) => {
-    const colorClass = fieldColors[index % fieldColors.length]
-    
+  const renderField = (
+    fieldName: string,
+    label: string,
+    index: number,
+    unit?: string,
+    inputClass?: string,
+  ) => {
+    const colorClass = fieldColors[index % fieldColors.length];
+
     return (
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-1">
-            <Label className="text-sm">{label} {unit && <span className="text-gray-500">({unit})</span>}</Label>
+            <Label className="text-sm">
+              {label} {unit && <span className="text-gray-500">({unit})</span>}
+            </Label>
             <Input
               value={getFieldValue(fieldName)}
               onChange={(e) => updateField(fieldName, e.target.value)}
@@ -115,12 +146,18 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
-  const renderSelectField = (fieldName: string, label: string, index: number, options: string[], selectClass?: string) => {
-    const colorClass = fieldColors[index % fieldColors.length]
-    
+  const renderSelectField = (
+    fieldName: string,
+    label: string,
+    index: number,
+    options: string[],
+    selectClass?: string,
+  ) => {
+    const colorClass = fieldColors[index % fieldColors.length];
+
     return (
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
@@ -132,19 +169,25 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
               className={`bg-white h-16 text-xl px-4 ${selectClass ?? ""}`}
             >
               <SelectValue placeholder="Select" />
-              {options.map(option => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
+              {options.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
               ))}
             </Select>
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
-  const renderTextAreaField = (fieldName: string, label: string, index: number) => {
-    const colorClass = fieldColors[index % fieldColors.length]
-    
+  const renderTextAreaField = (
+    fieldName: string,
+    label: string,
+    index: number,
+  ) => {
+    const colorClass = fieldColors[index % fieldColors.length];
+
     return (
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="flex items-start gap-2">
@@ -159,97 +202,113 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    const hasData = Object.keys(formData).length > 0 && 
-      Object.values(formData).some(v => v && v.trim().length > 0)
-    
+    e.preventDefault();
+
+    const hasData =
+      Object.keys(formData).length > 0 &&
+      Object.values(formData).some((v) => v && v.trim().length > 0);
+
     if (!hasData) {
-      alert("Please enter at least one field value before saving.")
-      return
+      alert("Please enter at least one field value before saving.");
+      return;
     }
 
-    setSaving(true)
+    setSaving(true);
     try {
-      const response = await fetch('/api/patient-tests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/patient-tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patientId: patientId || null,
-          sampleDate: `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}-${String(reportDate.getDate()).padStart(2, '0')}`,
+          sampleDate: `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, "0")}-${String(reportDate.getDate()).padStart(2, "0")}`,
           cardiology: formData,
-        })
-      })
+        }),
+      });
 
       if (response.ok) {
-        if (onSaveSuccess) onSaveSuccess()
-        if (onDataChange) onDataChange(formData, reportDate)
-        alert("Cardiology data saved successfully!")
-        onClose()
+        if (onSaveSuccess) onSaveSuccess();
+        if (onDataChange) onDataChange(formData, reportDate);
+        alert("Cardiology data saved successfully!");
+        onClose();
       } else {
-        const error = await response.json()
-        alert(error.message || "Failed to save data. Please try again.")
+        const error = await response.json();
+        alert(error.message || "Failed to save data. Please try again.");
       }
     } catch (error) {
-      console.error("Error saving Cardiology data:", error)
-      alert("Failed to save data. Please try again.")
+      console.error("Error saving Cardiology data:", error);
+      alert("Failed to save data. Please try again.");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
-  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
-    const reportType = 'cardiology'
-    const reportName = 'Cardiology'
-    
+  const handleSectionFavoriteToggle = (
+    fields: Array<[string, string]>,
+    sectionTitle: string,
+  ) => {
+    const reportType = "cardiology";
+    const reportName = "Cardiology";
+
     // Check if all fields are favorites
-    const allFavourite = fields.every(([fieldName]) => 
-      isFieldFavourite(reportType, fieldName)
-    )
-    
+    const allFavourite = fields.every(([fieldName]) =>
+      isFieldFavourite(reportType, fieldName),
+    );
+
     if (allFavourite) {
       // Remove all fields
       fields.forEach(([fieldName]) => {
-        removeFavouriteField(reportType, fieldName)
-      })
+        removeFavouriteField(reportType, fieldName);
+      });
     } else {
       // Add all fields - in Cardiology, fields are already separate (fieldName and fieldNameMmol)
-      addSectionFieldsToFavourites(reportType, reportName, fields, sectionTitle)
+      addSectionFieldsToFavourites(
+        reportType,
+        reportName,
+        fields,
+        sectionTitle,
+      );
     }
-    setFavoritesUpdated(prev => prev + 1)
-  }
+    setFavoritesUpdated((prev) => prev + 1);
+  };
 
-  const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
-    const reportType = 'cardiology'
+  const renderSectionHeader = (
+    title: string,
+    fields: Array<[string, string]>,
+  ) => {
+    const reportType = "cardiology";
     // Check if all fields are favorites
-    const allFavourite = fields.every(([fieldName]) => 
-      isFieldFavourite(reportType, fieldName)
-    )
-    
+    const allFavourite = fields.every(([fieldName]) =>
+      isFieldFavourite(reportType, fieldName),
+    );
+
     return (
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
         <button
           onClick={() => handleSectionFavoriteToggle(fields, title)}
           className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
+          title={
+            allFavourite
+              ? "Remove all fields from favorites"
+              : "Add all fields to favorites"
+          }
         >
-          <Heart 
-            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+          <Heart
+            className={`h-5 w-5 ${allFavourite ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`}
           />
           <span className="text-sm text-gray-600">
-            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
+            {allFavourite ? "Remove from Favorites" : "Add to Favorites"}
           </span>
         </button>
       </div>
-    )
-  }
+    );
+  };
 
-  let fieldIndex = 0
+  let fieldIndex = 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -265,23 +324,45 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
           </div>
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex gap-2 mr-2">
-              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-white border-white/40">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                disabled={saving}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/40"
+              >
                 Cancel
               </Button>
-              <Button type="button" size="sm" onClick={() => {
-                const form = document.getElementById('cardiology-form')
-                form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
-              }} disabled={saving} className="bg-amber-400 hover:bg-amber-500 text-blue-900">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const form = document.getElementById("cardiology-form");
+                  form?.dispatchEvent(
+                    new Event("submit", { cancelable: true, bubbles: true }),
+                  );
+                }}
+                disabled={saving}
+                className="bg-amber-400 hover:bg-amber-500 text-blue-900"
+              >
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full text-white"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
         <div className="overflow-y-auto p-6 flex-1">
-          <form id="cardiology-form" onSubmit={handleSubmit} className="space-y-4">
+          <form
+            id="cardiology-form"
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
             {/* Cardiovascular Tests */}
             <div className="mb-6 pb-4 border-b">
               {renderSectionHeader("Cardiovascular Tests", [
@@ -296,10 +377,19 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-1">
-                    {renderSelectField("echocardiogramType", "Echocardiogram - Type", fieldIndex++, ["2D", "3D", "4D"])}
+                    {renderSelectField(
+                      "echocardiogramType",
+                      "Echocardiogram - Type",
+                      fieldIndex++,
+                      ["2D", "3D", "4D"],
+                    )}
                   </div>
                   <div className="col-span-2">
-                    {renderField("echocardiogramReport", "Echocardiogram", fieldIndex++)}
+                    {renderField(
+                      "echocardiogramReport",
+                      "Echocardiogram",
+                      fieldIndex++,
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
@@ -326,18 +416,46 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
               <div className="space-y-2">
                 {(() => {
                   const lipidTests = [
-                    { name: "totalCholesterol", label: "Total Cholesterol", hasMmol: true },
-                    { name: "triglycerides", label: "Triglycerides", hasMmol: true },
-                    { name: "ldl", label: "Low-Density Lipoprotein (LDL) Cholesterol", hasMmol: true },
-                    { name: "hdl", label: "High-Density Lipoprotein (HDL) Cholesterol", hasMmol: true },
-                    { name: "vldl", label: "Very Low-Density Lipoprotein (VLDL) Cholesterol", hasMmol: true },
-                    { name: "tcHdlRatio", label: "Total Cholesterol / HDL Ratio (TC/HDL)", hasMmol: false },
-                  ]
+                    {
+                      name: "totalCholesterol",
+                      label: "Total Cholesterol",
+                      hasMmol: true,
+                    },
+                    {
+                      name: "triglycerides",
+                      label: "Triglycerides",
+                      hasMmol: true,
+                    },
+                    {
+                      name: "ldl",
+                      label: "Low-Density Lipoprotein (LDL) Cholesterol",
+                      hasMmol: true,
+                    },
+                    {
+                      name: "hdl",
+                      label: "High-Density Lipoprotein (HDL) Cholesterol",
+                      hasMmol: true,
+                    },
+                    {
+                      name: "vldl",
+                      label: "Very Low-Density Lipoprotein (VLDL) Cholesterol",
+                      hasMmol: true,
+                    },
+                    {
+                      name: "tcHdlRatio",
+                      label: "Total Cholesterol / HDL Ratio (TC/HDL)",
+                      hasMmol: false,
+                    },
+                  ];
                   return lipidTests.map((test, idx) => {
-                    const currentIndex = fieldIndex++
-                    const colorClass = fieldColors[currentIndex % fieldColors.length]
+                    const currentIndex = fieldIndex++;
+                    const colorClass =
+                      fieldColors[currentIndex % fieldColors.length];
                     return (
-                      <div key={test.name} className={`p-2 rounded ${colorClass}`}>
+                      <div
+                        key={test.name}
+                        className={`p-2 rounded ${colorClass}`}
+                      >
                         <div className="grid grid-cols-3 gap-2 items-end">
                           <div className="col-span-1">
                             <Label className="text-sm">{test.label}</Label>
@@ -346,7 +464,9 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
                             <Label className="text-sm">Value (mg/dL)</Label>
                             <Input
                               value={getFieldValue(test.name)}
-                              onChange={(e) => updateField(test.name, e.target.value)}
+                              onChange={(e) =>
+                                updateField(test.name, e.target.value)
+                              }
                               placeholder="mg/dL"
                               className="bg-white h-12 text-base"
                             />
@@ -356,7 +476,12 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
                               <Label className="text-sm">Value (mmol/L)</Label>
                               <Input
                                 value={getFieldValue(`${test.name}Mmol`)}
-                                onChange={(e) => updateField(`${test.name}Mmol`, e.target.value)}
+                                onChange={(e) =>
+                                  updateField(
+                                    `${test.name}Mmol`,
+                                    e.target.value,
+                                  )
+                                }
                                 placeholder="mmol/L"
                                 className="bg-white h-12 text-base"
                               />
@@ -365,8 +490,8 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
                           {!test.hasMmol && <div></div>}
                         </div>
                       </div>
-                    )
-                  })
+                    );
+                  });
                 })()}
               </div>
             </div>
@@ -382,7 +507,11 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
               <div className="space-y-2">
                 {renderField("lpPla2", "Lp-PLA2", fieldIndex++, "nmol/min/mL")}
                 {renderField("tropI", "Trop I", fieldIndex++)}
-                {renderField("highSensitiveTropI", "High Sensitive Trop I", fieldIndex++)}
+                {renderField(
+                  "highSensitiveTropI",
+                  "High Sensitive Trop I",
+                  fieldIndex++,
+                )}
                 {renderField("ckMb", "CK MB", fieldIndex++)}
               </div>
             </div>
@@ -395,12 +524,23 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
               ])}
               <div className="space-y-2">
                 {renderTextAreaField("angiogram", "Angiogram", fieldIndex++)}
-                {renderTextAreaField("tiltTableTest", "Tilt Table Test", fieldIndex++)}
+                {renderTextAreaField(
+                  "tiltTableTest",
+                  "Tilt Table Test",
+                  fieldIndex++,
+                )}
               </div>
             </div>
 
             <div className="flex gap-2 justify-end pt-4 border-t mt-4">
-              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={saving}>
                 {saving ? "Saving..." : "Save"}
               </Button>
@@ -409,5 +549,5 @@ export default function CardiologyModal({ onClose, defaultDate, onDataChange, pa
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,127 +1,173 @@
-'use client'
+"use client";
 
-import { useState, useEffect, Suspense, useCallback, useMemo } from "react"
-import { useSearchParams } from "next/navigation"
-import CalendarWithNavigation from "@/components/CalendarWithNavigation"
-import ExpandableSection from "@/components/ExpandableSection"
-import AutoimmunoProfileModal from "@/components/modals/AutoimmunoProfileModal"
-import CardiologyModal from "@/components/modals/CardiologyModal"
-import RFTModal from "@/components/modals/RFTModal"
-import LFTModal from "@/components/modals/LFTModal"
-import DiseaseHistoryModal, { type DiseaseHistoryData } from "@/components/modals/DiseaseHistoryModal"
-import ImagingHistopathologyModal from "@/components/modals/ImagingHistopathologyModal"
-import HematologyModal from "@/components/modals/HematologyModal"
-import MyFavoritesModal from "@/components/modals/MyFavoritesModal"
-import BASDAIModal from "@/components/modals/BASDAIModal"
-import { Button } from "@/components/ui/button"
-import { formatTestData } from "@/lib/formatTestData"
-import searchIndex from '@/lib/searchIndex'
+import { useState, useEffect, Suspense, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import CalendarWithNavigation from "@/components/CalendarWithNavigation";
+import ExpandableSection from "@/components/ExpandableSection";
+import AutoimmunoProfileModal from "@/components/modals/AutoimmunoProfileModal";
+import CardiologyModal from "@/components/modals/CardiologyModal";
+import RFTModal from "@/components/modals/RFTModal";
+import LFTModal from "@/components/modals/LFTModal";
+import DiseaseHistoryModal, {
+  type DiseaseHistoryData,
+} from "@/components/modals/DiseaseHistoryModal";
+import ImagingHistopathologyModal from "@/components/modals/ImagingHistopathologyModal";
+import HematologyModal from "@/components/modals/HematologyModal";
+import MyFavoritesModal from "@/components/modals/MyFavoritesModal";
+import BASDAIModal from "@/components/modals/BASDAIModal";
+import { Button } from "@/components/ui/button";
+import { formatTestData } from "@/lib/formatTestData";
+import searchIndex from "@/lib/searchIndex";
 
 // Type definitions for test data
-type TestDataSection = Record<string, unknown> | null
+type TestDataSection = Record<string, unknown> | null;
 type TestData = {
-  patientId: string
-  sampleDate: string
-  autoimmunoProfile: TestDataSection
-  cardiology: TestDataSection
-  rft: TestDataSection
-  lft: TestDataSection
-  diseaseHistory: TestDataSection
-  imaging: TestDataSection
-  hematology: TestDataSection
-  basdai: TestDataSection
-}
+  patientId: string;
+  sampleDate: string;
+  autoimmunoProfile: TestDataSection;
+  cardiology: TestDataSection;
+  rft: TestDataSection;
+  lft: TestDataSection;
+  diseaseHistory: TestDataSection;
+  imaging: TestDataSection;
+  hematology: TestDataSection;
+  basdai: TestDataSection;
+};
 
 type PatientTest = {
-  id: string
-  sampleDate: Date | string
-  autoimmunoProfile?: TestDataSection
-  cardiology?: TestDataSection
-  rft?: TestDataSection
-  lft?: TestDataSection
-  diseaseHistory?: TestDataSection
-  imaging?: TestDataSection
-  hematology?: TestDataSection
-  basdai?: TestDataSection
-}
+  id: string;
+  sampleDate: Date | string;
+  autoimmunoProfile?: TestDataSection;
+  cardiology?: TestDataSection;
+  rft?: TestDataSection;
+  lft?: TestDataSection;
+  diseaseHistory?: TestDataSection;
+  imaging?: TestDataSection;
+  hematology?: TestDataSection;
+  basdai?: TestDataSection;
+};
 
 // Separate component for saved reports to avoid conditional hook
-function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }) {
+function SavedReportsDisplay({
+  savedTestData,
+}: {
+  savedTestData: PatientTest[];
+}) {
   const groupedAndSorted = useMemo(() => {
     // First, sort all tests by createdAt (latest first) to maintain serial order
-    const sortedByCreatedAt = [...savedTestData].sort((a: PatientTest & { createdAt?: Date | string }, b: PatientTest & { createdAt?: Date | string }) => {
-      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.id ? 0 : -1)
-      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.id ? 0 : -1)
-      return timeB - timeA // Latest first
-    })
+    const sortedByCreatedAt = [...savedTestData].sort(
+      (
+        a: PatientTest & { createdAt?: Date | string },
+        b: PatientTest & { createdAt?: Date | string },
+      ) => {
+        const timeA = a.createdAt
+          ? new Date(a.createdAt).getTime()
+          : a.id
+            ? 0
+            : -1;
+        const timeB = b.createdAt
+          ? new Date(b.createdAt).getTime()
+          : b.id
+            ? 0
+            : -1;
+        return timeB - timeA; // Latest first
+      },
+    );
 
     // Then group by date while maintaining the order
-    const grouped = sortedByCreatedAt.reduce((acc: Record<string, PatientTest[]>, test: PatientTest) => {
-      // Fix timezone issue - use local date components
-      const sampleDate = test.sampleDate instanceof Date
-        ? test.sampleDate
-        : new Date(test.sampleDate)
+    const grouped = sortedByCreatedAt.reduce(
+      (acc: Record<string, PatientTest[]>, test: PatientTest) => {
+        // Fix timezone issue - use local date components
+        const sampleDate =
+          test.sampleDate instanceof Date
+            ? test.sampleDate
+            : new Date(test.sampleDate);
 
-      // Get local date components to avoid timezone conversion issues
-      const year = sampleDate.getFullYear()
-      const month = String(sampleDate.getMonth() + 1).padStart(2, '0')
-      const day = String(sampleDate.getDate()).padStart(2, '0')
-      const date = `${day}/${month}/${year}`
+        // Get local date components to avoid timezone conversion issues
+        const year = sampleDate.getFullYear();
+        const month = String(sampleDate.getMonth() + 1).padStart(2, "0");
+        const day = String(sampleDate.getDate()).padStart(2, "0");
+        const date = `${day}/${month}/${year}`;
 
-      if (!acc[date]) acc[date] = []
-      acc[date].push(test) // Maintain order - latest saves will be first in each group
-      return acc
-    }, {} as Record<string, PatientTest[]>)
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(test); // Maintain order - latest saves will be first in each group
+        return acc;
+      },
+      {} as Record<string, PatientTest[]>,
+    );
 
     // Sort date groups by latest createdAt in each group (not by date itself)
     // This ensures latest saves appear first regardless of date
     return Object.entries(grouped).sort(([, testsA], [, testsB]) => {
       // Get the latest createdAt from each group
       const getLatestTime = (tests: PatientTest[]) => {
-        return Math.max(...tests.map((t: PatientTest & { createdAt?: Date | string }) =>
-          t.createdAt ? new Date(t.createdAt).getTime() : 0
-        ))
-      }
-      const timeA = getLatestTime(testsA)
-      const timeB = getLatestTime(testsB)
-      return timeB - timeA // Latest first
-    }) as [string, PatientTest[]][]
-  }, [savedTestData])
+        return Math.max(
+          ...tests.map((t: PatientTest & { createdAt?: Date | string }) =>
+            t.createdAt ? new Date(t.createdAt).getTime() : 0,
+          ),
+        );
+      };
+      const timeA = getLatestTime(testsA);
+      const timeB = getLatestTime(testsB);
+      return timeB - timeA; // Latest first
+    }) as [string, PatientTest[]][];
+  }, [savedTestData]);
 
   return (
     <div className="space-y-6">
       {groupedAndSorted.map(([date, tests]) => {
         // Tests are already sorted by createdAt (latest first) from the grouping step
         // No need to sort again - maintain the order
-        const sortedTests = tests
+        const sortedTests = tests;
 
         return (
           <div key={date} className="bg-white border rounded-lg p-4 shadow-sm">
             <div className="flex justify-between items-center mb-4 border-b pb-2">
-              <h3 className="text-xl font-semibold text-blue-600">Test Reports</h3>
+              <h3 className="text-xl font-semibold text-blue-600">
+                Test Reports
+              </h3>
               <span className="text-sm font-medium text-gray-600">{date}</span>
             </div>
             <div className="space-y-4">
               {sortedTests.map((test, index) => (
-                <div key={index} className="bg-gray-50 rounded p-4 border-l-4 border-blue-500">
+                <div
+                  key={index}
+                  className="bg-gray-50 rounded p-4 border-l-4 border-blue-500"
+                >
                   {test.autoimmunoProfile && (
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold text-blue-700">Autoimmuno Profile</h4>
+                        <h4 className="font-semibold text-blue-700">
+                          Autoimmuno Profile
+                        </h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.autoimmunoProfile, 'autoimmunoProfile').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
+                        {formatTestData(
+                          test.autoimmunoProfile,
+                          "autoimmunoProfile",
+                        ).map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex justify-between text-sm"
+                          >
+                            <span className="font-medium text-gray-700">
+                              {item.label}:
+                            </span>
                             <span className="text-gray-900">{item.value}</span>
                           </div>
                         ))}
@@ -131,24 +177,41 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                   {test.cardiology && (
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold text-green-700">Cardiology</h4>
+                        <h4 className="font-semibold text-green-700">
+                          Cardiology
+                        </h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.cardiology, 'cardiology').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
-                            <span className="text-gray-900">{item.value}</span>
-                          </div>
-                        ))}
+                        {formatTestData(test.cardiology, "cardiology").map(
+                          (item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="font-medium text-gray-700">
+                                {item.label}:
+                              </span>
+                              <span className="text-gray-900">
+                                {item.value}
+                              </span>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
@@ -158,18 +221,29 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                         <h4 className="font-semibold text-purple-700">RFT</h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.rft, 'rft').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
+                        {formatTestData(test.rft, "rft").map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex justify-between text-sm"
+                          >
+                            <span className="font-medium text-gray-700">
+                              {item.label}:
+                            </span>
                             <span className="text-gray-900">{item.value}</span>
                           </div>
                         ))}
@@ -182,18 +256,29 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                         <h4 className="font-semibold text-yellow-700">LFT</h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.lft, 'lft').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
+                        {formatTestData(test.lft, "lft").map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex justify-between text-sm"
+                          >
+                            <span className="font-medium text-gray-700">
+                              {item.label}:
+                            </span>
                             <span className="text-gray-900">{item.value}</span>
                           </div>
                         ))}
@@ -203,21 +288,37 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                   {test.diseaseHistory && (
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold text-pink-700">Disease History</h4>
+                        <h4 className="font-semibold text-pink-700">
+                          Disease History
+                        </h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.diseaseHistory, 'diseaseHistory').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
+                        {formatTestData(
+                          test.diseaseHistory,
+                          "diseaseHistory",
+                        ).map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex justify-between text-sm"
+                          >
+                            <span className="font-medium text-gray-700">
+                              {item.label}:
+                            </span>
                             <span className="text-gray-900">{item.value}</span>
                           </div>
                         ))}
@@ -227,72 +328,123 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
                   {test.imaging && (
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold text-indigo-700">Imaging, Histopathology</h4>
+                        <h4 className="font-semibold text-indigo-700">
+                          Imaging, Histopathology
+                        </h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.imaging, 'imaging').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
-                            <span className="text-gray-900">{item.value}</span>
-                          </div>
-                        ))}
+                        {formatTestData(test.imaging, "imaging").map(
+                          (item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="font-medium text-gray-700">
+                                {item.label}:
+                              </span>
+                              <span className="text-gray-900">
+                                {item.value}
+                              </span>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
                   {test.hematology && (
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold text-orange-700">Hematology</h4>
+                        <h4 className="font-semibold text-orange-700">
+                          Hematology
+                        </h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.hematology, 'hematology').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
-                            <span className="text-gray-900">{item.value}</span>
-                          </div>
-                        ))}
+                        {formatTestData(test.hematology, "hematology").map(
+                          (item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="font-medium text-gray-700">
+                                {item.label}:
+                              </span>
+                              <span className="text-gray-900">
+                                {item.value}
+                              </span>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
                   {test.basdai && (
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold text-pink-700">BASDAI Score</h4>
+                        <h4 className="font-semibold text-pink-700">
+                          BASDAI Score
+                        </h4>
                         <span className="text-xs text-gray-500">
                           {(() => {
-                            const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate)
-                            const year = d.getFullYear()
-                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                            const day = String(d.getDate()).padStart(2, '0')
-                            return `${day}/${month}/${year}`
+                            const d =
+                              test.sampleDate instanceof Date
+                                ? test.sampleDate
+                                : new Date(test.sampleDate);
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(
+                              2,
+                              "0",
+                            );
+                            const day = String(d.getDate()).padStart(2, "0");
+                            return `${day}/${month}/${year}`;
                           })()}
                         </span>
                       </div>
                       <div className="bg-white p-3 rounded space-y-1">
-                        {formatTestData(test.basdai, 'basdai').map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="font-medium text-gray-700">{item.label}:</span>
-                            <span className="text-gray-900">{item.value}</span>
-                          </div>
-                        ))}
+                        {formatTestData(test.basdai, "basdai").map(
+                          (item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="font-medium text-gray-700">
+                                {item.label}:
+                              </span>
+                              <span className="text-gray-900">
+                                {item.value}
+                              </span>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
@@ -300,27 +452,27 @@ function SavedReportsDisplay({ savedTestData }: { savedTestData: PatientTest[] }
               ))}
             </div>
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 function NextPageContent() {
-  const searchParams = useSearchParams()
-  const patientId = searchParams.get('patientId')
+  const searchParams = useSearchParams();
+  const patientId = searchParams.get("patientId");
 
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [openModal, setOpenModal] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [savedTestData, setSavedTestData] = useState<PatientTest[]>([])
-  const [loadingSavedData, setLoadingSavedData] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [openModal, setOpenModal] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [savedTestData, setSavedTestData] = useState<PatientTest[]>([]);
+  const [loadingSavedData, setLoadingSavedData] = useState(false);
 
   // Store all test data from modals
   const [testData, setTestData] = useState<TestData>({
-    patientId: patientId || '',
+    patientId: patientId || "",
     sampleDate: new Date().toISOString(),
     autoimmunoProfile: null,
     cardiology: null,
@@ -330,112 +482,130 @@ function NextPageContent() {
     imaging: null,
     hematology: null,
     basdai: null,
-  })
+  });
 
   useEffect(() => {
     if (patientId) {
-      setTestData(prev => ({ ...prev, patientId }))
+      setTestData((prev) => ({ ...prev, patientId }));
     }
     // Always fetch saved data on mount and when patientId changes
-    fetchSavedTestData()
+    fetchSavedTestData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patientId])
+  }, [patientId]);
 
   const fetchSavedTestData = useCallback(async () => {
-    setLoadingSavedData(true)
+    setLoadingSavedData(true);
     try {
-      const currentPatientId = patientId || testData.patientId
+      const currentPatientId = patientId || testData.patientId;
       // Fetch all tests if no patientId, or filter by patientId if provided
       const url = currentPatientId
         ? `/api/patient-tests?patientId=${currentPatientId}`
-        : `/api/patient-tests`
+        : `/api/patient-tests`;
 
-      const response = await fetch(url)
+      const response = await fetch(url);
       if (response.ok) {
-        const data = await response.json()
-        setSavedTestData(data.tests || [])
+        const data = await response.json();
+        setSavedTestData(data.tests || []);
       } else {
-        console.error("Failed to fetch saved test data:", response.status)
+        console.error("Failed to fetch saved test data:", response.status);
       }
     } catch (error) {
-      console.error("Error fetching saved test data:", error)
+      console.error("Error fetching saved test data:", error);
     } finally {
-      setLoadingSavedData(false)
+      setLoadingSavedData(false);
     }
-  }, [patientId, testData.patientId])
+  }, [patientId, testData.patientId]);
 
   const handleDateChange = (date: Date) => {
-    setSelectedDate(date)
-    setTestData(prev => ({ ...prev, sampleDate: date.toISOString() }))
-  }
+    setSelectedDate(date);
+    setTestData((prev) => ({ ...prev, sampleDate: date.toISOString() }));
+  };
 
-  const updateTestData = (section: keyof TestData, data: TestDataSection, date?: Date) => {
-    setTestData(prev => ({
+  const updateTestData = (
+    section: keyof TestData,
+    data: TestDataSection,
+    date?: Date,
+  ) => {
+    setTestData((prev) => ({
       ...prev,
       [section]: {
         data,
-        date: date ? date.toISOString() : selectedDate.toISOString()
-      }
-    }))
-  }
+        date: date ? date.toISOString() : selectedDate.toISOString(),
+      },
+    }));
+  };
 
   const handleSubmit = async () => {
     // Validate patientId exists before submitting
-    if (!patientId || patientId.trim() === '') {
-      alert("Patient ID is missing. Please go back and create the patient first.")
-      return
+    if (!patientId || patientId.trim() === "") {
+      alert(
+        "Patient ID is missing. Please go back and create the patient first.",
+      );
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch('/api/patient-tests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/patient-tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...testData,
           patientId,
-        })
-      })
+        }),
+      });
 
       if (response.ok) {
-        alert("Patient test data submitted successfully!")
+        alert("Patient test data submitted successfully!");
         // Refresh saved test data in background (don't wait)
-        fetchSavedTestData().catch(console.error)
-        setLoading(false)
+        fetchSavedTestData().catch(console.error);
+        setLoading(false);
         // Don't redirect, stay on page to see the saved data
       } else {
-        const error = await response.json()
-        alert(error.message || "Failed to submit patient test data. Please try again.")
-        setLoading(false)
+        const error = await response.json();
+        alert(
+          error.message ||
+            "Failed to submit patient test data. Please try again.",
+        );
+        setLoading(false);
       }
     } catch (error) {
-      console.error("Error submitting patient test data:", error)
-      alert("Failed to submit patient test data. Please try again.")
-      setLoading(false)
+      console.error("Error submitting patient test data:", error);
+      alert("Failed to submit patient test data. Please try again.");
+      setLoading(false);
     }
-  }
+  };
 
   // Transform savedTestData for DiseaseHistoryModal (convert null to undefined)
   const transformedSavedDataForDiseaseHistory = useMemo(() => {
-    return savedTestData.map(test => ({
+    return savedTestData.map((test) => ({
       sampleDate: test.sampleDate,
-      diseaseHistory: test.diseaseHistory === null ? undefined : test.diseaseHistory as DiseaseHistoryData
-    }))
-  }, [savedTestData])
+      diseaseHistory:
+        test.diseaseHistory === null
+          ? undefined
+          : (test.diseaseHistory as DiseaseHistoryData),
+    }));
+  }, [savedTestData]);
 
   // use centralized search index (includes fields from all modals)
 
   const suggestions = useMemo(() => {
-    if (!searchTerm) return []
-    const q = searchTerm.trim().toLowerCase()
-    return searchIndex.filter(item => item.key.toLowerCase().includes(q) || item.label.toLowerCase().includes(q)).slice(0, 8)
-  }, [searchTerm, searchIndex])
+    if (!searchTerm) return [];
+    const q = searchTerm.trim().toLowerCase();
+    return searchIndex
+      .filter(
+        (item) =>
+          item.key.toLowerCase().includes(q) ||
+          item.label.toLowerCase().includes(q),
+      )
+      .slice(0, 8);
+  }, [searchTerm, searchIndex]);
 
   const openModalForSuggestion = (modalId: string) => {
-    setOpenModal(modalId)
-    setShowSuggestions(false)
-    setSearchTerm("")
-  }
+    setOpenModal(modalId);
+    setShowSuggestions(false);
+    setSearchTerm("");
+  };
 
   const sectionColors = [
     "bg-red-50 border-red-200",
@@ -446,13 +616,15 @@ function NextPageContent() {
     "bg-pink-50 border-pink-200",
     "bg-indigo-50 border-indigo-200",
     "bg-orange-50 border-orange-200",
-  ]
+  ];
 
   return (
     <div className="min-h-screen text-slate-800">
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-800">Patient Test Information</h1>
+          <h1 className="text-3xl font-bold text-slate-800">
+            Patient Test Information
+          </h1>
         </div>
 
         {/* Calendar Section */}
@@ -463,7 +635,8 @@ function NextPageContent() {
           />
           <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
             <p className="text-sm text-blue-800 font-medium">
-              <strong>Note:</strong> Please check for sample received date or given date, not report delivery date.
+              <strong>Note:</strong> Please check for sample received date or
+              given date, not report delivery date.
             </p>
           </div>
           {/* Search box placed under the Note as requested */}
@@ -472,13 +645,17 @@ function NextPageContent() {
               <input
                 aria-label="Search tests"
                 value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setShowSuggestions(true) }}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowSuggestions(true);
+                }}
                 onFocus={() => setShowSuggestions(true)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (suggestions.length > 0) openModalForSuggestion(suggestions[0].modal)
-                  } else if (e.key === 'Escape') {
-                    setShowSuggestions(false)
+                  if (e.key === "Enter") {
+                    if (suggestions.length > 0)
+                      openModalForSuggestion(suggestions[0].modal);
+                  } else if (e.key === "Escape") {
+                    setShowSuggestions(false);
                   }
                 }}
                 placeholder="Search (e.g. RBC, creatinine, ANA)"
@@ -486,8 +663,14 @@ function NextPageContent() {
               />
               {showSuggestions && suggestions.length > 0 && (
                 <ul className="absolute z-40 left-0 right-0 bg-white border rounded-md mt-1 max-h-48 overflow-auto shadow">
-                  {suggestions.map(s => (
-                    <li key={s.key} className="px-3 py-2 hover:bg-gray-100 cursor-pointer" onMouseDown={() => openModalForSuggestion(s.modal)}>{s.label}</li>
+                  {suggestions.map((s) => (
+                    <li
+                      key={s.key}
+                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                      onMouseDown={() => openModalForSuggestion(s.modal)}
+                    >
+                      {s.label}
+                    </li>
                   ))}
                 </ul>
               )}
@@ -500,7 +683,9 @@ function NextPageContent() {
           <ExpandableSection
             title="My Favorites"
             isOpen={openModal === "my-favorites"}
-            onToggle={() => setOpenModal(openModal === "my-favorites" ? null : "my-favorites")}
+            onToggle={() =>
+              setOpenModal(openModal === "my-favorites" ? null : "my-favorites")
+            }
             colorClass={sectionColors[0]}
           >
             <MyFavoritesModal
@@ -512,7 +697,9 @@ function NextPageContent() {
           <ExpandableSection
             title="BASDAI Score"
             isOpen={openModal === "basdai"}
-            onToggle={() => setOpenModal(openModal === "basdai" ? null : "basdai")}
+            onToggle={() =>
+              setOpenModal(openModal === "basdai" ? null : "basdai")
+            }
             colorClass={sectionColors[0]}
           >
             <BASDAIModal
@@ -520,7 +707,9 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
-              onDataChange={(data, date) => updateTestData('basdai', data, date)}
+              onDataChange={(data, date) =>
+                updateTestData("basdai", data as TestDataSection, date)
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -528,7 +717,9 @@ function NextPageContent() {
           <ExpandableSection
             title="Autoimmuno profile"
             isOpen={openModal === "autoimmuno"}
-            onToggle={() => setOpenModal(openModal === "autoimmuno" ? null : "autoimmuno")}
+            onToggle={() =>
+              setOpenModal(openModal === "autoimmuno" ? null : "autoimmuno")
+            }
             colorClass={sectionColors[1]}
           >
             <AutoimmunoProfileModal
@@ -536,7 +727,13 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
-              onDataChange={(data, date) => updateTestData('autoimmunoProfile', data, date)}
+              onDataChange={(data: unknown, date) =>
+                updateTestData(
+                  "autoimmunoProfile",
+                  data as TestDataSection,
+                  date,
+                )
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -544,7 +741,9 @@ function NextPageContent() {
           <ExpandableSection
             title="Cardiology"
             isOpen={openModal === "cardiology"}
-            onToggle={() => setOpenModal(openModal === "cardiology" ? null : "cardiology")}
+            onToggle={() =>
+              setOpenModal(openModal === "cardiology" ? null : "cardiology")
+            }
             colorClass={sectionColors[2]}
           >
             <CardiologyModal
@@ -552,7 +751,9 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
-              onDataChange={(data, date) => updateTestData('cardiology', data, date)}
+              onDataChange={(data, date) =>
+                updateTestData("cardiology", data as TestDataSection, date)
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -568,7 +769,9 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
-              onDataChange={(data, date) => updateTestData('rft', data, date)}
+              onDataChange={(data, date) =>
+                updateTestData("rft", data as TestDataSection, date)
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -584,7 +787,9 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
-              onDataChange={(data, date) => updateTestData('lft', data, date)}
+              onDataChange={(data, date) =>
+                updateTestData("lft", data as TestDataSection, date)
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -592,7 +797,11 @@ function NextPageContent() {
           <ExpandableSection
             title="on examination Disease history"
             isOpen={openModal === "disease-history"}
-            onToggle={() => setOpenModal(openModal === "disease-history" ? null : "disease-history")}
+            onToggle={() =>
+              setOpenModal(
+                openModal === "disease-history" ? null : "disease-history",
+              )
+            }
             colorClass={sectionColors[5]}
           >
             <DiseaseHistoryModal
@@ -600,7 +809,9 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={transformedSavedDataForDiseaseHistory}
-              onDataChange={(data, date) => updateTestData('diseaseHistory', data, date)}
+              onDataChange={(data, date) =>
+                updateTestData("diseaseHistory", data as TestDataSection, date)
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -608,7 +819,9 @@ function NextPageContent() {
           <ExpandableSection
             title="Imaging, Histopathology"
             isOpen={openModal === "imaging"}
-            onToggle={() => setOpenModal(openModal === "imaging" ? null : "imaging")}
+            onToggle={() =>
+              setOpenModal(openModal === "imaging" ? null : "imaging")
+            }
             colorClass={sectionColors[6]}
           >
             <ImagingHistopathologyModal
@@ -616,7 +829,9 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
-              onDataChange={(data, date) => updateTestData('imaging', data, date)}
+              onDataChange={(data, date) =>
+                updateTestData("imaging", data as TestDataSection, date)
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -624,7 +839,9 @@ function NextPageContent() {
           <ExpandableSection
             title="Hematology"
             isOpen={openModal === "hematology"}
-            onToggle={() => setOpenModal(openModal === "hematology" ? null : "hematology")}
+            onToggle={() =>
+              setOpenModal(openModal === "hematology" ? null : "hematology")
+            }
             colorClass={sectionColors[7]}
           >
             <HematologyModal
@@ -632,7 +849,9 @@ function NextPageContent() {
               defaultDate={selectedDate}
               patientId={patientId}
               savedData={savedTestData}
-              onDataChange={(data, date) => updateTestData('hematology', data, date)}
+              onDataChange={(data, date) =>
+                updateTestData("hematology", data as TestDataSection, date)
+              }
               onSaveSuccess={fetchSavedTestData}
             />
           </ExpandableSection>
@@ -658,28 +877,34 @@ function NextPageContent() {
           <h2 className="text-2xl font-bold mb-4">Saved Test Reports</h2>
 
           {loadingSavedData ? (
-            <div className="text-center py-8 text-gray-500">Loading saved data...</div>
+            <div className="text-center py-8 text-gray-500">
+              Loading saved data...
+            </div>
           ) : savedTestData.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No saved test data found. Submit test data to see it here.</div>
+            <div className="text-center py-8 text-gray-500">
+              No saved test data found. Submit test data to see it here.
+            </div>
           ) : (
             <SavedReportsDisplay savedTestData={savedTestData} />
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function NextPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-slate-600">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-slate-600">Loading...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <NextPageContent />
     </Suspense>
-  )
+  );
 }

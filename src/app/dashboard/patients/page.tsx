@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function AllPatientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, error, isLoading } = useSWR(
+  const { data, isLoading } = useSWR(
     searchQuery
       ? `/api/patients?search=${encodeURIComponent(searchQuery)}`
       : "/api/patients",
@@ -98,36 +98,39 @@ export default function AllPatientsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {patients.map((patient) => (
-              <div
-                key={patient.id}
-                className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-blue-100 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-lg hover:border-blue-300 transition-all"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-lg font-bold text-slate-800 truncate">
-                    {patient.name}
-                  </div>
-                  <div className="text-sm text-slate-400 mt-1">
-                    <span className="inline-block mr-4">
-                      ID:{" "}
-                      <span className="text-slate-500">
-                        {patient.patientId || "N/A"}
-                      </span>
-                    </span>
-                    <span className="inline-block">
-                      Mobile:{" "}
-                      <span className="text-slate-500">{patient.mobile}</span>
-                    </span>
-                  </div>
-                </div>
-                <Link
-                  href={`/dashboard/patients/${patient.patientId || patient.id}`}
-                  className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all text-sm"
+            {patients.map((patient: unknown) => {
+              const p = patient as any;
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-blue-100 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-lg hover:border-blue-300 transition-all"
                 >
-                  View Details
-                </Link>
-              </div>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-lg font-bold text-slate-800 truncate">
+                      {p.name}
+                    </div>
+                    <div className="text-sm text-slate-400 mt-1">
+                      <span className="inline-block mr-4">
+                        ID:{" "}
+                        <span className="text-slate-500">
+                          {p.patientId || "N/A"}
+                        </span>
+                      </span>
+                      <span className="inline-block">
+                        Mobile:{" "}
+                        <span className="text-slate-500">{p.mobile}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/dashboard/patients/${p.patientId || p.id}`}
+                    className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all text-sm"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
