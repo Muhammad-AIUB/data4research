@@ -12,7 +12,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gradient-to-br from-slate-100 via-blue-50 to-sky-100">
+      {/* Suppress hydration mismatch warnings on the <body> (common when browser extensions like Grammarly inject attributes) */}
+      <body suppressHydrationWarning className="bg-gradient-to-br from-slate-100 via-blue-50 to-sky-100">
         <Navbar />
         {children}
       </body>
