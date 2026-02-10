@@ -1,4 +1,5 @@
 import Navbar from '@/components/Navbar'
+import Providers from '@/components/Providers'
 import './globals.css'
 
 export const metadata = {
@@ -12,10 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      {/* Suppress hydration mismatch warnings on the <body> (common when browser extensions like Grammarly inject attributes) */}
       <body suppressHydrationWarning className="bg-gradient-to-br from-slate-100 via-blue-50 to-sky-100">
-        <Navbar />
-        {children}
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   )

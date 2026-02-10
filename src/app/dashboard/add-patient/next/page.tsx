@@ -477,9 +477,7 @@ function NextPageContent() {
       const url = currentPatientId
         ? `/api/patient-tests?patientId=${currentPatientId}&page=1&limit=100`
         : `/api/patient-tests?page=1&limit=100`;
-      const response = await fetch(url, {
-        next: { revalidate: 30 },
-      });
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setSavedTestData(data.tests || []);

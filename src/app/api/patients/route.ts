@@ -12,6 +12,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const { searchParams } = new URL(request.url);
+    const singleId = searchParams.get("id");
+
+    // Single patient fetch by id
+    if (singleId) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(singleId);
+      const whereClause = isUUID ? { id: singleId } : { patientId: singleId };
+      const patient = await prisma.patient.findUnique({
+        where: whereClause,
+      });
+      if (!patient) {
+        return NextResponse.json({ message: "Patient not found" }, { status: 404 });
+      }
+      return NextResponse.json({ patient }, { status: 200 });
+    }
+
     const searchQuery = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
@@ -261,6 +276,75 @@ export async function DELETE(request: Request) {
     }
     const message =
       error instanceof Error ? error.message : "Failed to delete patient";
+    return NextResponse.json({ message }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    // @ts-expect-error - authOptions type mismatch with next-auth overloads
+    const session = (await getServerSession(authOptions)) as Session | null;
+    if (!session || !session.user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, ...updateFields } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { message: "Patient ID is required" },
+        { status: 400 },
+      );
+    }
+
+    // Build update data — only include provided fields
+    const updateData: Record<string, unknown> = {};
+    if (updateFields.name !== undefined) updateData.name = updateFields.name;
+    if (updateFields.age !== undefined) updateData.age = parseInt(updateFields.age);
+    if (updateFields.dateOfBirth !== undefined) updateData.dateOfBirth = new Date(updateFields.dateOfBirth);
+    if (updateFields.ethnicity !== undefined) updateData.ethnicity = updateFields.ethnicity;
+    if (updateFields.religion !== undefined) updateData.religion = updateFields.religion;
+    if (updateFields.nid !== undefined) updateData.nid = updateFields.nid || null;
+    if (updateFields.patientId !== undefined) updateData.patientId = updateFields.patientId?.trim() || null;
+    if (updateFields.mobile !== undefined) updateData.mobile = updateFields.mobile;
+    if (updateFields.spouseMobile !== undefined) updateData.spouseMobile = updateFields.spouseMobile || null;
+    if (updateFields.relativeMobile !== undefined) updateData.relativeMobile = updateFields.relativeMobile || null;
+    if (updateFields.district !== undefined) updateData.district = updateFields.district || "";
+    if (updateFields.address !== undefined) updateData.address = updateFields.address || "";
+    if (updateFields.shortHistory !== undefined) updateData.shortHistory = updateFields.shortHistory || null;
+    if (updateFields.surgicalHistory !== undefined) updateData.surgicalHistory = updateFields.surgicalHistory || null;
+    if (updateFields.familyHistory !== undefined) updateData.familyHistory = updateFields.familyHistory || null;
+    if (updateFields.pastIllness !== undefined) updateData.pastIllness = updateFields.pastIllness || null;
+    if (updateFields.tags !== undefined) updateData.tags = updateFields.tags || [];
+    if (updateFields.specialNotes !== undefined) updateData.specialNotes = updateFields.specialNotes || null;
+    if (updateFields.finalDiagnosis !== undefined) updateData.finalDiagnosis = updateFields.finalDiagnosis || null;
+
+    const patient = await prisma.patient.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json({ success: true, patient }, { status: 200 });
+  } catch (error: unknown) {
+    console.error("Error updating patient:", error);
+    if (error && typeof error === "object" && "code" in error) {
+      const prismaError = error as { code: string };
+      if (prismaError.code === "P2025") {
+        return NextResponse.json(
+          { message: "Patient not found" },
+          { status: 404 },
+        );
+      }
+      if (prismaError.code === "P2002") {
+        return NextResponse.json(
+          { message: "Patient ID already exists. Please use a different one." },
+          { status: 409 },
+        );
+      }
+    }
+    const message =
+      error instanceof Error ? error.message : "Failed to update patient";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

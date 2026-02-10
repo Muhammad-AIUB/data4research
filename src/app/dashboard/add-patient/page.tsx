@@ -33,9 +33,7 @@ const months = [
 ];
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url, {
-    next: { revalidate: 3600 },
-  });
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
 };

@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import useSWR from "swr";
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url, {
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
 };
@@ -165,17 +163,31 @@ export default function AllPatientsPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/dashboard/patients/${patient.patientId || patient.id}`}
-                      className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all text-sm"
+                      className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-all text-sm"
                     >
                       View Details
+                    </Link>
+                    <Link
+                      href={`/dashboard/patients/${patient.id}/edit`}
+                      className="inline-flex items-center justify-center w-9 h-9 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-sm transition-all"
+                      title="Edit patient"
+                    >
+                      <Pencil className="w-4 h-4" />
                     </Link>
                     <button
                       onClick={() => handleDelete(patient.id, patient.name)}
                       disabled={deletingId === patient.id}
-                      className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-4 py-2 rounded-xl font-semibold shadow transition-all text-sm"
+                      className="inline-flex items-center justify-center w-9 h-9 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg shadow-sm transition-all"
+                      title="Delete patient"
                     >
-                      <Trash2 className="w-4 h-4" />
-                      {deletingId === patient.id ? "Deleting..." : "Delete"}
+                      {deletingId === patient.id ? (
+                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>

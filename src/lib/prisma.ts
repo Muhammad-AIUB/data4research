@@ -15,9 +15,9 @@ if (!process.env.DATABASE_URL) {
 // Reuse connection pool across hot reloads in development
 const pool = globalForPrisma.pool || new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 5,                  // limit connections for serverless
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  max: 5,
+  idleTimeoutMillis: 20000,
+  connectionTimeoutMillis: 5000,
 })
 const adapter = new PrismaPg(pool)
 
