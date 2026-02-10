@@ -9,8 +9,6 @@ import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import {
   addSectionFieldsToFavourites,
-  removeSectionFieldsFromFavourites,
-  areAllSectionFieldsFavourite,
   isFieldFavourite,
   removeFavouriteField,
 } from "@/lib/favourites";
@@ -35,7 +33,7 @@ export default function CardiologyModal({
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
-  const [favoritesUpdated, setFavoritesUpdated] = useState(0);
+  const [, setFavoritesUpdated] = useState(0);
 
   const formatDateString = (date: Date) => {
     const year = date.getFullYear();
@@ -99,7 +97,7 @@ export default function CardiologyModal({
     }
     
     
-  }, [savedData]);
+  }, [savedData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateField = (fieldName: string, value: string) => {
     setFormData((prev) => ({
@@ -313,7 +311,7 @@ export default function CardiologyModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md flex-shrink-0">
+        <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">Cardiology</h2>
             <ModalDatePicker
@@ -447,7 +445,7 @@ export default function CardiologyModal({
                       hasMmol: false,
                     },
                   ];
-                  return lipidTests.map((test, idx) => {
+                  return lipidTests.map((test) => {
                     const currentIndex = fieldIndex++;
                     const colorClass =
                       fieldColors[currentIndex % fieldColors.length];

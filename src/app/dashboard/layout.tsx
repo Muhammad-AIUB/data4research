@@ -10,14 +10,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // @ts-expect-error
+  // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = await getServerSession(authOptions) as Session | null
   if (!session || !session.user) {
     redirect('/login')
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-sky-100">
+    <div className="flex min-h-screen bg-linear-to-br from-slate-100 via-blue-50 to-sky-100">
       <Sidebar session={session} />
       <main className="flex-1 p-6">
         {children}

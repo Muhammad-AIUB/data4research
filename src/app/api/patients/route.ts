@@ -6,7 +6,7 @@ import type { Session } from "next-auth";
 
 export async function GET(request: Request) {
   try {
-    // @ts-expect-error
+    // @ts-expect-error - authOptions type mismatch with next-auth overloads
     const session = (await getServerSession(authOptions)) as Session | null;
     if (!session || !session.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -71,18 +71,27 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // @ts-expect-error
+    // @ts-expect-error - authOptions type mismatch with next-auth overloads
     const session = (await getServerSession(authOptions)) as Session | null;
     if (!session || !session.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    const userId = session.user.id as string;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
+    // Log session for debugging
+    console.log('Session on create patient:', session);
+    console.log('Session user id/email:', session?.user?.id, session?.user?.email);
+
+    // Prefer user id, but fall back to email lookup if id-based lookup fails
+    const userId = session?.user?.id as string | undefined;
+    let user = null;
+    if (userId) {
+      user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    }
+    if (!user && session?.user?.email) {
+      console.warn('User not found by id; attempting lookup by email:', session.user.email);
+      user = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+    }
     if (!user) {
-      console.error("User not found in database:", userId);
+      console.error('User not found in database using session id or email:', { id: userId, email: session?.user?.email });
       return NextResponse.json(
         { message: "User account not found. Please log in again." },
         { status: 401 },
@@ -111,7 +120,8 @@ export async function POST(request: Request) {
       specialNotes,
       finalDiagnosis,
     } = body;
-    if (!name || !age || !mobile || !relativeMobile) {
+    // Allow age 0 — check for undefined/null instead of falsy value
+    if (!name || typeof age === 'undefined' || age === null || !mobile || !relativeMobile) {
       return NextResponse.json(
         {
           message:
@@ -147,7 +157,7 @@ export async function POST(request: Request) {
       tags: tags || [],
       specialNotes: specialNotes || null,
       finalDiagnosis: finalDiagnosis || null,
-      createdBy: userId,
+      createdBy: user.id,
     };
     if (process.env.NODE_ENV === "development") {
       console.log("Creating patient with data:", JSON.stringify(patientData, null, 2));

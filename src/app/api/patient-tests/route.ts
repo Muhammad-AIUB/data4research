@@ -3,10 +3,11 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
-    // @ts-expect-error
+    // @ts-expect-error - authOptions type mismatch with next-auth overloads
     const session = (await getServerSession(authOptions)) as Session | null;
     if (!session || !session.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -16,15 +17,13 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = (page - 1) * limit;
-    let whereClause: Record<string, unknown> = {};
-    let patientDbId: string | null = null;
+    const whereClause: Record<string, unknown> = {};
     if (patientId && patientId.trim() !== "") {
       const patient = await prisma.patient.findUnique({
         where: { patientId },
         select: { id: true },
       });
       if (patient) {
-        patientDbId = patient.id;
         whereClause.patientId = patient.id;
       } else {
         return NextResponse.json(
@@ -86,7 +85,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // @ts-expect-error
+    // @ts-expect-error - authOptions type mismatch with next-auth overloads
     const session = (await getServerSession(authOptions)) as Session | null;
     if (!session || !session.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -153,18 +152,19 @@ export async function POST(request: Request) {
         dateObj.getDate(),
       );
     }
+    const jsonNull = Prisma.JsonNull;
     const savedTest = await prisma.patientTest.create({
       data: {
         patientId: patient?.id || null,
         sampleDate: localDate,
-        autoimmunoProfile: parsedTestData.autoimmunoProfile || null,
-        cardiology: parsedTestData.cardiology || null,
-        rft: parsedTestData.rft || null,
-        lft: parsedTestData.lft || null,
-        diseaseHistory: parsedTestData.diseaseHistory || null,
-        imaging: parsedTestData.imaging || null,
-        hematology: parsedTestData.hematology || null,
-        basdai: parsedTestData.basdai || null,
+        autoimmunoProfile: parsedTestData.autoimmunoProfile || jsonNull,
+        cardiology: parsedTestData.cardiology || jsonNull,
+        rft: parsedTestData.rft || jsonNull,
+        lft: parsedTestData.lft || jsonNull,
+        diseaseHistory: parsedTestData.diseaseHistory || jsonNull,
+        imaging: parsedTestData.imaging || jsonNull,
+        hematology: parsedTestData.hematology || jsonNull,
+        basdai: parsedTestData.basdai || jsonNull,
       },
     });
 

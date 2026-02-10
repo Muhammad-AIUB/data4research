@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { Session } from 'next-auth'
 
 export default async function Navbar() {
-  // @ts-expect-error
+  // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = await getServerSession(authOptions) as Session | null
   return (
     <nav className="bg-blue-700 text-white p-4 shadow-md">

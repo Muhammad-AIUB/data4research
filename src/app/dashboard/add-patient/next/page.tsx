@@ -594,7 +594,7 @@ function NextPageContent() {
           item.label.toLowerCase().includes(q),
       )
       .slice(0, 8);
-  }, [searchTerm, searchIndex]);
+  }, [searchTerm]);
 
   const openModalForSuggestion = (modalId: string) => {
     setOpenModal(modalId);

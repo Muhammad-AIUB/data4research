@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { X, Heart } from "lucide-react";
 import {
   addSectionFieldsToFavourites,
-  removeSectionFieldsFromFavourites,
-  areAllSectionFieldsFavourite,
   isFieldFavourite,
   removeFavouriteField,
 } from "@/lib/favourites";
@@ -33,7 +31,7 @@ export default function ImagingHistopathologyModal({
 }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
-  const [favoritesUpdated, setFavoritesUpdated] = useState(0);
+  const [, setFavoritesUpdated] = useState(0);
   const reportType = "imaging";
   const reportName = "Imaging, Histopathology";
 
@@ -148,7 +146,7 @@ export default function ImagingHistopathologyModal({
     }
     
     
-  }, [savedData]);
+  }, [savedData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

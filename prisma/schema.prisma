@@ -69,6 +69,7 @@ model PatientTest {
   diseaseHistory    Json?
   imaging           Json?
   hematology        Json?
+  basdai            Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   patient           Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade)

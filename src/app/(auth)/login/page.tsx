@@ -5,14 +5,14 @@ import { redirect } from 'next/navigation'
 import type { Session } from 'next-auth'
 
 export default async function LoginPage() {
-  // @ts-expect-error
+  // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = await getServerSession(authOptions) as Session | null
   if (session && session.user) {
     redirect('/')
   }
   return (
-    <div className="min-h-screen flex items-stretch bg-gradient-to-br from-slate-100 via-blue-50 to-sky-100 relative overflow-hidden">
-      <div className="hidden md:flex flex-col justify-center items-start w-1/2 px-12 bg-gradient-to-br from-blue-700 to-blue-900 text-white relative z-10 shadow-2xl">
+    <div className="min-h-screen flex items-stretch bg-linear-to-br from-slate-100 via-blue-50 to-sky-100 relative overflow-hidden">
+      <div className="hidden md:flex flex-col justify-center items-start w-1/2 px-12 bg-linear-to-br from-blue-700 to-blue-900 text-white relative z-10 shadow-2xl">
         <div className="mb-10">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-3xl shadow-xl mb-6 animate-bounce-slow">
             <span className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg select-none">DR</span>

@@ -1,10 +1,1 @@
-declare module "@prisma/client" {
-  export class PrismaClient {
-    constructor(options?: any);
-    $connect(): Promise<void>;
-    $disconnect(): Promise<void>;
-    user: any;
-    patient: any;
-    [key: string]: any;
-  }
-}
+// Prisma types are provided by the generated @prisma/client.\n// This file is intentionally empty — do not re-declare PrismaClient here.\n// Run `npx prisma generate` to regenerate types after schema changes.\n

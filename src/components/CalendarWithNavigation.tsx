@@ -187,7 +187,7 @@ export default function CalendarWithNavigation({ selectedDate, onDateChange }: P
           ))}
           {Array.from({ length: 42 }).map((_, index) => {
             const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+            new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0) // lastDay calc for reference
             const startDate = new Date(firstDay)
             startDate.setDate(startDate.getDate() - firstDay.getDay())
             

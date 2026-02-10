@@ -17,7 +17,7 @@ export default async function PatientDetailPage({
   const { patientId } = await params;
 
   const [session, isUUID] = await Promise.all([
-    // @ts-expect-error
+    // @ts-expect-error - authOptions type mismatch with next-auth overloads
     getServerSession(authOptions) as Promise<Session | null>,
     Promise.resolve(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -134,7 +134,7 @@ export default async function PatientDetailPage({
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-blue-100 p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-extrabold shadow-md">
+              <div className="w-20 h-20 rounded-xl bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-extrabold shadow-md">
                 {patient.name
                   ? patient.name
                       .split(" ")

@@ -7,14 +7,11 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { 
   addSectionFieldsToFavourites, 
-  removeSectionFieldsFromFavourites, 
-  areAllSectionFieldsFavourite,
   isFieldFavourite,
   removeFavouriteField
 } from "@/lib/favourites"
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
@@ -71,7 +68,7 @@ export default function DiseaseHistoryModal({
 }: Props) {
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
-  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
+  const [, setFavoritesUpdated] = useState(0)
   
   const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
     const reportType = 'diseaseHistory'
@@ -216,7 +213,7 @@ export default function DiseaseHistoryModal({
         update("weightKg", "")
       }
     }
-  }, [form.weightLb, update])
+  }, [form.weightLb, update]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const kg = parseFloat(form.weightKg)
@@ -230,7 +227,7 @@ export default function DiseaseHistoryModal({
         update("weightLb", "")
       }
     }
-  }, [form.weightKg, update])
+  }, [form.weightKg, update]) // eslint-disable-line react-hooks/exhaustive-deps
 
   
   useEffect(() => {

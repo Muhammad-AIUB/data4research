@@ -30,7 +30,7 @@ interface Props {
   savedData?: PatientTest[];
 }
 
-export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
+export default function MyFavoritesModal({ onClose }: Props) {
   const [favourites, setFavourites] = useState<FavouriteField[]>([]);
   const groupedFavourites = useMemo(() => {
     const grouped: Record<string, Record<string, FavouriteField[]>> = {};
@@ -98,17 +98,6 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
     const key = `${reportType}:${fieldName}`;
     setFieldValues((prev) => ({ ...prev, [key]: value }));
     setFavouriteFieldValue(reportType, fieldName, value);
-  };
-
-  const handleRemove = (reportType: string, fieldName: string) => {
-    removeFavouriteField(reportType, fieldName);
-    const key = `${reportType}:${fieldName}`;
-    setFieldValues((prev) => {
-      const updated = { ...prev };
-      delete updated[key];
-      return updated;
-    });
-    loadFavourites();
   };
 
   const handleRemoveSection = (
@@ -262,7 +251,7 @@ export default function MyFavoritesModal({ onClose, savedData = [] }: Props) {
                                         fields,
                                       )
                                     }
-                                    className="p-2 hover:bg-red-50 rounded-full transition-colors text-red-500 hover:text-red-600 flex-shrink-0"
+                                    className="p-2 hover:bg-red-50 rounded-full transition-colors text-red-500 hover:text-red-600 shrink-0"
                                     title={`Remove all fields from ${sectionTitle === "Other" ? "Other Fields" : sectionTitle}`}
                                   >
                                     <Trash2 className="h-5 w-5" />

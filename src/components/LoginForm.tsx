@@ -26,7 +26,7 @@ export default function LoginForm({ showButton = true }: { showButton?: boolean 
       } else {
         setError('Invalid email or password. Please try again.')
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.')
     } finally {
       setLoading(false)

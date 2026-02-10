@@ -146,9 +146,11 @@ export default function AddPatient() {
     try {
       const res = await fetch("/api/patients", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify(finalData),
       });
+      console.log('Fetch response status:', res.status, 'ok:', res.ok);
 
       if (res.ok) {
         const result = await res.json();
@@ -166,11 +168,22 @@ export default function AddPatient() {
         try {
           const text = await res.text();
           if (text) {
-            errorData = JSON.parse(text);
+            try {
+              errorData = JSON.parse(text);
+            } catch {
+              // Server returned plain text (or invalid JSON), capture it
+              errorData = { message: text };
+            }
+          } else {
+            // Empty body — provide helpful info
+            errorData = { message: `Empty response body (status ${res.status})` };
           }
         } catch (e) {
-          console.error("Failed to parse error response:", e);
+          console.error("Failed to read error response:", e);
+          errorData = { message: `Could not read error response (status ${res.status})` };
         }
+
+        console.log('Parsed error data:', errorData);
 
         console.error("API Error Response:", {
           status: res.status,

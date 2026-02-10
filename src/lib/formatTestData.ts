@@ -241,7 +241,7 @@ export function formatTestData(
       } else {
         
         const objEntries = Object.entries(value).filter(
-          ([key, v]) => v !== null && v !== undefined && v !== "",
+          ([, v]) => v !== null && v !== undefined && v !== "",
         );
         if (objEntries.length > 0) {
           displayValue = objEntries.map(([k, v]) => `${k}: ${v}`).join(", ");

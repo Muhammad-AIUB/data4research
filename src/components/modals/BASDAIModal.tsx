@@ -66,7 +66,7 @@ export default function BASDAIModal({
 }: Props) {
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
-  const [favoritesUpdated, setFavoritesUpdated] = useState(0)
+  const [, setFavoritesUpdated] = useState(0)
 
   const [form, setForm] = useState<BASDAIData>({
     q1Fatigue: 0,
@@ -200,7 +200,7 @@ export default function BASDAIModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md flex-shrink-0">
+        <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">BASDAI Score</h2>
             <ModalDatePicker

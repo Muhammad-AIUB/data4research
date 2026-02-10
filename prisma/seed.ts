@@ -4,8 +4,18 @@ import { resolve } from 'path'
 // Load .env file from project root
 config({ path: resolve(process.cwd(), '.env') })
 
-import { prisma } from '../src/lib/prisma'
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 import bcrypt from 'bcryptjs'
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL must be set in .env')
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
   const hash1 = await bcrypt.hash('Bslctr@253027', 10)
