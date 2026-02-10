@@ -216,3 +216,51 @@ export async function POST(request: Request) {
     return NextResponse.json(errorResponse, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    // @ts-expect-error - authOptions type mismatch with next-auth overloads
+    const session = (await getServerSession(authOptions)) as Session | null;
+    if (!session || !session.user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { message: "Patient ID is required" },
+        { status: 400 },
+      );
+    }
+
+    // Delete related test reports first (cascade should handle it, but be explicit)
+    await prisma.patientTest.deleteMany({
+      where: { patientId: id },
+    });
+
+    await prisma.patient.delete({
+      where: { id },
+    });
+
+    return NextResponse.json(
+      { success: true, message: "Patient deleted successfully" },
+      { status: 200 },
+    );
+  } catch (error: unknown) {
+    console.error("Error deleting patient:", error);
+    if (error && typeof error === "object" && "code" in error) {
+      const prismaError = error as { code: string };
+      if (prismaError.code === "P2025") {
+        return NextResponse.json(
+          { message: "Patient not found" },
+          { status: 404 },
+        );
+      }
+    }
+    const message =
+      error instanceof Error ? error.message : "Failed to delete patient";
+    return NextResponse.json({ message }, { status: 500 });
+  }
+}

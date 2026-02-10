@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import useSWR from "swr";
 
@@ -28,7 +28,7 @@ export default function AllPatientsPage() {
   }, [searchQuery]);
 
   
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, mutate } = useSWR(
     debouncedQuery
       ? `/api/patients?search=${encodeURIComponent(debouncedQuery)}&page=1&limit=50`
       : "/api/patients?page=1&limit=50",
@@ -43,6 +43,27 @@ export default function AllPatientsPage() {
 
   const patients = data?.patients || [];
   const loading = isLoading;
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = useCallback(async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete patient "${name}"? This will also delete all their test reports. This action cannot be undone.`)) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/patients?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        mutate();
+      } else {
+        const error = await res.json();
+        alert(error.message || "Failed to delete patient.");
+      }
+    } catch {
+      alert("Failed to delete patient. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  }, [mutate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,12 +162,22 @@ export default function AllPatientsPage() {
                       </span>
                     </div>
                   </div>
-                  <Link
-                    href={`/dashboard/patients/${patient.patientId || patient.id}`}
-                    className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all text-sm"
-                  >
-                    View Details
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/dashboard/patients/${patient.patientId || patient.id}`}
+                      className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all text-sm"
+                    >
+                      View Details
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(patient.id, patient.name)}
+                      disabled={deletingId === patient.id}
+                      className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-4 py-2 rounded-xl font-semibold shadow transition-all text-sm"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {deletingId === patient.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </div>
               );
             })}

@@ -19,10 +19,18 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
     const whereClause: Record<string, unknown> = {};
     if (patientId && patientId.trim() !== "") {
-      const patient = await prisma.patient.findUnique({
+      // Try finding by user-assigned patientId first
+      let patient = await prisma.patient.findUnique({
         where: { patientId },
         select: { id: true },
       });
+      // If not found, try finding by UUID (id)
+      if (!patient) {
+        patient = await prisma.patient.findUnique({
+          where: { id: patientId },
+          select: { id: true },
+        });
+      }
       if (patient) {
         whereClause.patientId = patient.id;
       } else {
@@ -94,10 +102,18 @@ export async function POST(request: Request) {
     const { patientId, sampleDate, ...testData } = body;
     let patient = null;
     if (patientId && patientId.trim() !== "") {
+      // Try finding by user-assigned patientId first
       patient = await prisma.patient.findUnique({
         where: { patientId },
         select: { id: true },
       });
+      // If not found, try finding by UUID (id) — handles case when patient has no user-assigned ID
+      if (!patient) {
+        patient = await prisma.patient.findUnique({
+          where: { id: patientId },
+          select: { id: true },
+        });
+      }
     }
     const parsedTestData: Record<string, unknown> = {};
     if (testData.autoimmunoProfile) {
