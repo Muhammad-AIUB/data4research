@@ -1,7 +1,3 @@
-// ====================================================
-// TASK 4 — Zod validation schemas for API request bodies
-// ====================================================
-// Validates data BEFORE it reaches Prisma. Shared across routes.
 
 import { z } from "zod";
 
