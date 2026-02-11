@@ -28,20 +28,31 @@ export default async function AllPatientsPage({
   const limit = 50;
   const offset = (page - 1) * limit;
 
-  // Build Prisma where clause for search (same logic as the old API route)
-  const whereClause = searchQuery
-    ? {
+  // Build Prisma where clause — split by input type for PG query planner efficiency.
+  // Numeric input → startsWith on phone/ID fields (uses B-tree index).
+  // Text input → contains on name/diagnosis + has on tags (uses GIN index).
+  let whereClause = {};
+  if (searchQuery) {
+    const isNumeric = /^[\d+\-() ]+$/.test(searchQuery);
+    if (isNumeric) {
+      whereClause = {
+        OR: [
+          { mobile: { startsWith: searchQuery } },
+          { patientId: { startsWith: searchQuery } },
+          { relativeMobile: { startsWith: searchQuery } },
+          { spouseMobile: { startsWith: searchQuery } },
+        ],
+      };
+    } else {
+      whereClause = {
         OR: [
           { name: { contains: searchQuery, mode: "insensitive" as const } },
-          { mobile: { contains: searchQuery, mode: "insensitive" as const } },
-          { patientId: { contains: searchQuery, mode: "insensitive" as const } },
           { finalDiagnosis: { contains: searchQuery, mode: "insensitive" as const } },
           { tags: { has: searchQuery } },
-          { relativeMobile: { contains: searchQuery, mode: "insensitive" as const } },
-          { spouseMobile: { contains: searchQuery, mode: "insensitive" as const } },
         ],
-      }
-    : {};
+      };
+    }
+  }
 
   // Single query — select only the 4 fields needed for the list card
   const patients = await prisma.patient.findMany({

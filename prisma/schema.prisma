@@ -56,6 +56,10 @@ model Patient {
   @@index([finalDiagnosis])
   @@index([relativeMobile])
   @@index([spouseMobile])
+  // GIN index for array field — enables fast `has` lookups on tags
+  @@index([tags], type: Gin)
+  // Composite index for default sort order (createdAt DESC) used by list queries
+  @@index([createdAt(sort: Desc)])
 }
 
 model PatientTest {

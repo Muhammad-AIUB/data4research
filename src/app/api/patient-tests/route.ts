@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
 import { Prisma } from "@prisma/client";
+import { authorizeRole } from "@/lib/authorizeRole";
+import { createPatientTestSchema } from "@/lib/validations";
 
 export async function GET(request: Request) {
   try {
@@ -14,8 +16,8 @@ export async function GET(request: Request) {
     }
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get("patientId");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
     const offset = (page - 1) * limit;
     const whereClause: Record<string, unknown> = {};
     if (patientId && patientId.trim() !== "") {
@@ -35,7 +37,7 @@ export async function GET(request: Request) {
         whereClause.patientId = patient.id;
       } else {
         return NextResponse.json(
-          { tests: [], total: 0, page, limit },
+          { tests: [], hasMore: false, page, limit },
           {
             status: 200,
             headers: {
@@ -45,8 +47,8 @@ export async function GET(request: Request) {
         );
       }
     }
-    const [tests, total] = await Promise.all([
-      prisma.patientTest.findMany({
+    // hasMore strategy: fetch limit+1 to detect next page without COUNT scan
+    const rows = await prisma.patientTest.findMany({
         where: whereClause,
         select: {
           id: true,
@@ -68,12 +70,14 @@ export async function GET(request: Request) {
           { sampleDate: "desc" },
         ],
         skip: offset,
-        take: limit,
-      }),
-      prisma.patientTest.count({ where: whereClause }),
-    ]);
+        take: limit + 1,
+      });
+
+    const hasMore = rows.length > limit;
+    const tests = hasMore ? rows.slice(0, limit) : rows;
+
     return NextResponse.json(
-      { tests, total, page, limit },
+      { tests, hasMore, page, limit },
       {
         status: 200,
         headers: {
@@ -93,13 +97,21 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // @ts-expect-error - authOptions type mismatch with next-auth overloads
-    const session = (await getServerSession(authOptions)) as Session | null;
-    if (!session || !session.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    // Role-based authorization — only DOCTOR/ADMIN can create tests
+    const auth = await authorizeRole();
+    if (auth.error) return auth.error;
+
     const body = await request.json();
-    const { patientId, sampleDate, ...testData } = body;
+
+    // Zod validation — reject malformed data before hitting Prisma
+    const parsed = createPatientTestSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+        { status: 400 },
+      );
+    }
+    const { patientId, sampleDate, ...testData } = parsed.data;
     let patient = null;
     if (patientId && patientId.trim() !== "") {
       // Try finding by user-assigned patientId first
@@ -146,7 +158,7 @@ export async function POST(request: Request) {
     }
 
     const reportDate =
-      testData.sampleDate || sampleDate || new Date().toISOString();
+      sampleDate || new Date().toISOString();
     let localDate: Date;
     if (typeof reportDate === "string") {
       if (/^\d{4}-\d{2}-\d{2}$/.test(reportDate)) {

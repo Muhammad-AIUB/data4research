@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
+import { authorizeRole } from "@/lib/authorizeRole";
+import { createPatientSchema, updatePatientSchema } from "@/lib/validations";
 
 export async function GET(request: Request) {
   try {
@@ -14,12 +16,21 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const singleId = searchParams.get("id");
 
-    // Single patient fetch by id
+    // Single patient fetch — select only fields the edit page needs
     if (singleId) {
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(singleId);
       const whereClause = isUUID ? { id: singleId } : { patientId: singleId };
       const patient = await prisma.patient.findUnique({
         where: whereClause,
+        // Explicit select avoids transferring large relation data
+        select: {
+          id: true, name: true, age: true, mobile: true, patientId: true,
+          dateOfBirth: true, ethnicity: true, religion: true, nid: true,
+          spouseMobile: true, relativeMobile: true, district: true,
+          address: true, shortHistory: true, surgicalHistory: true,
+          familyHistory: true, pastIllness: true, tags: true,
+          specialNotes: true, finalDiagnosis: true, createdAt: true,
+        },
       });
       if (!patient) {
         return NextResponse.json({ message: "Patient not found" }, { status: 404 });
@@ -28,47 +39,62 @@ export async function GET(request: Request) {
     }
 
     const searchQuery = searchParams.get("search");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
     const offset = (page - 1) * limit;
     let whereClause: Record<string, unknown> = {};
+
     if (searchQuery && searchQuery.trim() !== "") {
       const searchTerm = searchQuery.trim();
-      whereClause = {
-        OR: [
-          { name: { contains: searchTerm, mode: "insensitive" } },
-          { mobile: { contains: searchTerm, mode: "insensitive" } },
-          { patientId: { contains: searchTerm, mode: "insensitive" } },
-          { finalDiagnosis: { contains: searchTerm, mode: "insensitive" } },
-          { tags: { has: searchTerm } },
-          { relativeMobile: { contains: searchTerm, mode: "insensitive" } },
-          { spouseMobile: { contains: searchTerm, mode: "insensitive" } },
-        ],
-      };
+      // Split search by input type to reduce OR branches.
+      // Numeric-looking input → search phone/ID fields (use indexed startsWith).
+      // Text input → search name/diagnosis/tags only.
+      // This lets PG use the B-tree indexes instead of sequential scans.
+      const isNumeric = /^[\d+\-() ]+$/.test(searchTerm);
+
+      if (isNumeric) {
+        // Phone numbers & patientId — startsWith uses B-tree index efficiently
+        whereClause = {
+          OR: [
+            { mobile: { startsWith: searchTerm } },
+            { patientId: { startsWith: searchTerm } },
+            { relativeMobile: { startsWith: searchTerm } },
+            { spouseMobile: { startsWith: searchTerm } },
+          ],
+        };
+      } else {
+        // Text search — reduced to 3 OR branches (name, diagnosis, tags)
+        whereClause = {
+          OR: [
+            { name: { contains: searchTerm, mode: "insensitive" } },
+            { finalDiagnosis: { contains: searchTerm, mode: "insensitive" } },
+            { tags: { has: searchTerm } },  // GIN-indexed array lookup
+          ],
+        };
+      }
     }
-    const [patients, total] = await Promise.all([
-      prisma.patient.findMany({
-        where: whereClause,
-        select: {
-          id: true,
-          name: true,
-          age: true,
-          mobile: true,
-          patientId: true,
-          finalDiagnosis: true,
-          tags: true,
-          createdAt: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        skip: offset,
-        take: limit,
-      }),
-      prisma.patient.count({ where: whereClause }),
-    ]);
+
+    // hasMore strategy: fetch limit+1 to detect next page without a COUNT query.
+    // COUNT on large tables with WHERE is expensive (full index scan).
+    const rows = await prisma.patient.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        mobile: true,
+        patientId: true,
+      },
+      orderBy: { createdAt: "desc" },
+      skip: offset,
+      take: limit + 1,  // +1 to detect if there's a next page
+    });
+
+    const hasMore = rows.length > limit;
+    // Trim the extra row before sending response
+    const patients = hasMore ? rows.slice(0, limit) : rows;
+
     return NextResponse.json(
-      { patients, total, page, limit },
+      { patients, hasMore, page, limit },
       {
         status: 200,
         headers: {
@@ -86,11 +112,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // @ts-expect-error - authOptions type mismatch with next-auth overloads
-    const session = (await getServerSession(authOptions)) as Session | null;
-    if (!session || !session.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    // Role-based authorization — only DOCTOR/ADMIN can create patients
+    const auth = await authorizeRole();
+    if (auth.error) return auth.error;
+    const session = auth.session;
     // Log session for debugging
     console.log('Session on create patient:', session);
     console.log('Session user id/email:', session?.user?.id, session?.user?.email);
@@ -114,6 +139,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+
+    // Zod validation — reject malformed data before hitting Prisma
+    const parsed = createPatientSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+        { status: 400 },
+      );
+    }
     const {
       name,
       dateOfBirth,
@@ -134,28 +168,11 @@ export async function POST(request: Request) {
       tags,
       specialNotes,
       finalDiagnosis,
-    } = body;
-    // Allow age 0 — check for undefined/null instead of falsy value
-    if (!name || typeof age === 'undefined' || age === null || !mobile || !relativeMobile) {
-      return NextResponse.json(
-        {
-          message:
-            "Missing required fields: Name, Age, Mobile, and Relative Mobile are required",
-        },
-        { status: 400 },
-      );
-    }
-    const ageNum = parseInt(age);
-    if (isNaN(ageNum) || ageNum < 0 || ageNum > 120) {
-      return NextResponse.json(
-        { message: "Age must be a valid number between 0 and 120" },
-        { status: 400 },
-      );
-    }
+    } = parsed.data;
     const patientData = {
       name,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
-      age: ageNum,
+      age,
       ethnicity: ethnicity || "",
       religion: religion || "islam",
       nid: nid || null,
@@ -234,11 +251,9 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    // @ts-expect-error - authOptions type mismatch with next-auth overloads
-    const session = (await getServerSession(authOptions)) as Session | null;
-    if (!session || !session.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    // Role-based authorization — only DOCTOR/ADMIN can delete patients
+    const auth = await authorizeRole();
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -250,11 +265,8 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Delete related test reports first (cascade should handle it, but be explicit)
-    await prisma.patientTest.deleteMany({
-      where: { patientId: id },
-    });
-
+    // Single delete — Prisma schema has onDelete: Cascade on PatientTest,
+    // so PostgreSQL automatically deletes child rows. No need for manual deleteMany.
     await prisma.patient.delete({
       where: { id },
     });
@@ -282,14 +294,21 @@ export async function DELETE(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    // @ts-expect-error - authOptions type mismatch with next-auth overloads
-    const session = (await getServerSession(authOptions)) as Session | null;
-    if (!session || !session.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    // Role-based authorization — only DOCTOR/ADMIN can update patients
+    const auth = await authorizeRole();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
-    const { id, ...updateFields } = body;
+
+    // Zod validation — reject malformed data before hitting Prisma
+    const parsed = updatePatientSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+        { status: 400 },
+      );
+    }
+    const { id, ...updateFields } = parsed.data;
 
     if (!id) {
       return NextResponse.json(
@@ -301,7 +320,7 @@ export async function PUT(request: Request) {
     // Build update data — only include provided fields
     const updateData: Record<string, unknown> = {};
     if (updateFields.name !== undefined) updateData.name = updateFields.name;
-    if (updateFields.age !== undefined) updateData.age = parseInt(updateFields.age);
+    if (updateFields.age !== undefined) updateData.age = updateFields.age;
     if (updateFields.dateOfBirth !== undefined) updateData.dateOfBirth = new Date(updateFields.dateOfBirth);
     if (updateFields.ethnicity !== undefined) updateData.ethnicity = updateFields.ethnicity;
     if (updateFields.religion !== undefined) updateData.religion = updateFields.religion;
