@@ -6,13 +6,17 @@ import type { Session } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authorizeRole } from "@/lib/authorizeRole";
 import { createPatientTestSchema } from "@/lib/validations";
+import { createRequestId } from "@/lib/requestId";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { auditLog } from "@/lib/auditLog";
 
 export async function GET(request: Request) {
+  const requestId = createRequestId();
   try {
     // @ts-expect-error - authOptions type mismatch with next-auth overloads
     const session = (await getServerSession(authOptions)) as Session | null;
     if (!session || !session.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized", requestId }, { status: 401 });
     }
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get("patientId");
@@ -86,20 +90,25 @@ export async function GET(request: Request) {
       },
     );
   } catch (error: unknown) {
-    console.error("Error fetching patient test data:", error);
+    console.error(JSON.stringify({ level: "ERROR", requestId, route: "GET /api/patient-tests", error: error instanceof Error ? error.message : String(error) }));
     const message =
       error instanceof Error
         ? error.message
         : "Failed to fetch patient test data";
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json({ message, requestId }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  const requestId = createRequestId();
   try {
     // Role-based authorization — only DOCTOR/ADMIN can create tests
     const auth = await authorizeRole();
     if (auth.error) return auth.error;
+
+    // Rate limit — protect write endpoint from abuse
+    const rateLimited = checkRateLimit(auth.session.user.id);
+    if (rateLimited) return rateLimited;
 
     const body = await request.json();
 
@@ -107,7 +116,7 @@ export async function POST(request: Request) {
     const parsed = createPatientTestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors, requestId },
         { status: 400 },
       );
     }
@@ -196,6 +205,9 @@ export async function POST(request: Request) {
       },
     });
 
+    // Audit: test created
+    auditLog(requestId, auth.session.user.id, "CREATE_PATIENT_TEST", "PatientTest", savedTest.id);
+
     return NextResponse.json(
       {
         success: true,
@@ -205,11 +217,11 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error: unknown) {
-    console.error("Error saving patient test data:", error);
+    console.error(JSON.stringify({ level: "ERROR", requestId, route: "POST /api/patient-tests", error: error instanceof Error ? error.message : String(error) }));
     const message =
       error instanceof Error
         ? error.message
         : "Failed to save patient test data";
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json({ message, requestId }, { status: 500 });
   }
 }

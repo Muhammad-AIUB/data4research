@@ -5,13 +5,17 @@ import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
 import { authorizeRole } from "@/lib/authorizeRole";
 import { createPatientSchema, updatePatientSchema } from "@/lib/validations";
+import { createRequestId } from "@/lib/requestId";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { auditLog } from "@/lib/auditLog";
 
 export async function GET(request: Request) {
+  const requestId = createRequestId();
   try {
     // @ts-expect-error - authOptions type mismatch with next-auth overloads
     const session = (await getServerSession(authOptions)) as Session | null;
     if (!session || !session.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized", requestId }, { status: 401 });
     }
     const { searchParams } = new URL(request.url);
     const singleId = searchParams.get("id");
@@ -33,7 +37,7 @@ export async function GET(request: Request) {
         },
       });
       if (!patient) {
-        return NextResponse.json({ message: "Patient not found" }, { status: 404 });
+        return NextResponse.json({ message: "Patient not found", requestId }, { status: 404 });
       }
       return NextResponse.json({ patient }, { status: 200 });
     }
@@ -103,19 +107,24 @@ export async function GET(request: Request) {
       },
     );
   } catch (error: unknown) {
-    console.error("Error fetching patients:", error);
+    console.error(JSON.stringify({ level: "ERROR", requestId, route: "GET /api/patients", error: error instanceof Error ? error.message : String(error) }));
     const message =
       error instanceof Error ? error.message : "Failed to fetch patients";
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json({ message, requestId }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  const requestId = createRequestId();
   try {
     // Role-based authorization — only DOCTOR/ADMIN can create patients
     const auth = await authorizeRole();
     if (auth.error) return auth.error;
     const session = auth.session;
+
+    // Rate limit — protect write endpoint from abuse
+    const rateLimited = checkRateLimit(session.user.id);
+    if (rateLimited) return rateLimited;
     // Log session for debugging
     console.log('Session on create patient:', session);
     console.log('Session user id/email:', session?.user?.id, session?.user?.email);
@@ -133,7 +142,7 @@ export async function POST(request: Request) {
     if (!user) {
       console.error('User not found in database using session id or email:', { id: userId, email: session?.user?.email });
       return NextResponse.json(
-        { message: "User account not found. Please log in again." },
+        { message: "User account not found. Please log in again.", requestId },
         { status: 401 },
       );
     }
@@ -144,7 +153,7 @@ export async function POST(request: Request) {
     const parsed = createPatientSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors, requestId },
         { status: 400 },
       );
     }
@@ -198,18 +207,12 @@ export async function POST(request: Request) {
       data: patientData,
     });
 
+    // Audit: patient created
+    auditLog(requestId, user.id, "CREATE_PATIENT", "Patient", patient.id);
+
     return NextResponse.json({ success: true, patient }, { status: 201 });
   } catch (error: unknown) {
-    console.error("Error creating patient:", error);
-    if (error && typeof error === "object") {
-      console.error("Error details:", JSON.stringify(error, null, 2));
-      if ("code" in error) {
-        console.error("Prisma error code:", error.code);
-      }
-      if ("meta" in error) {
-        console.error("Prisma error meta:", error.meta);
-      }
-    }
+    console.error(JSON.stringify({ level: "ERROR", requestId, route: "POST /api/patients", error: error instanceof Error ? error.message : String(error) }));
     if (error && typeof error === "object" && "code" in error) {
       const prismaError = error as {
         code: string;
@@ -221,6 +224,7 @@ export async function POST(request: Request) {
           {
             message:
               "Patient ID already exists. Please use a different Patient ID.",
+            requestId,
           },
           { status: 409 },
         );
@@ -229,6 +233,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             message: "User account not found. Please log out and log in again.",
+            requestId,
           },
           { status: 401 },
         );
@@ -240,7 +245,7 @@ export async function POST(request: Request) {
     } else if (error && typeof error === "object" && "message" in error) {
       message = String(error.message);
     }
-    const errorResponse: { message: string; error?: string } = { message };
+    const errorResponse: { message: string; error?: string; requestId: string } = { message, requestId };
     if (process.env.NODE_ENV === "development") {
       errorResponse.error =
         error instanceof Error ? error.stack : String(error);
@@ -250,53 +255,66 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const requestId = createRequestId();
   try {
     // Role-based authorization — only DOCTOR/ADMIN can delete patients
     const auth = await authorizeRole();
     if (auth.error) return auth.error;
+
+    // Rate limit — protect write endpoint from abuse
+    const rateLimited = checkRateLimit(auth.session.user.id);
+    if (rateLimited) return rateLimited;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
-        { message: "Patient ID is required" },
+        { message: "Patient ID is required", requestId },
         { status: 400 },
       );
     }
 
-    // Single delete — Prisma schema has onDelete: Cascade on PatientTest,
-    // so PostgreSQL automatically deletes child rows. No need for manual deleteMany.
+    // DESTRUCTIVE: Deletes patient AND all related PatientTest rows (onDelete: Cascade).
+    // This cannot be undone. The cascade is defined in schema.prisma on Patient.tests.
     await prisma.patient.delete({
       where: { id },
     });
+
+    // Audit: patient deleted (+ cascaded tests)
+    auditLog(requestId, auth.session.user.id, "DELETE_PATIENT", "Patient", id);
 
     return NextResponse.json(
       { success: true, message: "Patient deleted successfully" },
       { status: 200 },
     );
   } catch (error: unknown) {
-    console.error("Error deleting patient:", error);
+    console.error(JSON.stringify({ level: "ERROR", requestId, route: "DELETE /api/patients", error: error instanceof Error ? error.message : String(error) }));
     if (error && typeof error === "object" && "code" in error) {
       const prismaError = error as { code: string };
       if (prismaError.code === "P2025") {
         return NextResponse.json(
-          { message: "Patient not found" },
+          { message: "Patient not found", requestId },
           { status: 404 },
         );
       }
     }
     const message =
       error instanceof Error ? error.message : "Failed to delete patient";
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json({ message, requestId }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request) {
+  const requestId = createRequestId();
   try {
     // Role-based authorization — only DOCTOR/ADMIN can update patients
     const auth = await authorizeRole();
     if (auth.error) return auth.error;
+
+    // Rate limit — protect write endpoint from abuse
+    const rateLimited = checkRateLimit(auth.session.user.id);
+    if (rateLimited) return rateLimited;
 
     const body = await request.json();
 
@@ -304,7 +322,7 @@ export async function PUT(request: Request) {
     const parsed = updatePatientSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors, requestId },
         { status: 400 },
       );
     }
@@ -312,7 +330,7 @@ export async function PUT(request: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { message: "Patient ID is required" },
+        { message: "Patient ID is required", requestId },
         { status: 400 },
       );
     }
@@ -344,26 +362,29 @@ export async function PUT(request: Request) {
       data: updateData,
     });
 
+    // Audit: patient updated
+    auditLog(requestId, auth.session.user.id, "UPDATE_PATIENT", "Patient", id);
+
     return NextResponse.json({ success: true, patient }, { status: 200 });
   } catch (error: unknown) {
-    console.error("Error updating patient:", error);
+    console.error(JSON.stringify({ level: "ERROR", requestId, route: "PUT /api/patients", error: error instanceof Error ? error.message : String(error) }));
     if (error && typeof error === "object" && "code" in error) {
       const prismaError = error as { code: string };
       if (prismaError.code === "P2025") {
         return NextResponse.json(
-          { message: "Patient not found" },
+          { message: "Patient not found", requestId },
           { status: 404 },
         );
       }
       if (prismaError.code === "P2002") {
         return NextResponse.json(
-          { message: "Patient ID already exists. Please use a different one." },
+          { message: "Patient ID already exists. Please use a different one.", requestId },
           { status: 409 },
         );
       }
     }
     const message =
       error instanceof Error ? error.message : "Failed to update patient";
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json({ message, requestId }, { status: 500 });
   }
 }

@@ -2,6 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// PRODUCTION GUARDRAIL: Never edit applied migration files in prisma/migrations/.
+// To change the schema, create a NEW migration with `npx prisma migrate dev`.
+// Applied migrations are immutable records of the database history.
+
 datasource db {
   provider = "postgresql"
 }
@@ -76,6 +80,9 @@ model PatientTest {
   basdai            Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  // DESTRUCTIVE: onDelete: Cascade — deleting a Patient removes ALL related
+  // PatientTest rows automatically. This is intentional for data integrity
+  // but cannot be undone. Ensure UI confirms before triggering delete.
   patient           Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   @@index([patientId])
