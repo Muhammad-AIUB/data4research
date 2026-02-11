@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import {
-  addSectionFieldsToFavourites,
+  addFavouriteField,
   isFieldFavourite,
   removeFavouriteField,
 } from "@/lib/favourites";
@@ -130,9 +130,26 @@ export default function LFTModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-3 gap-2 items-end">
           <div className="col-span-2">
-            <Label className="text-sm font-medium">
-              {label} {unit && <span className="text-gray-500">({unit})</span>}
-            </Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-sm font-medium">
+                {label} {unit && <span className="text-gray-500">({unit})</span>}
+              </Label>
+              <button
+                type="button"
+                onClick={() => {
+                  const reportType = "lft"
+                  const reportName = "LFT"
+                  const isFav = isFieldFavourite(reportType, fieldName)
+                  if (isFav) removeFavouriteField(reportType, fieldName)
+                  else addFavouriteField(reportType, reportName, fieldName, label)
+                  setFavoritesUpdated(prev => prev + 1)
+                }}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite("lft", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite("lft", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+              </button>
+            </div>
             <Input
               value={getFieldValue(fieldName)}
               onChange={(e) => updateField(fieldName, e.target.value)}
@@ -159,7 +176,29 @@ export default function LFTModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-1">
-            <Label className="text-sm font-medium">{label}</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-sm font-medium">{label}</Label>
+              <button
+                type="button"
+                onClick={() => {
+                  const reportType = "lft"
+                  const reportName = "LFT"
+                  const isFav = isFieldFavourite(reportType, `${fieldName}_value1`)
+                  if (isFav) {
+                    removeFavouriteField(reportType, `${fieldName}_value1`)
+                    removeFavouriteField(reportType, `${fieldName}_value2`)
+                  } else {
+                    addFavouriteField(reportType, reportName, `${fieldName}_value1`, `${label} - Value (${unit1})`)
+                    addFavouriteField(reportType, reportName, `${fieldName}_value2`, `${label} - Value (${unit2})`)
+                  }
+                  setFavoritesUpdated(prev => prev + 1)
+                }}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite("lft", `${fieldName}_value1`) ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite("lft", `${fieldName}_value1`) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+              </button>
+            </div>
           </div>
           <div>
             <Label className="text-sm">Value ({unit1})</Label>
@@ -212,7 +251,24 @@ export default function LFTModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-3 gap-2 items-end">
           <div className="col-span-2">
-            <Label className="text-sm font-medium">{label}</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-sm font-medium">{label}</Label>
+              <button
+                type="button"
+                onClick={() => {
+                  const reportType = "lft"
+                  const reportName = "LFT"
+                  const isFav = isFieldFavourite(reportType, fieldName)
+                  if (isFav) removeFavouriteField(reportType, fieldName)
+                  else addFavouriteField(reportType, reportName, fieldName, label)
+                  setFavoritesUpdated(prev => prev + 1)
+                }}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite("lft", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite("lft", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+              </button>
+            </div>
             <Select
               value={getFieldValue(fieldName)}
               onValueChange={(v) => updateField(fieldName, v)}
@@ -279,112 +335,12 @@ export default function LFTModal({
     }
   };
 
-  
-  const dualFields = new Set([
-    "bilirubinTotal",
-    "bilirubinDirect",
-    "bilirubinIndirect",
-    "hbvDna",
-    "hcvRna",
-  ]);
-
-  const handleSectionFavoriteToggle = (
-    fields: Array<[string, string]>,
-    sectionTitle: string,
-  ) => {
-    const reportType = "lft";
-    const reportName = "LFT";
-
-    
-    const fieldsToCheck = fields.map(([fieldName]) =>
-      dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName,
-    );
-
-    const allFavourite = fieldsToCheck.every((fieldName) =>
-      isFieldFavourite(reportType, fieldName),
-    );
-
-    if (allFavourite) {
-      
-      fields.forEach(([fieldName]) => {
-        if (dualFields.has(fieldName)) {
-          removeFavouriteField(reportType, `${fieldName}_value1`);
-          removeFavouriteField(reportType, `${fieldName}_value2`);
-        } else {
-          removeFavouriteField(reportType, fieldName);
-        }
-      });
-    } else {
-      
-      const allFieldsToAdd: Array<[string, string]> = [];
-      fields.forEach(([fieldName, fieldLabel]) => {
-        if (dualFields.has(fieldName)) {
-          
-          let unit1 = "Unit 1";
-          let unit2 = "Unit 2";
-
-          if (fieldName.includes("bilirubin")) {
-            unit1 = "µmol/L";
-            unit2 = "mg/dL";
-          } else if (fieldName === "hbvDna" || fieldName === "hcvRna") {
-            unit1 = "C/mL";
-            unit2 = "IU/mL";
-          }
-
-          allFieldsToAdd.push([
-            `${fieldName}_value1`,
-            `${fieldLabel} - Value (${unit1})`,
-          ]);
-          allFieldsToAdd.push([
-            `${fieldName}_value2`,
-            `${fieldLabel} - Value (${unit2})`,
-          ]);
-        } else {
-          allFieldsToAdd.push([fieldName, fieldLabel]);
-        }
-      });
-      addSectionFieldsToFavourites(
-        reportType,
-        reportName,
-        allFieldsToAdd,
-        sectionTitle,
-      );
-    }
-    setFavoritesUpdated((prev) => prev + 1);
-  };
-
   const renderSectionHeader = (
     title: string,
-    fields: Array<[string, string]>,
   ) => {
-    const reportType = "lft";
-    
-    const fieldsToCheck = fields.map(([fieldName]) =>
-      dualFields.has(fieldName) ? `${fieldName}_value1` : fieldName,
-    );
-    const allFavourite = fieldsToCheck.every((fieldName) =>
-      isFieldFavourite(reportType, fieldName),
-    );
-
     return (
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
-        <button
-          onClick={() => handleSectionFavoriteToggle(fields, title)}
-          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-          title={
-            allFavourite
-              ? "Remove all fields from favorites"
-              : "Add all fields to favorites"
-          }
-        >
-          <Heart
-            className={`h-5 w-5 ${allFavourite ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`}
-          />
-          <span className="text-sm text-gray-600">
-            {allFavourite ? "Remove from Favorites" : "Add to Favorites"}
-          </span>
-        </button>
       </div>
     );
   };
@@ -442,24 +398,7 @@ export default function LFTModal({
           <form id="lft-form" onSubmit={handleSubmit} className="space-y-4">
             {/* Liver Function Tests */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader(
-                "Liver Function Tests and Coagulation Parameters",
-                [
-                  ["alt", "ALT/SGPT"],
-                  ["ast", "AST/SGOT"],
-                  ["alp", "ALP"],
-                  ["bilirubinTotal", "S. Bilirubin (Total)"],
-                  ["bilirubinDirect", "S. Bilirubin (Direct)"],
-                  ["bilirubinIndirect", "S. Bilirubin (Indirect)"],
-                  ["ptPatient", "Prothrombin Time Patient"],
-                  ["ptTest", "Prothrombin Time Test"],
-                  ["inr", "INR"],
-                  ["albumin", "S. Albumin"],
-                  ["globulin", "S. Globulin"],
-                  ["agRatio", "A/G ratio"],
-                  ["totalProtein", "S. Total Protein"],
-                ],
-              )}
+              {renderSectionHeader("Liver Function Tests and Coagulation Parameters")}
               <div className="space-y-2">
                 {renderField("alt", "ALT/SGPT", fieldIndex++, "U/L")}
                 {renderField("ast", "AST/SGOT", fieldIndex++, "U/L")}
@@ -503,9 +442,31 @@ export default function LFTModal({
                 <div
                   className={`p-2 rounded ${fieldColors[fieldIndex % fieldColors.length]}`}
                 >
-                  <Label className="text-sm font-medium mb-2 block">
-                    Prothrombin Time
-                  </Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-medium">Prothrombin Time</Label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const reportType = "lft"
+                        const reportName = "LFT"
+                        const isFav = isFieldFavourite(reportType, 'ptPatient')
+                        if (isFav) {
+                          removeFavouriteField(reportType, 'ptPatient')
+                          removeFavouriteField(reportType, 'ptTest')
+                          removeFavouriteField(reportType, 'inr')
+                        } else {
+                          addFavouriteField(reportType, reportName, 'ptPatient', 'Prothrombin Time Patient')
+                          addFavouriteField(reportType, reportName, 'ptTest', 'Prothrombin Time Test')
+                          addFavouriteField(reportType, reportName, 'inr', 'INR')
+                        }
+                        setFavoritesUpdated(prev => prev + 1)
+                      }}
+                      className="p-1 rounded hover:bg-gray-100"
+                      title={isFieldFavourite("lft", 'ptPatient') ? "Remove from Favorites" : "Add to Favorites"}
+                    >
+                      <Heart className={`h-5 w-5 ${isFieldFavourite("lft", 'ptPatient') ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+                    </button>
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <Label className="text-sm">Patient (Sec)</Label>
@@ -570,18 +531,7 @@ export default function LFTModal({
 
             {/* Viral Markers */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Viral Markers", [
-                ["hbsag", "HBsAg"],
-                ["antiHBe", "Anti HBe"],
-                ["hbeag", "HBeAg"],
-                ["antiHbcIgm", "Anti HBc IgM"],
-                ["antiHbcTotal", "Anti HBc Total"],
-                ["hbvDna", "HBV DNA"],
-                ["antiHcv", "Anti HCV"],
-                ["hcvRna", "HCV RNA"],
-                ["antiHavIgm", "Anti HAV IgM"],
-                ["antiHevIgm", "Anti HEV IgM"],
-              ])}
+              {renderSectionHeader("Viral Markers")}
               <div className="space-y-2">
                 {renderDropdown("hbsag", "HBsAg", fieldIndex++, [
                   "Positive",
@@ -646,14 +596,7 @@ export default function LFTModal({
 
             {/* Clinical Assessment */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Clinical Assessment and Scores", [
-                ["ascites", "Ascites"],
-                ["hepaticEncephalopathy", "Hepatic encephalopathy"],
-                ["dialysis", "Is Patient getting Dialysis"],
-                ["childPughScore", "Child Pugh score"],
-                ["meldScore", "MELD Score"],
-                ["meldNaScore", "MELD Na score"],
-              ])}
+              {renderSectionHeader("Clinical Assessment and Scores")}
               <div className="space-y-2">
                 {renderDropdown("ascites", "Ascites", fieldIndex++, [
                   "absent",
@@ -691,13 +634,7 @@ export default function LFTModal({
 
             {/* Ascites Fluid Study */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Ascites Fluid Study", [
-                ["appearance", "Appearance"],
-                ["color", "Color"],
-                ["turbidity", "Turbidity"],
-                ["specificGravity", "Specific Gravity"],
-                ["totalProteinAscites", "Total Protein"],
-              ])}
+              {renderSectionHeader("Ascites Fluid Study")}
               <div className="space-y-2">
                 {renderDropdown("appearance", "Appearance", fieldIndex++, [
                   "Clear",

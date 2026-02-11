@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import {
-  addSectionFieldsToFavourites,
+  addFavouriteField,
   isFieldFavourite,
   removeFavouriteField,
 } from "@/lib/favourites";
@@ -132,9 +132,19 @@ export default function CardiologyModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-1">
-            <Label className="text-sm">
-              {label} {unit && <span className="text-gray-500">({unit})</span>}
-            </Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-sm">
+                {label} {unit && <span className="text-gray-500">({unit})</span>}
+              </Label>
+              <button
+                type="button"
+                onClick={() => toggleFieldFavourite(fieldName, label)}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite("cardiology", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+              </button>
+            </div>
             <Input
               value={getFieldValue(fieldName)}
               onChange={(e) => updateField(fieldName, e.target.value)}
@@ -160,7 +170,17 @@ export default function CardiologyModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-3">
-            <Label className="text-sm">{label}</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-sm">{label}</Label>
+              <button
+                type="button"
+                onClick={() => toggleFieldFavourite(fieldName, label)}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite("cardiology", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+              </button>
+            </div>
             <Select
               value={getFieldValue(fieldName)}
               onValueChange={(v) => updateField(fieldName, v)}
@@ -190,7 +210,17 @@ export default function CardiologyModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="flex items-start gap-2">
           <div className="flex-1">
-            <Label className="text-sm">{label}</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-sm">{label}</Label>
+              <button
+                type="button"
+                onClick={() => toggleFieldFavourite(fieldName, label)}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite("cardiology", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+              </button>
+            </div>
             <textarea
               value={getFieldValue(fieldName)}
               onChange={(e) => updateField(fieldName, e.target.value)}
@@ -244,64 +274,51 @@ export default function CardiologyModal({
     }
   };
 
-  const handleSectionFavoriteToggle = (
-    fields: Array<[string, string]>,
-    sectionTitle: string,
+  const toggleFieldFavourite = (
+    fieldName: string,
+    fieldLabel: string,
+    sectionTitle?: string,
+    hasDualValues: boolean = false,
   ) => {
     const reportType = "cardiology";
     const reportName = "Cardiology";
 
-    
-    const allFavourite = fields.every(([fieldName]) =>
-      isFieldFavourite(reportType, fieldName),
-    );
-
-    if (allFavourite) {
-      
-      fields.forEach(([fieldName]) => {
-        removeFavouriteField(reportType, fieldName);
-      });
+    if (hasDualValues) {
+      const isFav = isFieldFavourite(reportType, `${fieldName}_value1`);
+      if (isFav) {
+        removeFavouriteField(reportType, `${fieldName}_value1`);
+        removeFavouriteField(reportType, `${fieldName}_value2`);
+      } else {
+        addFavouriteField(
+          reportType,
+          reportName,
+          `${fieldName}_value1`,
+          `${fieldLabel} - Value 1`,
+          sectionTitle,
+        );
+        addFavouriteField(
+          reportType,
+          reportName,
+          `${fieldName}_value2`,
+          `${fieldLabel} - Value 2`,
+          sectionTitle,
+        );
+      }
     } else {
-      
-      addSectionFieldsToFavourites(
-        reportType,
-        reportName,
-        fields,
-        sectionTitle,
-      );
+      const isFav = isFieldFavourite(reportType, fieldName);
+      if (isFav) removeFavouriteField(reportType, fieldName);
+      else addFavouriteField(reportType, reportName, fieldName, fieldLabel, sectionTitle);
     }
+
     setFavoritesUpdated((prev) => prev + 1);
   };
 
   const renderSectionHeader = (
     title: string,
-    fields: Array<[string, string]>,
   ) => {
-    const reportType = "cardiology";
-    
-    const allFavourite = fields.every(([fieldName]) =>
-      isFieldFavourite(reportType, fieldName),
-    );
-
     return (
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
-        <button
-          onClick={() => handleSectionFavoriteToggle(fields, title)}
-          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-          title={
-            allFavourite
-              ? "Remove all fields from favorites"
-              : "Add all fields to favorites"
-          }
-        >
-          <Heart
-            className={`h-5 w-5 ${allFavourite ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`}
-          />
-          <span className="text-sm text-gray-600">
-            {allFavourite ? "Remove from Favorites" : "Add to Favorites"}
-          </span>
-        </button>
       </div>
     );
   };
@@ -363,12 +380,7 @@ export default function CardiologyModal({
           >
             {/* Cardiovascular Tests */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Cardiovascular Tests", [
-                ["ecgReport", "ECG"],
-                ["echocardiogramType", "Echocardiogram - Type"],
-                ["echocardiogramReport", "Echocardiogram"],
-                ["ettReport", "ETT"],
-              ])}
+              {renderSectionHeader("Cardiovascular Tests")}
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-4">
                   {renderField("ecgReport", "ECG", fieldIndex++)}
@@ -398,19 +410,7 @@ export default function CardiologyModal({
 
             {/* Lipid Profile */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Lipid Profile", [
-                ["totalCholesterol", "Total Cholesterol"],
-                ["totalCholesterolMmol", "Total Cholesterol (mmol/L)"],
-                ["triglycerides", "Triglycerides"],
-                ["triglyceridesMmol", "Triglycerides (mmol/L)"],
-                ["ldl", "Low-Density Lipoprotein (LDL) Cholesterol"],
-                ["ldlMmol", "LDL Cholesterol (mmol/L)"],
-                ["hdl", "High-Density Lipoprotein (HDL) Cholesterol"],
-                ["hdlMmol", "HDL Cholesterol (mmol/L)"],
-                ["vldl", "Very Low-Density Lipoprotein (VLDL) Cholesterol"],
-                ["vldlMmol", "VLDL Cholesterol (mmol/L)"],
-                ["tcHdlRatio", "Total Cholesterol / HDL Ratio (TC/HDL)"],
-              ])}
+              {renderSectionHeader("Lipid Profile")}
               <div className="space-y-2">
                 {(() => {
                   const lipidTests = [
@@ -456,7 +456,17 @@ export default function CardiologyModal({
                       >
                         <div className="grid grid-cols-3 gap-2 items-end">
                           <div className="col-span-1">
-                            <Label className="text-sm">{test.label}</Label>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="text-sm">{test.label}</Label>
+                              <button
+                                type="button"
+                                onClick={() => toggleFieldFavourite(test.name, test.label, "Lipid Profile")}
+                                className="p-1 rounded hover:bg-gray-100"
+                                title={isFieldFavourite("cardiology", test.name) ? "Remove from Favorites" : "Add to Favorites"}
+                              >
+                                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", test.name) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+                              </button>
+                            </div>
                           </div>
                           <div>
                             <Label className="text-sm">Value (mg/dL)</Label>
@@ -496,12 +506,7 @@ export default function CardiologyModal({
 
             {/* Cardiac Markers */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Cardiac Markers", [
-                ["lpPla2", "Lp-PLA2"],
-                ["tropI", "Trop I"],
-                ["highSensitiveTropI", "High Sensitive Trop I"],
-                ["ckMb", "CK MB"],
-              ])}
+              {renderSectionHeader("Cardiac Markers")}
               <div className="space-y-2">
                 {renderField("lpPla2", "Lp-PLA2", fieldIndex++, "nmol/min/mL")}
                 {renderField("tropI", "Trop I", fieldIndex++)}
@@ -516,10 +521,7 @@ export default function CardiologyModal({
 
             {/* Diagnostic Procedures */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Diagnostic Procedures", [
-                ["angiogram", "Angiogram"],
-                ["tiltTableTest", "Tilt Table Test"],
-              ])}
+              {renderSectionHeader("Diagnostic Procedures")}
               <div className="space-y-2">
                 {renderTextAreaField("angiogram", "Angiogram", fieldIndex++)}
                 {renderTextAreaField(

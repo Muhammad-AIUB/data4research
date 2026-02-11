@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { 
-  addSectionFieldsToFavourites, 
+  addFavouriteField,
   isFieldFavourite,
   removeFavouriteField
 } from "@/lib/favourites"
@@ -70,49 +70,10 @@ export default function DiseaseHistoryModal({
   const [saving, setSaving] = useState(false)
   const [, setFavoritesUpdated] = useState(0)
   
-  const handleSectionFavoriteToggle = (fields: Array<[string, string]>, sectionTitle: string) => {
-    const reportType = 'diseaseHistory'
-    const reportName = 'Disease History'
-    
-    
-    const allFavourite = fields.every(([fieldName]) => 
-      isFieldFavourite(reportType, fieldName)
-    )
-    
-    if (allFavourite) {
-      
-      fields.forEach(([fieldName]) => {
-        removeFavouriteField(reportType, fieldName)
-      })
-    } else {
-      
-      addSectionFieldsToFavourites(reportType, reportName, fields, sectionTitle)
-    }
-    setFavoritesUpdated(prev => prev + 1)
-  }
-
-  const renderSectionHeader = (title: string, fields: Array<[string, string]>) => {
-    const reportType = 'diseaseHistory'
-    
-    const allFavourite = fields.every(([fieldName]) => 
-      isFieldFavourite(reportType, fieldName)
-    )
-    
+  const renderSectionHeader = (title: string) => {
     return (
       <div className="flex items-center justify-between mb-3 pb-2 border-b">
         <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
-        <button
-          onClick={() => handleSectionFavoriteToggle(fields, title)}
-          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
-        >
-          <Heart 
-            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
-          />
-          <span className="text-sm text-gray-600">
-            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
-          </span>
-        </button>
       </div>
     )
   }
@@ -357,21 +318,28 @@ export default function DiseaseHistoryModal({
         <form id="disease-history-form" onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* Physical Measurements Section */}
           <div className="space-y-4">
-            {renderSectionHeader("Physical Measurements", [
-              ["age", "Age"],
-              ["heightCm", "Height (cm)"],
-              ["heightFeet", "Height (feet)"],
-              ["heightInch", "Height (inch)"],
-              ["weightLb", "Weight (lb)"],
-              ["weightKg", "Weight (kg)"],
-              ["bmi", "BMI"],
-              ["idealWeightKg", "Ideal Weight (kg)"],
-              ["idealWeightLb", "Ideal Weight (lb)"],
-            ])}
+            {renderSectionHeader("Physical Measurements")}
           
           {/* Age */}
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <Label>Age</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>Age</Label>
+              <button
+                type="button"
+                onClick={() => {
+                  const reportType = 'diseaseHistory'
+                  const reportName = 'On Examination & Disease History'
+                  const isFav = isFieldFavourite(reportType, 'age')
+                  if (isFav) removeFavouriteField(reportType, 'age')
+                  else addFavouriteField(reportType, reportName, 'age', 'Age')
+                  setFavoritesUpdated(prev => prev + 1)
+                }}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite('diseaseHistory', 'age') ? 'Remove from Favorites' : 'Add to Favorites'}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'age') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+              </button>
+            </div>
             <Input value={form.age} onChange={(e) => update("age", e.target.value)} placeholder="35" className="bg-white" />
           </div>
 
@@ -380,15 +348,66 @@ export default function DiseaseHistoryModal({
             <Label className="mb-2 block font-bold">Height (delete any = clear all)</Label>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>cm</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>cm</Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const reportType = 'diseaseHistory'
+                      const reportName = 'On Examination & Disease History'
+                      const isFav = isFieldFavourite(reportType, 'heightCm')
+                      if (isFav) removeFavouriteField(reportType, 'heightCm')
+                      else addFavouriteField(reportType, reportName, 'heightCm', 'Height (cm)')
+                      setFavoritesUpdated(prev => prev + 1)
+                    }}
+                    className="p-1 rounded hover:bg-gray-100"
+                    title={isFieldFavourite('diseaseHistory', 'heightCm') ? 'Remove from Favorites' : 'Add to Favorites'}
+                  >
+                    <Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'heightCm') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                  </button>
+                </div>
                 <Input value={form.heightCm} onChange={(e) => handleCmChange(e.target.value)} placeholder="170" />
               </div>
               <div>
-                <Label>feet</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>feet</Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const reportType = 'diseaseHistory'
+                      const reportName = 'On Examination & Disease History'
+                      const isFav = isFieldFavourite(reportType, 'heightFeet')
+                      if (isFav) removeFavouriteField(reportType, 'heightFeet')
+                      else addFavouriteField(reportType, reportName, 'heightFeet', 'Height (feet)')
+                      setFavoritesUpdated(prev => prev + 1)
+                    }}
+                    className="p-1 rounded hover:bg-gray-100"
+                    title={isFieldFavourite('diseaseHistory', 'heightFeet') ? 'Remove from Favorites' : 'Add to Favorites'}
+                  >
+                    <Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'heightFeet') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                  </button>
+                </div>
                 <Input value={form.heightFeet} onChange={(e) => handleFeetChange(e.target.value)} placeholder="5" />
               </div>
               <div>
-                <Label>inch</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>inch</Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const reportType = 'diseaseHistory'
+                      const reportName = 'On Examination & Disease History'
+                      const isFav = isFieldFavourite(reportType, 'heightInch')
+                      if (isFav) removeFavouriteField(reportType, 'heightInch')
+                      else addFavouriteField(reportType, reportName, 'heightInch', 'Height (inch)')
+                      setFavoritesUpdated(prev => prev + 1)
+                    }}
+                    className="p-1 rounded hover:bg-gray-100"
+                    title={isFieldFavourite('diseaseHistory', 'heightInch') ? 'Remove from Favorites' : 'Add to Favorites'}
+                  >
+                    <Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'heightInch') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                  </button>
+                </div>
                 <Input value={form.heightInch} onChange={(e) => handleInchChange(e.target.value)} placeholder="7" step="0.1" />
               </div>
             </div>
@@ -397,11 +416,45 @@ export default function DiseaseHistoryModal({
           {/* Weight */}
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-lg border border-purple-300 bg-purple-50 p-4">
-              <Label>pound (lb)</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>pound (lb)</Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const reportType = 'diseaseHistory'
+                    const reportName = 'On Examination & Disease History'
+                    const isFav = isFieldFavourite(reportType, 'weightLb')
+                    if (isFav) removeFavouriteField(reportType, 'weightLb')
+                    else addFavouriteField(reportType, reportName, 'weightLb', 'Weight (lb)')
+                    setFavoritesUpdated(prev => prev + 1)
+                  }}
+                  className="p-1 rounded hover:bg-gray-100"
+                  title={isFieldFavourite('diseaseHistory', 'weightLb') ? 'Remove from Favorites' : 'Add to Favorites'}
+                >
+                  <Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'weightLb') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                </button>
+              </div>
               <Input value={form.weightLb} onChange={(e) => update("weightLb", e.target.value)} className="bg-white" />
             </div>
             <div className="rounded-lg border border-purple-300 bg-purple-50 p-4">
-              <Label>KG</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>KG</Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const reportType = 'diseaseHistory'
+                    const reportName = 'On Examination & Disease History'
+                    const isFav = isFieldFavourite(reportType, 'weightKg')
+                    if (isFav) removeFavouriteField(reportType, 'weightKg')
+                    else addFavouriteField(reportType, reportName, 'weightKg', 'Weight (kg)')
+                    setFavoritesUpdated(prev => prev + 1)
+                  }}
+                  className="p-1 rounded hover:bg-gray-100"
+                  title={isFieldFavourite('diseaseHistory', 'weightKg') ? 'Remove from Favorites' : 'Add to Favorites'}
+                >
+                  <Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'weightKg') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                </button>
+              </div>
               <Input value={form.weightKg} onChange={(e) => update("weightKg", e.target.value)} className="bg-white" />
             </div>
           </div>
@@ -409,29 +462,30 @@ export default function DiseaseHistoryModal({
 
           {/* Vital Signs Section */}
           <div className="space-y-4">
-            {renderSectionHeader("Vital Signs", [
-              ["sbp", "Systolic (SBP)"],
-              ["dbp", "Diastolic (DBP)"],
-              ["map", "Mean Arterial Pressure"],
-              ["pulse", "Pulse"],
-              ["pulseNote", "Pulse Note"],
-              ["respiratoryRate", "Respiratory Rate"],
-              ["spO2", "Oxygen Saturation (SpO2)"],
-            ])}
+            {renderSectionHeader("Vital Signs")}
           
           {/* BP + MAP */}
           <div className="rounded-lg border border-teal-200 bg-teal-50 p-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Diastolic (DBP)</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Diastolic (DBP)</Label>
+                  <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'dbp'); if (isFav) removeFavouriteField('diseaseHistory', 'dbp'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'dbp', 'Diastolic (DBP)'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'dbp') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'dbp') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                </div>
                 <Input value={form.dbp} onChange={(e) => update("dbp", e.target.value)} className="bg-white" />
               </div>
               <div>
-                <Label>Mean Arterial Pressure (auto)</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Mean Arterial Pressure (auto)</Label>
+                  <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'map'); if (isFav) removeFavouriteField('diseaseHistory', 'map'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'map', 'Mean Arterial Pressure'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'map') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'map') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                </div>
                 <Input value={form.map} readOnly className="bg-gray-100" />
               </div>
               <div>
-                <Label>Systolic (SBP)</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Systolic (SBP)</Label>
+                  <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'sbp'); if (isFav) removeFavouriteField('diseaseHistory', 'sbp'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'sbp', 'Systolic (SBP)'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'sbp') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'sbp') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                </div>
                 <Input value={form.sbp} onChange={(e) => update("sbp", e.target.value)} className="bg-white" />
               </div>
             </div>
@@ -440,11 +494,17 @@ export default function DiseaseHistoryModal({
           {/* BMI + Ideal Weight */}
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-              <Label>BMI (auto)</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>BMI (auto)</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'bmi'); if (isFav) removeFavouriteField('diseaseHistory', 'bmi'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'bmi', 'BMI'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'bmi') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'bmi') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Input value={form.bmi} readOnly className="bg-gray-100" />
             </div>
             <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-              <Label>Ideal Body Weight (kg)</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Ideal Body Weight (kg)</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'idealWeightKg'); if (isFav) removeFavouriteField('diseaseHistory', 'idealWeightKg'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'idealWeightKg', 'Ideal Body Weight (kg)'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'idealWeightKg') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'idealWeightKg') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Input value={form.idealWeightKg} readOnly className="bg-gray-100" />
             </div>
           </div>
@@ -453,21 +513,33 @@ export default function DiseaseHistoryModal({
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Pulse (b/m)</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Pulse (b/m)</Label>
+                  <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'pulse'); if (isFav) removeFavouriteField('diseaseHistory', 'pulse'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'pulse', 'Pulse'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'pulse') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'pulse') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                </div>
                 <Input value={form.pulse} onChange={(e) => update("pulse", e.target.value)} className="bg-white" />
               </div>
               <div>
-                <Label>Note</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Note</Label>
+                  <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'pulseNote'); if (isFav) removeFavouriteField('diseaseHistory', 'pulseNote'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'pulseNote', 'Pulse Note'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'pulseNote') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'pulseNote') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                </div>
                 <Input value={form.pulseNote} onChange={(e) => update("pulseNote", e.target.value)} className="bg-white" />
               </div>
               <div>
-                <Label>Oxygen Saturation (SpO2)</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Oxygen Saturation (SpO2)</Label>
+                  <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'spO2'); if (isFav) removeFavouriteField('diseaseHistory', 'spO2'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'spO2', 'Oxygen Saturation (SpO2)'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'spO2') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'spO2') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                </div>
                 <Input value={form.spO2} onChange={(e) => update("spO2", e.target.value)} className="bg-white" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Respiratory Rate</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Respiratory Rate</Label>
+                  <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'respiratoryRate'); if (isFav) removeFavouriteField('diseaseHistory', 'respiratoryRate'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'respiratoryRate', 'Respiratory Rate'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'respiratoryRate') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'respiratoryRate') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                </div>
                 <Input value={form.respiratoryRate} onChange={(e) => update("respiratoryRate", e.target.value)} className="bg-white" />
               </div>
               <div></div>
@@ -477,21 +549,15 @@ export default function DiseaseHistoryModal({
 
           {/* Clinical Findings Section */}
           <div className="space-y-4">
-            {renderSectionHeader("Clinical Findings", [
-              ["anaemia", "Anaemia"],
-              ["jaundice", "Jaundice"],
-              ["ascites", "Ascites"],
-              ["heart", "Heart"],
-              ["lung", "Lung"],
-              ["specialNote", "Special Note"],
-              ["diseaseHistory", "Disease History"],
-              ["surgicalHistory", "Surgical History"],
-            ])}
+            {renderSectionHeader("Clinical Findings")}
           
           {/* Anaemia / Jaundice / Ascites */}
           <div className="grid grid-cols-3 gap-4 rounded-lg border border-pink-200 bg-pink-50 p-4">
             <div>
-              <Label>Anaemia</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Anaemia</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'anaemia'); if (isFav) removeFavouriteField('diseaseHistory', 'anaemia'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'anaemia', 'Anaemia'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'anaemia') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'anaemia') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Select value={form.anaemia ?? ""} onValueChange={(v) => update("anaemia", v)}>
                 <SelectValue placeholder="Select" />
                 <SelectContent>
@@ -503,7 +569,10 @@ export default function DiseaseHistoryModal({
               </Select>
             </div>
             <div>
-              <Label>Jaundice</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Jaundice</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'jaundice'); if (isFav) removeFavouriteField('diseaseHistory', 'jaundice'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'jaundice', 'Jaundice'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'jaundice') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'jaundice') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Select value={form.jaundice ?? ""} onValueChange={(v) => update("jaundice", v)}>
                 <SelectValue placeholder="Select" />
                 <SelectContent>
@@ -515,7 +584,10 @@ export default function DiseaseHistoryModal({
               </Select>
             </div>
             <div>
-              <Label>Ascites</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Ascites</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'ascites'); if (isFav) removeFavouriteField('diseaseHistory', 'ascites'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'ascites', 'Ascites'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'ascites') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'ascites') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Select value={form.ascites ?? ""} onValueChange={(v) => update("ascites", v)}>
                 <SelectValue placeholder="Select" />
                 <SelectContent>
@@ -532,11 +604,17 @@ export default function DiseaseHistoryModal({
           {/* Auscultation */}
           <div className="grid grid-cols-2 gap-4 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
             <div>
-              <Label>Auscultation Heart</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Auscultation Heart</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'heart'); if (isFav) removeFavouriteField('diseaseHistory', 'heart'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'heart', 'Auscultation Heart'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'heart') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'heart') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Input value={form.heart} onChange={(e) => update("heart", e.target.value)} className="bg-white" />
             </div>
             <div>
-              <Label>Auscultation Lung</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Auscultation Lung</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'lung'); if (isFav) removeFavouriteField('diseaseHistory', 'lung'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'lung', 'Auscultation Lung'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'lung') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'lung') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Input value={form.lung} onChange={(e) => update("lung", e.target.value)} className="bg-white" />
             </div>
           </div>
@@ -544,15 +622,24 @@ export default function DiseaseHistoryModal({
           {/* Notes */}
           <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
             <div>
-              <Label>Special note or other findings of O/E</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Special note or other findings of O/E</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'specialNote'); if (isFav) removeFavouriteField('diseaseHistory', 'specialNote'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'specialNote', 'Special Note'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'specialNote') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'specialNote') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Input value={form.specialNote} onChange={(e) => update("specialNote", e.target.value)} className="bg-white" />
             </div>
             <div>
-              <Label>Disease History (e.g. first known, disease event etc.)</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Disease History (e.g. first known, disease event etc.)</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'diseaseHistory'); if (isFav) removeFavouriteField('diseaseHistory', 'diseaseHistory'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'diseaseHistory', 'Disease History'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'diseaseHistory') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'diseaseHistory') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Input value={form.diseaseHistory} onChange={(e) => update("diseaseHistory", e.target.value)} className="bg-white" />
             </div>
             <div>
-              <Label>Surgical or Intervention History</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Surgical or Intervention History</Label>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('diseaseHistory', 'surgicalHistory'); if (isFav) removeFavouriteField('diseaseHistory', 'surgicalHistory'); else addFavouriteField('diseaseHistory', 'On Examination & Disease History', 'surgicalHistory', 'Surgical History'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('diseaseHistory', 'surgicalHistory') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('diseaseHistory', 'surgicalHistory') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              </div>
               <Input value={form.surgicalHistory} onChange={(e) => update("surgicalHistory", e.target.value)} className="bg-white" />
             </div>
           </div>

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import {
-  addSectionFieldsToFavourites,
-  areAllSectionFieldsFavourite,
+  addFavouriteField,
+  isFieldFavourite,
   removeFavouriteField,
 } from "@/lib/favourites";
 
@@ -112,6 +112,20 @@ export default function AutoimmunoProfileModal({
     "bg-cyan-50 border-cyan-200",
   ];
 
+  const toggleFieldFavourite = (fieldName: string, fieldLabel: string, sectionTitle?: string) => {
+    const reportType = "autoimmunoProfile";
+    const reportName = "Autoimmuno Profile";
+    const isFav = isFieldFavourite(reportType, fieldName);
+    if (isFav) {
+      removeFavouriteField(reportType, fieldName);
+      removeFavouriteField(reportType, `${fieldName}_notes`);
+    } else {
+      addFavouriteField(reportType, reportName, fieldName, fieldLabel, sectionTitle);
+      addFavouriteField(reportType, reportName, `${fieldName}_notes`, `${fieldLabel} - Notes`, sectionTitle);
+    }
+    setFavoritesUpdated((prev) => prev + 1);
+  };
+
   const renderField = (fieldName: string, label: string, index: number) => {
     const colorClass = fieldColors[index % fieldColors.length];
 
@@ -120,7 +134,17 @@ export default function AutoimmunoProfileModal({
         className={`grid grid-cols-3 gap-2 items-end p-2 rounded ${colorClass}`}
       >
         <div className="col-span-1">
-          <Label className="text-sm">{label}</Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label className="text-sm">{label}</Label>
+            <button
+              type="button"
+              onClick={() => toggleFieldFavourite(fieldName, label)}
+              className="p-1 rounded hover:bg-gray-100"
+              title={isFieldFavourite("autoimmunoProfile", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
+            >
+              <Heart className={`h-5 w-5 ${isFieldFavourite("autoimmunoProfile", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+            </button>
+          </div>
           <Select
             value={getFieldValue(fieldName)}
             onValueChange={(v) => updateField(fieldName, v, "value")}
@@ -144,74 +168,16 @@ export default function AutoimmunoProfileModal({
     );
   };
 
-  const handleSectionFavoriteToggle = (
-    fields: Array<[string, string]>,
-    sectionTitle: string,
-  ) => {
-    const reportType = "autoimmunoProfile";
-    const reportName = "Autoimmuno Profile";
-
-    if (areAllSectionFieldsFavourite(reportType, fields)) {
-      
-      const fieldsToRemove: Array<[string, string]> = [];
-      fields.forEach(([fieldName, fieldLabel]) => {
-        fieldsToRemove.push([fieldName, fieldLabel]);
-        fieldsToRemove.push([`${fieldName}_notes`, `${fieldLabel} - Notes`]);
-      });
-      fieldsToRemove.forEach(([fieldName]) => {
-        removeFavouriteField(reportType, fieldName);
-      });
-    } else {
-      
-      const fieldsToAdd: Array<[string, string]> = [];
-      fields.forEach(([fieldName, fieldLabel]) => {
-        
-        fieldsToAdd.push([fieldName, fieldLabel]);
-        
-        fieldsToAdd.push([`${fieldName}_notes`, `${fieldLabel} - Notes`]);
-      });
-      addSectionFieldsToFavourites(
-        reportType,
-        reportName,
-        fieldsToAdd,
-        sectionTitle,
-      );
-    }
-    setFavoritesUpdated((prev) => prev + 1); 
-  };
-
   const renderSection = (
     title: string,
     fields: Array<[string, string]>,
     startIndex: number,
   ) => {
-    const reportType = "autoimmunoProfile";
-    
-    const mainFields = fields.filter(
-      ([fieldName]) => !fieldName.endsWith("_notes"),
-    );
-    const allFavourite = areAllSectionFieldsFavourite(reportType, mainFields);
 
     return (
       <div className="mb-6 pb-4 border-b">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
-          <button
-            onClick={() => handleSectionFavoriteToggle(fields, title)}
-            className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-            title={
-              allFavourite
-                ? "Remove all fields from favorites"
-                : "Add all fields to favorites"
-            }
-          >
-            <Heart
-              className={`h-5 w-5 ${allFavourite ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`}
-            />
-            <span className="text-sm text-gray-600">
-              {allFavourite ? "Remove from Favorites" : "Add to Favorites"}
-            </span>
-          </button>
         </div>
         <div className="space-y-2">
           {fields.map(([fieldName, label], idx) => (

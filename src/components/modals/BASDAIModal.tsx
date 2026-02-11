@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
 import { 
-  addSectionFieldsToFavourites, 
+  addFavouriteField,
   isFieldFavourite, 
   removeFavouriteField 
 } from "@/lib/favourites"
@@ -125,18 +125,6 @@ export default function BASDAIModal({
     ["q6StiffnessDuration", "Morning stiffness duration"],
   ]
 
-  const handleSectionFavoriteToggle = () => {
-    const reportType = "basdai"
-    const reportName = "BASDAI"
-    const allFavourite = basdaiFields.every(([fieldName]) => isFieldFavourite(reportType, fieldName))
-    if (allFavourite) {
-      basdaiFields.forEach(([fieldName]) => removeFavouriteField(reportType, fieldName))
-    } else {
-      addSectionFieldsToFavourites(reportType, reportName, basdaiFields, "BASDAI Questions")
-    }
-    setFavoritesUpdated(prev => prev + 1)
-  }
-
   const fieldColors = [
     "bg-blue-50 border-blue-200",
     "bg-green-50 border-green-200",
@@ -149,23 +137,9 @@ export default function BASDAIModal({
   ]
 
   const renderSectionHeader = () => {
-    const reportType = "basdai"
-    const allFavourite = basdaiFields.every(([fieldName]) => isFieldFavourite(reportType, fieldName))
     return (
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-lg text-blue-700">BASDAI Questions</h3>
-        <button
-          onClick={handleSectionFavoriteToggle}
-          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-          title={allFavourite ? "Remove all fields from favorites" : "Add all fields to favorites"}
-        >
-          <Heart 
-            className={`h-5 w-5 ${allFavourite ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} 
-          />
-          <span className="text-sm text-gray-600">
-            {allFavourite ? 'Remove from Favorites' : 'Add to Favorites'}
-          </span>
-        </button>
       </div>
     )
   }
@@ -247,7 +221,25 @@ export default function BASDAIModal({
                   const colorClass = fieldColors[idx % fieldColors.length]
                   return (
                     <div key={idx} className={`p-2 rounded ${colorClass}`}>
-                      <Label className="text-sm">{f.label}</Label>
+                      <div className="flex items-center justify-between mb-1">
+                        <Label className="text-sm">{f.label}</Label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const reportType = 'basdai'
+                            const reportName = 'BASDAI'
+                            const fieldName = basdaiFields[idx][0]
+                            const isFav = isFieldFavourite(reportType, fieldName)
+                            if (isFav) removeFavouriteField(reportType, fieldName)
+                            else addFavouriteField(reportType, reportName, fieldName, f.label)
+                            setFavoritesUpdated(prev => prev + 1)
+                          }}
+                          className="p-1 rounded hover:bg-gray-100"
+                          title={isFieldFavourite('basdai', basdaiFields[idx][0]) ? 'Remove from Favorites' : 'Add to Favorites'}
+                        >
+                          <Heart className={`h-5 w-5 ${isFieldFavourite('basdai', basdaiFields[idx][0]) ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                        </button>
+                      </div>
                       <Select
                         value={f.value}
                         onValueChange={(v) => f.onChange(v)}
@@ -266,7 +258,25 @@ export default function BASDAIModal({
                   const colorClass = fieldColors[idx % fieldColors.length]
                   return (
                     <div className={`p-2 rounded ${colorClass}`}>
-                      <Label className="text-sm">6. Morning stiffness duration</Label>
+                      <div className="flex items-center justify-between mb-1">
+                        <Label className="text-sm">6. Morning stiffness duration</Label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const reportType = 'basdai'
+                            const reportName = 'BASDAI'
+                            const fieldName = basdaiFields[5][0]
+                            const isFav = isFieldFavourite(reportType, fieldName)
+                            if (isFav) removeFavouriteField(reportType, fieldName)
+                            else addFavouriteField(reportType, reportName, fieldName, '6. Morning stiffness duration')
+                            setFavoritesUpdated(prev => prev + 1)
+                          }}
+                          className="p-1 rounded hover:bg-gray-100"
+                          title={isFieldFavourite('basdai', basdaiFields[5][0]) ? 'Remove from Favorites' : 'Add to Favorites'}
+                        >
+                          <Heart className={`h-5 w-5 ${isFieldFavourite('basdai', basdaiFields[5][0]) ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                        </button>
+                      </div>
                       <Select
                         value={String(form.q6StiffnessDuration)}
                         onValueChange={(v) => {

@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import {
-  addSectionFieldsToFavourites,
-  areAllSectionFieldsFavourite,
+  addFavouriteField,
   isFieldFavourite,
   removeFavouriteField,
 } from "@/lib/favourites";
@@ -154,7 +153,17 @@ export default function RFTModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-1">
-            <Label className="text-sm font-medium">{label}</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-sm font-medium">{label}</Label>
+              <button
+                type="button"
+                onClick={() => toggleFieldFavourite(fieldName, label, undefined, true)}
+                className="p-1 rounded hover:bg-gray-100"
+                title={isFieldFavourite("rft", `${fieldName}_value1`) ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <Heart className={`h-5 w-5 ${isFieldFavourite("rft", `${fieldName}_value1`) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+              </button>
+            </div>
           </div>
           <div>
             <Label className="text-sm">Value ({unit1})</Label>
@@ -220,109 +229,51 @@ export default function RFTModal({
     }
   };
 
-  const handleSectionFavoriteToggle = (
-    fields: Array<[string, string]>,
-    sectionTitle: string,
+  const toggleFieldFavourite = (
+    fieldName: string,
+    fieldLabel: string,
+    sectionTitle?: string,
     hasDualValues: boolean = true,
   ) => {
     const reportType = "rft";
     const reportName = "RFT";
 
-    
-    const fieldsToCheck = hasDualValues
-      ? fields.map(([fieldName]) => `${fieldName}_value1`)
-      : fields.map(([fieldName]) => fieldName);
-
-    const allFavourite = fieldsToCheck.every((fieldName) =>
-      isFieldFavourite(reportType, fieldName),
-    );
-
-    if (allFavourite) {
-      
-      fields.forEach(([fieldName]) => {
-        if (hasDualValues) {
-          
-          removeFavouriteField(reportType, `${fieldName}_value1`);
-          removeFavouriteField(reportType, `${fieldName}_value2`);
-        } else {
-          removeFavouriteField(reportType, fieldName);
-        }
-      });
+    if (hasDualValues) {
+      const isFav = isFieldFavourite(reportType, `${fieldName}_value1`);
+      if (isFav) {
+        removeFavouriteField(reportType, `${fieldName}_value1`);
+        removeFavouriteField(reportType, `${fieldName}_value2`);
+      } else {
+        addFavouriteField(
+          reportType,
+          reportName,
+          `${fieldName}_value1`,
+          `${fieldLabel} - Value (Unit 1)`,
+          sectionTitle,
+        );
+        addFavouriteField(
+          reportType,
+          reportName,
+          `${fieldName}_value2`,
+          `${fieldLabel} - Value (Unit 2)`,
+          sectionTitle,
+        );
+      }
     } else {
-      
-      const allFieldsToAdd: Array<[string, string]> = [];
-      fields.forEach(([fieldName, fieldLabel]) => {
-        if (hasDualValues) {
-          
-          
-          
-          let unit1 = "Unit 1";
-          let unit2 = "Unit 2";
-
-          if (fieldName === "creatinine") {
-            unit1 = "mg/dL";
-            unit2 = "µmol/L";
-          } else if (
-            ["sodium", "potassium", "chloride", "bicarbonate"].includes(
-              fieldName,
-            )
-          ) {
-            unit1 = "mmol/L";
-            unit2 = "mEq/L";
-          }
-
-          allFieldsToAdd.push([
-            `${fieldName}_value1`,
-            `${fieldLabel} - Value (${unit1})`,
-          ]);
-          allFieldsToAdd.push([
-            `${fieldName}_value2`,
-            `${fieldLabel} - Value (${unit2})`,
-          ]);
-        } else {
-          allFieldsToAdd.push([fieldName, fieldLabel]);
-        }
-      });
-      addSectionFieldsToFavourites(
-        reportType,
-        reportName,
-        allFieldsToAdd,
-        sectionTitle,
-      );
+      const isFav = isFieldFavourite(reportType, fieldName);
+      if (isFav) removeFavouriteField(reportType, fieldName);
+      else addFavouriteField(reportType, reportName, fieldName, fieldLabel, sectionTitle);
     }
+
     setFavoritesUpdated((prev) => prev + 1);
   };
 
   const renderSectionHeader = (
     title: string,
-    fields: Array<[string, string]>,
-    hasDualValues: boolean = true,
   ) => {
-    const reportType = "rft";
-    
-    const allFavourite = areAllSectionFieldsFavourite(reportType, fields);
-
     return (
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
-        <button
-          onClick={() =>
-            handleSectionFavoriteToggle(fields, title, hasDualValues)
-          }
-          className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-          title={
-            allFavourite
-              ? "Remove all fields from favorites"
-              : "Add all fields to favorites"
-          }
-        >
-          <Heart
-            className={`h-5 w-5 ${allFavourite ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`}
-          />
-          <span className="text-sm text-gray-600">
-            {allFavourite ? "Remove from Favorites" : "Add to Favorites"}
-          </span>
-        </button>
       </div>
     );
   };
@@ -380,11 +331,7 @@ export default function RFTModal({
           <form id="rft-form" onSubmit={handleSubmit} className="space-y-4">
             {/* S. Creatinine */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader(
-                "S. Creatinine",
-                [["creatinine", "S. Creatinine"]],
-                true,
-              )}
+              {renderSectionHeader("S. Creatinine")}
               <div className="space-y-2">
                 {renderField(
                   "creatinine",
@@ -398,16 +345,7 @@ export default function RFTModal({
 
             {/* S. Electrolyte */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader(
-                "S. Electrolyte",
-                [
-                  ["sodium", "Sodium (Na+)"],
-                  ["potassium", "Potassium (K+)"],
-                  ["chloride", "Chloride (Cl-)"],
-                  ["bicarbonate", "Bicarbonate (HCO3-)"],
-                ],
-                true,
-              )}
+              {renderSectionHeader("S. Electrolyte")}
               <div className="space-y-2">
                 {renderField(
                   "sodium",
@@ -442,11 +380,7 @@ export default function RFTModal({
 
             {/* Blood Urea Nitrogen */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader(
-                "Blood Urea Nitrogen (BUN)",
-                [["bun", "Blood Urea Nitrogen (BUN)"]],
-                false,
-              )}
+              {renderSectionHeader("Blood Urea Nitrogen (BUN)")}
               <div className="space-y-2">
                 {(() => {
                   const colorClass =
@@ -455,9 +389,19 @@ export default function RFTModal({
                     <div className={`p-2 rounded ${colorClass}`}>
                       <div className="grid grid-cols-2 gap-2 items-end">
                         <div>
-                          <Label className="text-sm font-medium">
-                            Blood Urea Nitrogen (BUN)
-                          </Label>
+                          <div className="flex items-center justify-between mb-1">
+                            <Label className="text-sm font-medium">
+                              Blood Urea Nitrogen (BUN)
+                            </Label>
+                            <button
+                              type="button"
+                              onClick={() => toggleFieldFavourite("bun", "Blood Urea Nitrogen (BUN)", undefined, false)}
+                              className="p-1 rounded hover:bg-gray-100"
+                              title={isFieldFavourite("rft", "bun") ? "Remove from Favorites" : "Add to Favorites"}
+                            >
+                              <Heart className={`h-5 w-5 ${isFieldFavourite("rft", "bun") ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <Label className="text-sm">Value</Label>
