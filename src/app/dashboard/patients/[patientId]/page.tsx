@@ -109,6 +109,33 @@ export default async function PatientDetailPage({
     );
   }
 
+  // ---------- Pre-compute test grouping ONCE, outside JSX ----------
+  // Prisma already returns tests sorted by createdAt desc, sampleDate desc.
+  // Group by formatted sampleDate; Map preserves insertion order (= newest first).
+  type TestRow = (typeof patient.tests)[number];
+  const groupedTests: [string, TestRow[]][] = (() => {
+    const map = new Map<string, TestRow[]>();
+    for (const test of patient.tests) {
+      const d = test.sampleDate instanceof Date ? test.sampleDate : new Date(test.sampleDate);
+      const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+      const arr = map.get(key);
+      if (arr) arr.push(test);
+      else map.set(key, [test]);
+    }
+    return Array.from(map.entries());
+  })();
+
+  // Pre-format test data for each report type to avoid calling formatTestData inside JSX loops
+  const reportTypes = [
+    { key: "autoimmunoProfile" as const, label: "Autoimmuno Profile" },
+    { key: "cardiology" as const, label: "Cardiology" },
+    { key: "rft" as const, label: "RFT" },
+    { key: "lft" as const, label: "LFT" },
+    { key: "diseaseHistory" as const, label: "Disease History" },
+    { key: "imaging" as const, label: "Imaging, Histopathology" },
+    { key: "hematology" as const, label: "Hematology" },
+  ] as const;
+
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto p-8">
@@ -309,109 +336,8 @@ export default async function PatientDetailPage({
             </div>
           ) : (
             <div className="space-y-6">
-              {(
-                Object.entries(
-                  
-                  [...patient.tests]
-                    .sort((a, b) => {
-                      const timeA = a.createdAt
-                        ? new Date(a.createdAt).getTime()
-                        : 0;
-                      const timeB = b.createdAt
-                        ? new Date(b.createdAt).getTime()
-                        : 0;
-                      return timeB - timeA; 
-                    })
-                    .reduce(
-                      (acc: Record<string, Array<{
-                        sampleDate: Date | string;
-                        createdAt?: Date | string;
-                        autoimmunoProfile?: unknown;
-                        cardiology?: unknown;
-                        rft?: unknown;
-                        lft?: unknown;
-                        diseaseHistory?: unknown;
-                        imaging?: unknown;
-                        hematology?: unknown;
-                        basdai?: unknown;
-                      }>>, test: {
-                        sampleDate: Date | string;
-                        createdAt?: Date | string;
-                        autoimmunoProfile?: unknown;
-                        cardiology?: unknown;
-                        rft?: unknown;
-                        lft?: unknown;
-                        diseaseHistory?: unknown;
-                        imaging?: unknown;
-                        hematology?: unknown;
-                        basdai?: unknown;
-                      }) => {
-                        
-                        const sampleDate =
-                          test.sampleDate instanceof Date
-                            ? test.sampleDate
-                            : new Date(test.sampleDate);
-
-                        
-                        const year = sampleDate.getFullYear();
-                        const month = String(
-                          sampleDate.getMonth() + 1,
-                        ).padStart(2, "0");
-                        const day = String(sampleDate.getDate()).padStart(
-                          2,
-                          "0",
-                        );
-                        const date = `${day}/${month}/${year}`;
-
-                        if (!acc[date]) acc[date] = [];
-                        acc[date].push(test); 
-                        return acc;
-                      },
-                      {} as Record<string, Array<{
-                        sampleDate: Date | string;
-                        createdAt?: Date | string;
-                        autoimmunoProfile?: unknown;
-                        cardiology?: unknown;
-                        rft?: unknown;
-                        lft?: unknown;
-                        diseaseHistory?: unknown;
-                        imaging?: unknown;
-                        hematology?: unknown;
-                        basdai?: unknown;
-                      }>>,
-                    ),
-                ) as [string, Array<{
-                  sampleDate: Date | string;
-                  createdAt?: Date | string;
-                  autoimmunoProfile?: unknown;
-                  cardiology?: unknown;
-                  rft?: unknown;
-                  lft?: unknown;
-                  diseaseHistory?: unknown;
-                  imaging?: unknown;
-                  hematology?: unknown;
-                  basdai?: unknown;
-                }>][]
-              )
-                .sort(([, testsA], [, testsB]) => {
-                  
-                  const getLatestTime = (tests: Array<{ createdAt?: Date | string; [key: string]: unknown }>) => {
-                    return Math.max(
-                      ...tests.map((t) =>
-                        t.createdAt ? new Date(t.createdAt).getTime() : 0,
-                      ),
-                    );
-                  };
-                  const timeA = getLatestTime(testsA);
-                  const timeB = getLatestTime(testsB);
-                  return timeB - timeA; 
-                })
-                .map(([date, tests]) => {
-                  
-                  
-                  const sortedTests = tests;
-
-                  return (
+              {/* groupedTests is pre-computed above — no inline sort/reduce during render */}
+              {groupedTests.map(([date, tests]) => (
                     <div
                       key={date}
                       className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-blue-100 p-4"
@@ -425,203 +351,38 @@ export default async function PatientDetailPage({
                         </div>
                       </div>
                       <div className="space-y-4">
-                        {sortedTests.map((test, index) => (
+                        {tests.map((test, index) => (
                           <div
                             key={index}
                             className="bg-white rounded-xl p-4 shadow-sm border border-blue-50"
                           >
-                            {test.autoimmunoProfile != null && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-slate-800">
-                                    Autoimmuno Profile
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
-                                  {formatTestData(
-                                    test.autoimmunoProfile,
-                                    "autoimmunoProfile",
-                                  ).map((item, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex justify-between items-center text-sm"
-                                    >
-                                      <span className="text-slate-500">
-                                        {item.label}
-                                      </span>
-                                      <span className="text-gray-900 font-medium">
-                                        {item.value}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {test.cardiology != null && Boolean(test.cardiology) && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-slate-800">
-                                    Cardiology
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
-                                  {formatTestData(
-                                    test.cardiology,
-                                    "cardiology",
-                                  ).map((item, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex justify-between items-center text-sm"
-                                    >
-                                      <span className="text-slate-500">
-                                        {item.label}
-                                      </span>
-                                      <span className="text-gray-900 font-medium">
-                                        {item.value}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {test.rft != null && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-slate-800">
-                                    RFT
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
-                                  {formatTestData(test.rft, "rft").map(
-                                    (item, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="flex justify-between items-center text-sm"
-                                      >
-                                        <span className="text-slate-500">
-                                          {item.label}
-                                        </span>
-                                        <span className="text-gray-900 font-medium">
-                                          {item.value}
-                                        </span>
+                            {/* Loop over report types instead of repeating 7 blocks */}
+                            {reportTypes.map(({ key, label }) => {
+                              const data = test[key];
+                              if (data == null) return null;
+                              const items = formatTestData(data, key);
+                              if (items.length === 0) return null;
+                              return (
+                                <div key={key} className="mb-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-semibold text-slate-800">{label}</h4>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
+                                    {items.map((item, idx) => (
+                                      <div key={idx} className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500">{item.label}</span>
+                                        <span className="text-gray-900 font-medium">{item.value}</span>
                                       </div>
-                                    ),
-                                  )}
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                            {test.lft != null && Boolean(test.lft) && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-slate-800">
-                                    LFT
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
-                                  {formatTestData(test.lft, "lft").map(
-                                    (item, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="flex justify-between items-center text-sm"
-                                      >
-                                        <span className="text-slate-500">
-                                          {item.label}
-                                        </span>
-                                        <span className="text-gray-900 font-medium">
-                                          {item.value}
-                                        </span>
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {test.diseaseHistory != null && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-slate-800">
-                                    Disease History
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
-                                  {formatTestData(
-                                    test.diseaseHistory,
-                                    "diseaseHistory",
-                                  ).map((item, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex justify-between items-center text-sm"
-                                    >
-                                      <span className="text-slate-500">
-                                        {item.label}
-                                      </span>
-                                      <span className="text-gray-900 font-medium">
-                                        {item.value}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {test.imaging != null && Boolean(test.imaging) && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-slate-800">
-                                    Imaging, Histopathology
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
-                                  {formatTestData(test.imaging, "imaging").map(
-                                    (item, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="flex justify-between items-center text-sm"
-                                      >
-                                        <span className="text-slate-500">
-                                          {item.label}
-                                        </span>
-                                        <span className="text-gray-900 font-medium">
-                                          {item.value}
-                                        </span>
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {test.hematology != null && Boolean(test.hematology) && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-slate-800">
-                                    Hematology
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
-                                  {formatTestData(
-                                    test.hematology,
-                                    "hematology",
-                                  ).map((item, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex justify-between items-center text-sm"
-                                    >
-                                      <span className="text-slate-500">
-                                        {item.label}
-                                      </span>
-                                      <span className="text-gray-900 font-medium">
-                                        {item.value}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })}
                           </div>
                         ))}
                       </div>
                     </div>
-                  );
-                })}
+              ))}
             </div>
           )}
         </div>
