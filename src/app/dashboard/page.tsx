@@ -8,7 +8,7 @@ export default async function DashboardPage() {
   // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = (await getServerSession(authOptions)) as Session | null;
   if (!session || !session.user) {
-    redirect("/login");
+    redirect("/");
   }
 
   return (

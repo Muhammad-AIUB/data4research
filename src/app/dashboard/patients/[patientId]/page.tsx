@@ -28,7 +28,7 @@ export default async function PatientDetailPage({
 
   
   if (!session || !session.user) {
-    redirect("/login");
+    redirect("/");
   }
 
   

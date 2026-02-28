@@ -14,7 +14,7 @@ export default async function EditPatientPage({
   // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = (await getServerSession(authOptions)) as Session | null;
   if (!session?.user) {
-    redirect("/login");
+    redirect("/");
   }
 
   const { patientId } = await params;

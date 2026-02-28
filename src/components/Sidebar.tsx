@@ -11,7 +11,7 @@ interface SidebarProps {
 
 export default function Sidebar({ session }: SidebarProps) {
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' })
+    await signOut({ callbackUrl: '/' })
   }
 
   return (

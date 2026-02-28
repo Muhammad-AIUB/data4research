@@ -20,7 +20,7 @@ export default async function AllPatientsPage({
   // Auth check — redirect unauthenticated users
   // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = (await getServerSession(authOptions)) as Session | null;
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect("/");
 
   const { search, page: pageParam } = await searchParams;
   const searchQuery = search?.trim() || "";
