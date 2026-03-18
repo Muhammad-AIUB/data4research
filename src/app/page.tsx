@@ -23,7 +23,7 @@ export default async function HomePage() {
           </p>
         </div>
         </div>
-      <div className="flex flex-1 items-center justify-center relative z-10 w-full max-w-md px-2 md:px-0">
+      <div className="flex flex-1 flex-col items-center justify-center relative z-10 w-full px-4 md:px-0">
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-blue-100 px-7 py-8 md:px-12 md:py-14 transition-all duration-300 flex flex-col items-center w-full max-w-md">
           <div className="text-center mb-6 md:hidden">
             <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-700 rounded-2xl shadow-lg mb-3 animate-bounce-slow">
