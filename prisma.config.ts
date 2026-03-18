@@ -1,16 +1,12 @@
-import { config } from "dotenv";
-import { resolve } from "path";
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
 
-// Load .env file
-config({ path: resolve(process.cwd(), ".env") });
-
-const prismaConfig = {
+export default defineConfig({
   datasource: {
-    url: process.env.DATABASE_URL || "",
+    // Prisma CLI operations should bypass PgBouncer and use the direct connection.
+    url: env("DIRECT_DATABASE_URL"),
   },
   migrations: {
-    seed: "npx tsx prisma/seed.ts",
+    seed: "npm run seed",
   },
-};
-
-export default prismaConfig;
+});
