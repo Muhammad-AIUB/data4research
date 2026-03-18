@@ -11,9 +11,12 @@ function createPrismaClient(): PrismaClient {
     throw new Error('DATABASE_URL environment variable is not set. Make sure .env file exists and contains DATABASE_URL.')
   }
 
+  // Neon pooler (PgBouncer) manages connections server-side.
+  // max: 1 — each serverless instance holds only 1 connection; PgBouncer multiplexes upstream.
+  // prepare: false — PgBouncer transaction mode doesn't support prepared statements.
   const pool = globalForPrisma.pool || new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 5,
+    max: 1,
     idleTimeoutMillis: 20000,
     connectionTimeoutMillis: 5000,
   })
