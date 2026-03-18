@@ -8,6 +8,7 @@ import { createPatientSchema, updatePatientSchema } from "@/lib/validations";
 import { createRequestId } from "@/lib/requestId";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { auditLog } from "@/lib/auditLog";
+import * as Sentry from "@sentry/nextjs";
 
 export async function GET(request: Request) {
   const requestId = createRequestId();
@@ -107,6 +108,7 @@ export async function GET(request: Request) {
       },
     );
   } catch (error: unknown) {
+    Sentry.captureException(error, { tags: { requestId, route: "GET /api/patients" } });
     console.error(JSON.stringify({ level: "ERROR", requestId, route: "GET /api/patients", error: error instanceof Error ? error.message : String(error) }));
     const message =
       error instanceof Error ? error.message : "Failed to fetch patients";
@@ -212,6 +214,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, patient }, { status: 201 });
   } catch (error: unknown) {
+    Sentry.captureException(error, { tags: { requestId, route: "POST /api/patients" } });
     console.error(JSON.stringify({ level: "ERROR", requestId, route: "POST /api/patients", error: error instanceof Error ? error.message : String(error) }));
     if (error && typeof error === "object" && "code" in error) {
       const prismaError = error as {
@@ -289,6 +292,7 @@ export async function DELETE(request: Request) {
       { status: 200 },
     );
   } catch (error: unknown) {
+    Sentry.captureException(error, { tags: { requestId, route: "DELETE /api/patients" } });
     console.error(JSON.stringify({ level: "ERROR", requestId, route: "DELETE /api/patients", error: error instanceof Error ? error.message : String(error) }));
     if (error && typeof error === "object" && "code" in error) {
       const prismaError = error as { code: string };
@@ -367,6 +371,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true, patient }, { status: 200 });
   } catch (error: unknown) {
+    Sentry.captureException(error, { tags: { requestId, route: "PUT /api/patients" } });
     console.error(JSON.stringify({ level: "ERROR", requestId, route: "PUT /api/patients", error: error instanceof Error ? error.message : String(error) }));
     if (error && typeof error === "object" && "code" in error) {
       const prismaError = error as { code: string };

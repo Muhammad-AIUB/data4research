@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -30,4 +31,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Suppress Sentry CLI logs during build
+  silent: true,
+  // Route browser requests through Next.js to bypass ad blockers
+  tunnelRoute: "/monitoring",
+  // Disable source map deletion so Vercel can still use them
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: false,
+  },
+});

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find '/Users/siam/Desktop/Jubayer Tanvir/data4research' -name *sentry* -type f)"
+    ]
+  }
+}

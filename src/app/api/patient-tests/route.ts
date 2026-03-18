@@ -9,6 +9,7 @@ import { createPatientTestSchema } from "@/lib/validations";
 import { createRequestId } from "@/lib/requestId";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { auditLog } from "@/lib/auditLog";
+import * as Sentry from "@sentry/nextjs";
 
 export async function GET(request: Request) {
   const requestId = createRequestId();
@@ -90,6 +91,7 @@ export async function GET(request: Request) {
       },
     );
   } catch (error: unknown) {
+    Sentry.captureException(error, { tags: { requestId, route: "GET /api/patient-tests" } });
     console.error(JSON.stringify({ level: "ERROR", requestId, route: "GET /api/patient-tests", error: error instanceof Error ? error.message : String(error) }));
     const message =
       error instanceof Error
@@ -217,6 +219,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error: unknown) {
+    Sentry.captureException(error, { tags: { requestId, route: "POST /api/patient-tests" } });
     console.error(JSON.stringify({ level: "ERROR", requestId, route: "POST /api/patient-tests", error: error instanceof Error ? error.message : String(error) }));
     const message =
       error instanceof Error
