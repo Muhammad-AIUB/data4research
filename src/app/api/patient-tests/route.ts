@@ -8,7 +8,7 @@ import { authorizeRole } from "@/lib/authorizeRole";
 import { createPatientTestSchema } from "@/lib/validations";
 import { createRequestId } from "@/lib/requestId";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { auditLog } from "@/lib/auditLog";
+import { logAudit, extractRequestMeta } from "@/lib/auditLog";
 import * as Sentry from "@sentry/nextjs";
 
 export async function GET(request: Request) {
@@ -207,8 +207,16 @@ export async function POST(request: Request) {
       },
     });
 
-    // Audit: test created
-    auditLog(requestId, auth.session.user.id, "CREATE_PATIENT_TEST", "PatientTest", savedTest.id);
+    const { ipAddress, userAgent } = extractRequestMeta(request);
+    logAudit({
+      userId: auth.session.user.id,
+      action: "CREATE_PATIENT_TEST",
+      resource: "PatientTest",
+      resourceId: savedTest.id,
+      after: { patientId: savedTest.patientId, sampleDate: savedTest.sampleDate },
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json(
       {

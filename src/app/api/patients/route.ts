@@ -7,7 +7,7 @@ import { authorizeRole } from "@/lib/authorizeRole";
 import { createPatientSchema, updatePatientSchema } from "@/lib/validations";
 import { createRequestId } from "@/lib/requestId";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { auditLog } from "@/lib/auditLog";
+import { logAudit, getChangedFields, extractRequestMeta } from "@/lib/auditLog";
 import * as Sentry from "@sentry/nextjs";
 
 export async function GET(request: Request) {
@@ -209,8 +209,16 @@ export async function POST(request: Request) {
       data: patientData,
     });
 
-    // Audit: patient created
-    auditLog(requestId, user.id, "CREATE_PATIENT", "Patient", patient.id);
+    const { ipAddress, userAgent } = extractRequestMeta(request);
+    logAudit({
+      userId: user.id,
+      action: "CREATE_PATIENT",
+      resource: "Patient",
+      resourceId: patient.id,
+      after: { name: patient.name, age: patient.age, mobile: patient.mobile, patientId: patient.patientId },
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json({ success: true, patient }, { status: 201 });
   } catch (error: unknown) {
@@ -278,14 +286,28 @@ export async function DELETE(request: Request) {
       );
     }
 
+    // Snapshot before delete for audit trail
+    const beforePatient = await prisma.patient.findUnique({
+      where: { id },
+      select: { name: true, age: true, mobile: true, patientId: true },
+    });
+
     // DESTRUCTIVE: Deletes patient AND all related PatientTest rows (onDelete: Cascade).
     // This cannot be undone. The cascade is defined in schema.prisma on Patient.tests.
     await prisma.patient.delete({
       where: { id },
     });
 
-    // Audit: patient deleted (+ cascaded tests)
-    auditLog(requestId, auth.session.user.id, "DELETE_PATIENT", "Patient", id);
+    const { ipAddress, userAgent } = extractRequestMeta(request);
+    logAudit({
+      userId: auth.session.user.id,
+      action: "DELETE_PATIENT",
+      resource: "Patient",
+      resourceId: id,
+      before: beforePatient as Record<string, unknown> | null,
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json(
       { success: true, message: "Patient deleted successfully" },
@@ -339,6 +361,9 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Snapshot before update for audit diff
+    const beforePatient = await prisma.patient.findUnique({ where: { id } });
+
     // Build update data — only include provided fields
     const updateData: Record<string, unknown> = {};
     if (updateFields.name !== undefined) updateData.name = updateFields.name;
@@ -366,8 +391,21 @@ export async function PUT(request: Request) {
       data: updateData,
     });
 
-    // Audit: patient updated
-    auditLog(requestId, auth.session.user.id, "UPDATE_PATIENT", "Patient", id);
+    const { ipAddress, userAgent } = extractRequestMeta(request);
+    const diff = getChangedFields(
+      beforePatient as Record<string, unknown> | null,
+      updateData,
+    );
+    logAudit({
+      userId: auth.session.user.id,
+      action: "UPDATE_PATIENT",
+      resource: "Patient",
+      resourceId: id,
+      before: diff.before,
+      after: diff.after,
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json({ success: true, patient }, { status: 200 });
   } catch (error: unknown) {

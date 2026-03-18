@@ -90,3 +90,20 @@ model PatientTest {
   @@index([createdAt])
   @@index([patientId, createdAt])
 }
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  resource   String
+  resourceId String
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([resource, resourceId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
