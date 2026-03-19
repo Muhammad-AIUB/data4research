@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import type { Session } from "next-auth";
 import { formatTestData } from "@/lib/formatTestData";
+import { isAdmin, scopePatientAccess } from "@/lib/rbac";
 
 export const revalidate = 60;
 export const dynamic = "force-dynamic";
@@ -17,7 +18,6 @@ export default async function PatientDetailPage({
   const { patientId } = await params;
 
   const [session, isUUID] = await Promise.all([
-    // @ts-expect-error - authOptions type mismatch with next-auth overloads
     getServerSession(authOptions) as Promise<Session | null>,
     Promise.resolve(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -26,20 +26,18 @@ export default async function PatientDetailPage({
     ),
   ]);
 
-  
   if (!session || !session.user) {
     redirect("/");
   }
+  const admin = isAdmin(session.user);
 
-  
-  
-  const whereClause =
-    isUUID || patientId === "null" || !patientId
-      ? { id: patientId }
-      : { patientId };
-
-  const patient = await prisma.patient.findUnique({
-    where: whereClause,
+  const patient = await prisma.patient.findFirst({
+    where: scopePatientAccess(
+      session.user,
+      isUUID || patientId === "null" || !patientId
+        ? { id: patientId }
+        : { patientId },
+    ),
     select: {
       id: true,
       name: true,
@@ -62,6 +60,15 @@ export default async function PatientDetailPage({
       specialNotes: true,
       finalDiagnosis: true,
       createdAt: true,
+      createdByUser: admin
+        ? {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          }
+        : false,
       tests: {
         select: {
           id: true,

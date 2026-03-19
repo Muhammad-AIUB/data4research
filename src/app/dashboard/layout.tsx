@@ -11,7 +11,6 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = await getServerSession(authOptions) as Session | null
   if (!session || !session.user) {
     redirect('/')

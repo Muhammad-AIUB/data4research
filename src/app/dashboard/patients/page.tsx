@@ -1,15 +1,16 @@
-// Server Component — no "use client", no SWR, no client-side fetch.
-// Data is fetched directly from Prisma at request time with ISR (revalidate = 30s).
-
+import type { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import type { Session } from "next-auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import PatientDeleteButton from "./PatientDeleteButton";
 import PatientSearch from "./PatientSearch";
 
-// ISR: regenerate page every 30s so the list stays fresh without a full rebuild
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { isAdmin, scopePatientAccess } from "@/lib/rbac";
+
 export const revalidate = 30;
 
 export default async function AllPatientsPage({
@@ -17,47 +18,57 @@ export default async function AllPatientsPage({
 }: {
   searchParams: Promise<{ search?: string; page?: string }>;
 }) {
-  // Auth check — redirect unauthenticated users
-  // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = (await getServerSession(authOptions)) as Session | null;
   if (!session?.user) redirect("/");
 
+  const admin = isAdmin(session.user);
   const { search, page: pageParam } = await searchParams;
   const searchQuery = search?.trim() || "";
   const page = Math.max(1, parseInt(pageParam || "1", 10));
   const limit = 50;
   const offset = (page - 1) * limit;
 
-  // Build Prisma where clause — split by input type for PG query planner efficiency.
-  // Numeric input → startsWith on phone/ID fields (uses B-tree index).
-  // Text input → contains on name/diagnosis + has on tags (uses GIN index).
-  let whereClause = {};
+  let whereClause: Prisma.PatientWhereInput = {};
   if (searchQuery) {
     const isNumeric = /^[\d+\-() ]+$/.test(searchQuery);
-    if (isNumeric) {
-      whereClause = {
-        OR: [
-          { mobile: { startsWith: searchQuery } },
-          { patientId: { startsWith: searchQuery } },
-          { relativeMobile: { startsWith: searchQuery } },
-          { spouseMobile: { startsWith: searchQuery } },
-        ],
-      };
-    } else {
-      whereClause = {
-        OR: [
-          { name: { contains: searchQuery, mode: "insensitive" as const } },
-          { finalDiagnosis: { contains: searchQuery, mode: "insensitive" as const } },
-          { tags: { has: searchQuery } },
-        ],
-      };
-    }
+    whereClause = isNumeric
+      ? {
+          OR: [
+            { mobile: { startsWith: searchQuery } },
+            { patientId: { startsWith: searchQuery } },
+            { relativeMobile: { startsWith: searchQuery } },
+            { spouseMobile: { startsWith: searchQuery } },
+          ],
+        }
+      : {
+          OR: [
+            { name: { contains: searchQuery, mode: "insensitive" } },
+            {
+              finalDiagnosis: {
+                contains: searchQuery,
+                mode: "insensitive",
+              },
+            },
+            { tags: { has: searchQuery } },
+          ],
+        };
   }
 
-  // Single query — select only the 4 fields needed for the list card
   const patients = await prisma.patient.findMany({
-    where: whereClause,
-    select: { id: true, name: true, patientId: true, mobile: true },
+    where: scopePatientAccess(session.user, whereClause),
+    select: {
+      id: true,
+      name: true,
+      patientId: true,
+      mobile: true,
+      createdByUser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
     take: limit,
     skip: offset,
@@ -78,7 +89,6 @@ export default async function AllPatientsPage({
           </Link>
         </div>
 
-        {/* Client component handles search input + delete (needs interactivity) */}
         <PatientSearch initialSearch={searchQuery} />
 
         {patients.length === 0 ? (
@@ -114,6 +124,15 @@ export default async function AllPatientsPage({
                       <span className="text-slate-500">{patient.mobile}</span>
                     </span>
                   </div>
+                  {admin ? (
+                    <div className="text-sm text-slate-500 mt-2">
+                      Created by{" "}
+                      <span className="font-medium text-slate-700">
+                        {patient.createdByUser?.name || patient.createdByUser?.email}
+                      </span>
+                      {patient.createdByUser?.email ? ` (${patient.createdByUser.email})` : ""}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2">
                   <Link
@@ -129,7 +148,6 @@ export default async function AllPatientsPage({
                   >
                     <PencilIcon />
                   </Link>
-                  {/* Delete is handled by the PatientDeleteButton client component below */}
                   <PatientDeleteButton id={patient.id} name={patient.name} />
                 </div>
               </div>
@@ -141,15 +159,21 @@ export default async function AllPatientsPage({
   );
 }
 
-// Tiny server-rendered icon — avoids importing lucide-react on the server
 function PencilIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
       <path d="m15 5 4 4" />
     </svg>
   );
 }
-
-// Isolated client component for delete — keeps the rest of the page as a server component
-import PatientDeleteButton from "./PatientDeleteButton";

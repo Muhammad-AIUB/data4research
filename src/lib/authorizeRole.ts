@@ -8,17 +8,19 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
+import type { AppRole } from "@/lib/rbac";
 
-const ALLOWED_ROLES = new Set(["DOCTOR", "ADMIN"]);
+const DEFAULT_ALLOWED_ROLES: readonly AppRole[] = ["DOCTOR", "ADMIN"];
 
 /**
  * Authenticate the user and verify they have an allowed role.
  * Returns the session on success, or a NextResponse error to return immediately.
  */
-export async function authorizeRole(): Promise<
+export async function authorizeRole(
+  allowedRoles: readonly AppRole[] = DEFAULT_ALLOWED_ROLES,
+): Promise<
   { session: Session; error?: never } | { session?: never; error: NextResponse }
 > {
-  // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = (await getServerSession(authOptions)) as Session | null;
 
   if (!session?.user) {
@@ -27,7 +29,7 @@ export async function authorizeRole(): Promise<
     };
   }
 
-  if (!ALLOWED_ROLES.has(session.user.role)) {
+  if (!allowedRoles.includes(session.user.role)) {
     return {
       error: NextResponse.json(
         { message: "Forbidden: insufficient permissions" },

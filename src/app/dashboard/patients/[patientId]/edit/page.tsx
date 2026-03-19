@@ -1,31 +1,35 @@
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
-import EditPatientForm from "./EditPatientForm";
 import type { Session } from "next-auth";
+import { notFound, redirect } from "next/navigation";
+
+import EditPatientForm from "./EditPatientForm";
+
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { scopePatientAccess } from "@/lib/rbac";
 
 export default async function EditPatientPage({
   params,
 }: {
   params: Promise<{ patientId: string }>;
 }) {
-  // Auth guard — redirect unauthenticated users
-  // @ts-expect-error - authOptions type mismatch with next-auth overloads
   const session = (await getServerSession(authOptions)) as Session | null;
   if (!session?.user) {
     redirect("/");
   }
 
   const { patientId } = await params;
-
-  // Parallel data fetch — patient + dropdown options in one round-trip
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
-  const whereClause = isUUID ? { id: patientId } : { patientId };
+  const isUUID =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      patientId,
+    );
 
   const [patient, religions, ethnicities, districts] = await Promise.all([
-    prisma.patient.findUnique({
-      where: whereClause,
+    prisma.patient.findFirst({
+      where: scopePatientAccess(
+        session.user,
+        isUUID ? { id: patientId } : { patientId },
+      ),
       select: {
         id: true,
         name: true,
@@ -70,7 +74,6 @@ export default async function EditPatientPage({
     notFound();
   }
 
-  // Serialize Date to ISO string for the client component
   const serializedPatient = {
     ...patient,
     dateOfBirth: patient.dateOfBirth?.toISOString() ?? null,

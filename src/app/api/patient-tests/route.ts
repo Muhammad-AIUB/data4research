@@ -1,82 +1,88 @@
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { NextResponse } from "next/server";
-import type { Session } from "next-auth";
 import { Prisma } from "@prisma/client";
-import { authorizeRole } from "@/lib/authorizeRole";
-import { createPatientTestSchema } from "@/lib/validations";
-import { createRequestId } from "@/lib/requestId";
-import { checkRateLimit } from "@/lib/rateLimit";
-import { logAudit, extractRequestMeta } from "@/lib/auditLog";
 import * as Sentry from "@sentry/nextjs";
+import { NextResponse } from "next/server";
+
+import { prisma } from "@/lib/prisma";
+import { authorizeRole } from "@/lib/authorizeRole";
+import { logAudit, extractRequestMeta } from "@/lib/auditLog";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { scopePatientAccess, scopePatientTestAccess } from "@/lib/rbac";
+import { createRequestId } from "@/lib/requestId";
+import { createPatientTestSchema } from "@/lib/validations";
+
+async function findAccessiblePatient(patientId: string, userId: Parameters<typeof scopePatientAccess>[0]) {
+  const isUUID =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      patientId,
+    );
+
+  return prisma.patient.findFirst({
+    where: scopePatientAccess(
+      userId,
+      isUUID ? { id: patientId } : { patientId },
+    ),
+    select: { id: true },
+  });
+}
 
 export async function GET(request: Request) {
   const requestId = createRequestId();
+
   try {
-    // @ts-expect-error - authOptions type mismatch with next-auth overloads
-    const session = (await getServerSession(authOptions)) as Session | null;
-    if (!session || !session.user) {
-      return NextResponse.json({ message: "Unauthorized", requestId }, { status: 401 });
-    }
+    const auth = await authorizeRole();
+    if (auth.error) return auth.error;
+
+    const user = auth.session.user;
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get("patientId");
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(searchParams.get("limit") || "50", 10)),
+    );
     const offset = (page - 1) * limit;
-    const whereClause: Record<string, unknown> = {};
-    if (patientId && patientId.trim() !== "") {
-      // Try finding by user-assigned patientId first
-      let patient = await prisma.patient.findUnique({
-        where: { patientId },
-        select: { id: true },
-      });
-      // If not found, try finding by UUID (id)
+    let whereClause = scopePatientTestAccess(user);
+
+    if (patientId?.trim()) {
+      const patient = await findAccessiblePatient(patientId.trim(), user);
+
       if (!patient) {
-        patient = await prisma.patient.findUnique({
-          where: { id: patientId },
-          select: { id: true },
-        });
-      }
-      if (patient) {
-        whereClause.patientId = patient.id;
-      } else {
         return NextResponse.json(
           { tests: [], hasMore: false, page, limit },
           {
             status: 200,
             headers: {
-              "Cache-Control": "private, s-maxage=60, stale-while-revalidate=120",
+              "Cache-Control":
+                "private, s-maxage=60, stale-while-revalidate=120",
             },
           },
         );
       }
+
+      whereClause = scopePatientTestAccess(user, { patientId: patient.id });
     }
-    // hasMore strategy: fetch limit+1 to detect next page without COUNT scan
+
     const rows = await prisma.patientTest.findMany({
-        where: whereClause,
-        select: {
-          id: true,
-          patientId: true,
-          sampleDate: true,
-          autoimmunoProfile: true,
-          cardiology: true,
-          rft: true,
-          lft: true,
-          diseaseHistory: true,
-          imaging: true,
-          hematology: true,
-          basdai: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: [
-          { createdAt: "desc" },
-          { sampleDate: "desc" },
-        ],
-        skip: offset,
-        take: limit + 1,
-      });
+      where: whereClause,
+      select: {
+        id: true,
+        patientId: true,
+        sampleDate: true,
+        autoimmunoProfile: true,
+        cardiology: true,
+        rft: true,
+        lft: true,
+        diseaseHistory: true,
+        imaging: true,
+        hematology: true,
+        basdai: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [{ createdAt: "desc" }, { sampleDate: "desc" }],
+      skip: offset,
+      take: limit + 1,
+    });
 
     const hasMore = rows.length > limit;
     const tests = hasMore ? rows.slice(0, limit) : rows;
@@ -91,53 +97,70 @@ export async function GET(request: Request) {
       },
     );
   } catch (error: unknown) {
-    Sentry.captureException(error, { tags: { requestId, route: "GET /api/patient-tests" } });
-    console.error(JSON.stringify({ level: "ERROR", requestId, route: "GET /api/patient-tests", error: error instanceof Error ? error.message : String(error) }));
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to fetch patient test data";
-    return NextResponse.json({ message, requestId }, { status: 500 });
+    Sentry.captureException(error, {
+      tags: { requestId, route: "GET /api/patient-tests" },
+    });
+    console.error(
+      JSON.stringify({
+        level: "ERROR",
+        requestId,
+        route: "GET /api/patient-tests",
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch patient test data",
+        requestId,
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: Request) {
   const requestId = createRequestId();
+
   try {
-    // Role-based authorization — only DOCTOR/ADMIN can create tests
     const auth = await authorizeRole();
     if (auth.error) return auth.error;
 
-    // Rate limit — protect write endpoint from abuse
-    const rateLimited = checkRateLimit(auth.session.user.id);
+    const user = auth.session.user;
+    const rateLimited = checkRateLimit(user.id);
     if (rateLimited) return rateLimited;
 
     const body = await request.json();
-
-    // Zod validation — reject malformed data before hitting Prisma
     const parsed = createPatientTestSchema.safeParse(body);
+
     if (!parsed.success) {
       return NextResponse.json(
-        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors, requestId },
+        {
+          message: "Validation failed",
+          errors: parsed.error.flatten().fieldErrors,
+          requestId,
+        },
         { status: 400 },
       );
     }
+
     const { patientId, sampleDate, ...testData } = parsed.data;
     let patient = null;
-    if (patientId && patientId.trim() !== "") {
-      // Try finding by user-assigned patientId first
-      patient = await prisma.patient.findUnique({
-        where: { patientId },
-        select: { id: true },
-      });
-      // If not found, try finding by UUID (id) — handles case when patient has no user-assigned ID
+
+    if (patientId?.trim()) {
+      patient = await findAccessiblePatient(patientId.trim(), user);
+
       if (!patient) {
-        patient = await prisma.patient.findUnique({
-          where: { id: patientId },
-          select: { id: true },
-        });
+        return NextResponse.json(
+          { message: "Patient not found", requestId },
+          { status: 404 },
+        );
       }
     }
+
     const parsedTestData: Record<string, unknown> = {};
     if (testData.autoimmunoProfile) {
       parsedTestData.autoimmunoProfile =
@@ -168,21 +191,11 @@ export async function POST(request: Request) {
       parsedTestData.basdai = testData.basdai.data || testData.basdai;
     }
 
-    const reportDate =
-      sampleDate || new Date().toISOString();
+    const reportDate = sampleDate || new Date().toISOString();
     let localDate: Date;
-    if (typeof reportDate === "string") {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(reportDate)) {
-        const [year, month, day] = reportDate.split("-").map(Number);
-        localDate = new Date(year, month - 1, day);
-      } else {
-        const dateObj = new Date(reportDate);
-        localDate = new Date(
-          dateObj.getFullYear(),
-          dateObj.getMonth(),
-          dateObj.getDate(),
-        );
-      }
+    if (typeof reportDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(reportDate)) {
+      const [year, month, day] = reportDate.split("-").map(Number);
+      localDate = new Date(year, month - 1, day);
     } else {
       const dateObj = new Date(reportDate);
       localDate = new Date(
@@ -191,6 +204,7 @@ export async function POST(request: Request) {
         dateObj.getDate(),
       );
     }
+
     const jsonNull = Prisma.JsonNull;
     const savedTest = await prisma.patientTest.create({
       data: {
@@ -209,7 +223,7 @@ export async function POST(request: Request) {
 
     const { ipAddress, userAgent } = extractRequestMeta(request);
     logAudit({
-      userId: auth.session.user.id,
+      userId: user.id,
       action: "CREATE_PATIENT_TEST",
       resource: "PatientTest",
       resourceId: savedTest.id,
@@ -227,12 +241,27 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error: unknown) {
-    Sentry.captureException(error, { tags: { requestId, route: "POST /api/patient-tests" } });
-    console.error(JSON.stringify({ level: "ERROR", requestId, route: "POST /api/patient-tests", error: error instanceof Error ? error.message : String(error) }));
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to save patient test data";
-    return NextResponse.json({ message, requestId }, { status: 500 });
+    Sentry.captureException(error, {
+      tags: { requestId, route: "POST /api/patient-tests" },
+    });
+    console.error(
+      JSON.stringify({
+        level: "ERROR",
+        requestId,
+        route: "POST /api/patient-tests",
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to save patient test data",
+        requestId,
+      },
+      { status: 500 },
+    );
   }
 }
