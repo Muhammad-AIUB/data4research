@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 40, "column": 0}, "map": {"version":3,"sources":["file:///Users/siam/Desktop/Jubayer%20Tanvir/data4research/src/app/api/health/route.ts"],"sourcesContent":["import { NextResponse } from \"next/server\";\n\n// Liveness probe — confirms the process is running, no I/O\nexport async function GET() {\n  return NextResponse.json(\n    {\n      status: \"ok\",\n      timestamp: new Date().toISOString(),\n    },\n    {\n      headers: { \"Cache-Control\": \"no-store\" },\n    },\n  );\n}\n"],"names":["GET","json","status","timestamp","Date","toISOString","headers"],"mappings":";;;;AAAA;;AAGO,eAAeA;IACpB,OAAO,gJAAY,CAACC,IAAI,CACtB;QACEC,QAAQ;QACRC,WAAW,IAAIC,OAAOC,WAAW;IACnC,GACA;QACEC,SAAS;YAAE,iBAAiB;QAAW;IACzC;AAEJ"}}]
+}

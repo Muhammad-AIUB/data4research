@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Workaround: Turbopack cannot write build artifacts when project path contains spaces
+  distDir: '/tmp/data4research-next',
   reactCompiler: true,
   compress: true,
   serverExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg'],

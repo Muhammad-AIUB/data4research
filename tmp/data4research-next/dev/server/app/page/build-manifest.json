@@ -1,0 +1,29 @@
+{
+  "devFiles": [],
+  "ampDevFiles": [],
+  "polyfillFiles": [
+    "static/chunks/node_modules_next_dist_build_polyfills_polyfill-nomodule.js"
+  ],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0mw6etn._.js",
+    "static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js",
+    "static/chunks/node_modules_next_dist_compiled_next-devtools_index_0553esy.js",
+    "static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js",
+    "static/chunks/node_modules_next_dist_compiled_00yae29._.js",
+    "static/chunks/node_modules_next_dist_shared_lib_0t5pchv._.js",
+    "static/chunks/node_modules_next_dist_client_0.0dnbh._.js",
+    "static/chunks/node_modules_next_dist_038ce8_._.js",
+    "static/chunks/node_modules_next_router_0r7w7aj.js",
+    "static/chunks/node_modules_@sentry_core_build_esm_0-34shw._.js",
+    "static/chunks/node_modules_@sentry_browser_build_npm_esm_dev_0p35wc6._.js",
+    "static/chunks/node_modules_@sentry-internal_browser-utils_build_esm_05_-lc.._.js",
+    "static/chunks/node_modules_@sentry-internal_replay_build_npm_esm_index_08ssmp7.js",
+    "static/chunks/node_modules_0mfks2d._.js",
+    "static/chunks/_03pz43w._.js",
+    "static/chunks/_0rqeker._.js",
+    "static/chunks/turbopack-_0v_gc_f._.js"
+  ],
+  "pages": {},
+  "ampFirstPages": []
+}

@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":["file:///Users/siam/Desktop/Jubayer%20Tanvir/data4research/src/instrumentation-client.ts"],"sourcesContent":["// Sentry disabled for local development\n// import * as Sentry from \"@sentry/nextjs\";\n// import \"../sentry.client.config\";\n// export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;\n"],"names":[],"mappings":"AAAA,wCAAwC;AACxC,4CAA4C;AAC5C,oCAAoC;AACpC,8EAA8E"}}]
+}
