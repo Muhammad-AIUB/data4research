@@ -1,1 +1,6 @@
 {"timestamp":"00:00:04.587","source":"Server","level":"LOG","message":"○ Compiling middleware ..."}
+{"timestamp":"00:02:01.880","source":"Server","level":"LOG","message":"- Experiments (use with caution):"}
+{"timestamp":"00:02:01.880","source":"Server","level":"LOG","message":"  · clientTraceMetadata"}
+{"timestamp":"00:02:01.881","source":"Server","level":"LOG","message":"  · optimizePackageImports"}
+{"timestamp":"00:02:01.882","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:02:03.533","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
