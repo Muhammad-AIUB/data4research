@@ -8,10 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "prisma": {
     "seed": "npm run seed"
+  },
+  "overrides": {
+    "@opentelemetry/instrumentation": "0.213.0",
+    "import-in-the-middle": "3.0.0"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -40,12 +44,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
-    "baseline-browser-mapping": "^2.9.19",
+    "baseline-browser-mapping": "^2.10.8",
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
     "prisma": "^7.3.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }
