@@ -18,20 +18,25 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null
         const normalizedEmail = credentials.email.trim().toLowerCase()
 
-        const user = await prisma.user.findUnique({
-          where: { email: normalizedEmail }
-        })
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: normalizedEmail }
+          })
 
-        if (!user) return null
+          if (!user) return null
 
-        const isValid = await bcrypt.compare(credentials.password, user.password)
-        if (!isValid) return null
+          const isValid = await bcrypt.compare(credentials.password, user.password)
+          if (!isValid) return null
 
-        return {
-          id: user.id,
-          name: user.name || user.email.split('@')[0],
-          email: user.email,
-          role: user.role as AppRole
+          return {
+            id: user.id,
+            name: user.name || user.email.split('@')[0],
+            email: user.email,
+            role: user.role as AppRole
+          }
+        } catch (error) {
+          console.error('[AUTH] authorize() failed:', error)
+          return null
         }
       }
     })
