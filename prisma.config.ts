@@ -1,10 +1,11 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   datasource: {
-    // Prisma CLI operations should bypass PgBouncer and use the direct connection.
-    url: env("DIRECT_DATABASE_URL"),
+    // Prefer the direct (non-pooled) URL for CLI operations like migrate;
+    // fall back to the pooled DATABASE_URL so prisma generate works without it.
+    url: process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL,
   },
   migrations: {
     seed: "npm run seed",
