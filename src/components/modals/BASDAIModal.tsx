@@ -299,7 +299,9 @@ export default function BASDAIModal({
 
             <div className={`rounded-lg border border-indigo-200 bg-indigo-50 p-4`}>
               <p className="font-semibold text-lg">BASDAI Score: <span className="text-blue-700">{form.basdaiScore}</span></p>
-              <p className="text-sm text-gray-600 mt-1">Formula: [(Q1 + Q2 + Q3 + Q4) + ((Q5 + Q6) / 2)] / 5</p>
+              <p className="text-sm text-gray-600 mt-1">
+                Formula: &#91;(Q1 + Q2 + Q3 + Q4) + ((Q5 + Q6) / 2)&#93; / 5
+              </p>
               <a className="text-sm text-blue-600 mt-1 inline-block" href="https://www.physio-pedia.com/BASDAI" target="_blank" rel="noopener noreferrer">Learn more about BASDAI</a>
             </div>
 
