@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Heart } from 'lucide-react'
 import ExpandableSection from '@/components/ExpandableSection'
 import AutoimmunoProfileModal from '@/components/modals/AutoimmunoProfileModal'
 import CardiologyModal from '@/components/modals/CardiologyModal'
@@ -20,27 +21,50 @@ export default function FavouritesPage() {
   const savedData: SavedTest[] = []
   const noop = () => {}
 
-  const sectionColors = [
-    "bg-blue-50 border-blue-200",
-    "bg-green-50 border-green-200",
-    "bg-purple-50 border-purple-200",
-    "bg-yellow-50 border-yellow-200",
-    "bg-pink-50 border-pink-200",
-    "bg-indigo-50 border-indigo-200",
-    "bg-orange-50 border-orange-200",
+  /** Unified cards with a subtle left accent stripe per section */
+  const sections: { title: string; accent: string }[] = [
+    { title: 'Autoimmuno profile', accent: 'border-l-blue-600' },
+    { title: 'Cardiology', accent: 'border-l-emerald-600' },
+    { title: 'RFT', accent: 'border-l-violet-600' },
+    { title: 'LFT', accent: 'border-l-amber-500' },
+    { title: 'On examination & disease history', accent: 'border-l-rose-500' },
+    { title: 'Imaging, histopathology', accent: 'border-l-indigo-600' },
+    { title: 'Hematology', accent: 'border-l-orange-500' },
   ]
 
-  return (
-    <div className="min-h-screen text-gray-900">
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6 text-white">Customize your favourites</h1>
+  const cardShell = (accent: string) =>
+    `bg-white/95 backdrop-blur-sm border-slate-200/90 ${accent} border-l-4`
 
-        <div className="space-y-4">
+  const contentPanel = 'bg-slate-50/90'
+
+  return (
+    <div className="min-h-[calc(100vh-3rem)] text-slate-900">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <header className="mb-8 sm:mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-100/90 px-3 py-1 text-sm font-medium text-blue-800 ring-1 ring-blue-200/60 mb-3">
+                <Heart className="h-4 w-4 fill-red-500 text-red-500" aria-hidden />
+                Favourites
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-800">
+                Customize your favourites
+              </h1>
+              <p className="mt-2 max-w-2xl text-base text-slate-600 leading-relaxed">
+                Open a section and use the heart icons next to each field to choose what appears in your
+                favourites for new patients.
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <div className="space-y-3 sm:space-y-4">
           <ExpandableSection
-            title="Autoimmuno profile"
+            title={sections[0].title}
             isOpen={openModal === "autoimmuno"}
             onToggle={() => setOpenModal(openModal === "autoimmuno" ? null : "autoimmuno")}
-            colorClass={sectionColors[0]}
+            colorClass={cardShell(sections[0].accent)}
+            contentClassName={contentPanel}
           >
             <AutoimmunoProfileModal 
               onClose={() => setOpenModal(null)} 
@@ -53,10 +77,11 @@ export default function FavouritesPage() {
           </ExpandableSection>
 
           <ExpandableSection
-            title="Cardiology"
+            title={sections[1].title}
             isOpen={openModal === "cardiology"}
             onToggle={() => setOpenModal(openModal === "cardiology" ? null : "cardiology")}
-            colorClass={sectionColors[1]}
+            colorClass={cardShell(sections[1].accent)}
+            contentClassName={contentPanel}
           >
             <CardiologyModal 
               onClose={() => setOpenModal(null)} 
@@ -69,10 +94,11 @@ export default function FavouritesPage() {
           </ExpandableSection>
 
           <ExpandableSection
-            title="RFT"
+            title={sections[2].title}
             isOpen={openModal === "rft"}
             onToggle={() => setOpenModal(openModal === "rft" ? null : "rft")}
-            colorClass={sectionColors[2]}
+            colorClass={cardShell(sections[2].accent)}
+            contentClassName={contentPanel}
           >
             <RFTModal 
               onClose={() => setOpenModal(null)} 
@@ -85,10 +111,11 @@ export default function FavouritesPage() {
           </ExpandableSection>
 
           <ExpandableSection
-            title="LFT"
+            title={sections[3].title}
             isOpen={openModal === "lft"}
             onToggle={() => setOpenModal(openModal === "lft" ? null : "lft")}
-            colorClass={sectionColors[3]}
+            colorClass={cardShell(sections[3].accent)}
+            contentClassName={contentPanel}
           >
             <LFTModal 
               onClose={() => setOpenModal(null)} 
@@ -101,10 +128,11 @@ export default function FavouritesPage() {
           </ExpandableSection>
 
           <ExpandableSection
-            title="On examination Disease history"
+            title={sections[4].title}
             isOpen={openModal === "disease-history"}
             onToggle={() => setOpenModal(openModal === "disease-history" ? null : "disease-history")}
-            colorClass={sectionColors[4]}
+            colorClass={cardShell(sections[4].accent)}
+            contentClassName={contentPanel}
           >
             <DiseaseHistoryModal 
               onClose={() => setOpenModal(null)} 
@@ -117,10 +145,11 @@ export default function FavouritesPage() {
           </ExpandableSection>
 
           <ExpandableSection
-            title="Imaging, Histopathology"
+            title={sections[5].title}
             isOpen={openModal === "imaging"}
             onToggle={() => setOpenModal(openModal === "imaging" ? null : "imaging")}
-            colorClass={sectionColors[5]}
+            colorClass={cardShell(sections[5].accent)}
+            contentClassName={contentPanel}
           >
             <ImagingHistopathologyModal 
               onClose={() => setOpenModal(null)} 
@@ -133,10 +162,11 @@ export default function FavouritesPage() {
           </ExpandableSection>
 
           <ExpandableSection
-            title="Hematology"
+            title={sections[6].title}
             isOpen={openModal === "hematology"}
             onToggle={() => setOpenModal(openModal === "hematology" ? null : "hematology")}
-            colorClass={sectionColors[6]}
+            colorClass={cardShell(sections[6].accent)}
+            contentClassName={contentPanel}
           >
             <HematologyModal 
               onClose={() => setOpenModal(null)} 
