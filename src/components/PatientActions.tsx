@@ -8,7 +8,7 @@ type TestItem = { label: string; value: string };
 export type PatientExportData = {
   name: string;
   patientId: string | null;
-  age: string | null;
+  age: string | number | null;
   mobile: string | null;
   nid: string | null;
   ethnicity: string | null;
@@ -48,7 +48,7 @@ export default function PatientActions({ patient }: Props) {
     const infoRows = [
       ["Patient ID", fmt(patient.patientId)],
       ["Name", fmt(patient.name)],
-      ["Age", fmt(patient.age)],
+      ["Age", patient.age != null ? String(patient.age) : "-"],
       ["Date of Birth", fmtDate(patient.dateOfBirth)],
       ["Mobile", fmt(patient.mobile)],
       ["NID", fmt(patient.nid)],
@@ -203,7 +203,7 @@ export default function PatientActions({ patient }: Props) {
       ["Field", "Value"],
       ["Name", patient.name ?? ""],
       ["Patient ID", patient.patientId ?? ""],
-      ["Age", patient.age ?? ""],
+      ["Age", patient.age != null ? String(patient.age) : ""],
       ["Date of Birth", patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : ""],
       ["Mobile", patient.mobile ?? ""],
       ["NID", patient.nid ?? ""],
