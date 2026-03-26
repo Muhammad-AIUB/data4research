@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
+import ModalPortal from "@/components/ModalPortal";
 import {
   addFavouriteField,
   isFieldFavourite,
@@ -326,6 +327,7 @@ export default function CardiologyModal({
   let fieldIndex = 0;
 
   return (
+    <ModalPortal>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
@@ -549,5 +551,6 @@ export default function CardiologyModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

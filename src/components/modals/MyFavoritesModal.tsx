@@ -12,6 +12,7 @@ import {
   getFavouriteFieldValue,
   type FavouriteField,
 } from "@/lib/favourites";
+import ModalPortal from "@/components/ModalPortal";
 
 type PatientTest = {
   id: string;
@@ -175,6 +176,7 @@ export default function MyFavoritesModal({ onClose }: Props) {
   };
 
   return (
+    <ModalPortal>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4">
         {/* Header */}
@@ -546,5 +548,6 @@ export default function MyFavoritesModal({ onClose }: Props) {
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
