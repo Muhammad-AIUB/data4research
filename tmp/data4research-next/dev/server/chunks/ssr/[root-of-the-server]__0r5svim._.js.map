@@ -1,8 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "debugId": "0192b79d-1b78-b390-5e26-e2508983cee0",
-  "sections": [
-    {"offset": {"line": 11, "column": 0}, "map": {"version":3,"sources":["file:///C:/Muhammad/data4research/src/components/Navbar.tsx"],"sourcesContent":["'use client'\r\n\r\nimport { useSession } from 'next-auth/react'\r\nimport Link from 'next/link'\r\n\r\nexport default function Navbar() {\r\n  const { data: session } = useSession()\r\n  return (\r\n    <nav className=\"bg-blue-700 text-white p-4 shadow-md\">\r\n      <div className=\"max-w-6xl mx-auto flex justify-end items-center\">\r\n        <Link href={session?.user ? \"/dashboard\" : \"/\"} className=\"text-xl font-bold hover:text-blue-200 transition-colors cursor-pointer\">\r\n          Data4Research\r\n        </Link>\r\n      </div>\r\n    </nav>\r\n  )\r\n}\r\n"],"names":["Navbar","data","session","className","href","user"],"mappings":";;;;;AAEA;AACA;AAHA;;;;AAKe,SAASA;IACtB,MAAM,EAAEC,MAAMC,OAAO,EAAE,GAAG,IAAA,4JAAU;IACpC,qBACE,8OAAC;QAAIC,WAAU;kBACb,cAAA,8OAAC;YAAIA,WAAU;sBACb,cAAA,8OAAC,uKAAI;gBAACC,MAAMF,SAASG,OAAO,eAAe;gBAAKF,WAAU;0BAAyE;;;;;;;;;;;;;;;;AAM3I"}},
-    {"offset": {"line": 52, "column": 0}, "map": {"version":3,"sources":["file:///C:/Muhammad/data4research/src/components/Providers.tsx"],"sourcesContent":["'use client'\r\n\r\nimport { SessionProvider } from 'next-auth/react'\r\n\r\nexport default function Providers({ children }: { children: React.ReactNode }) {\r\n  return <SessionProvider>{children}</SessionProvider>\r\n}\r\n"],"names":["Providers","children"],"mappings":";;;;;AAEA;AAFA;;;AAIe,SAASA,UAAU,EAAEC,QAAQ,EAAiC;IAC3E,qBAAO,8OAAC,iKAAe;kBAAEA;;;;;;AAC3B"}}]
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "debugId": "3d0fb94c-df70-ffd6-cd7d-1766fc355c78",
-  "sections": [
-    {"offset": {"line": 173, "column": 0}, "map": {"version":3,"sources":["file:///C:/Muhammad/data4research/sentry.server.config.ts"],"sourcesContent":["import * as Sentry from \"@sentry/nextjs\";\r\n\r\nSentry.init({\r\n  dsn: process.env.SENTRY_DSN,\r\n  enabled: !!process.env.SENTRY_DSN,\r\n\r\n  // Sample 10% of transactions for performance monitoring\r\n  tracesSampleRate: 0.1,\r\n});\r\n"],"names":["dsn","process","env","SENTRY_DSN","enabled","tracesSampleRate"],"mappings":";AAAA;;AAEA,kLAAW,CAAC;IACVA,KAAKC,QAAQC,GAAG,CAACC,UAAU;IAC3BC,SAAS,CAAC,CAACH,QAAQC,GAAG,CAACC,UAAU;IAEjC,wDAAwD;IACxDE,kBAAkB;AACpB"}}]
-}
