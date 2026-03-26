@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Heart } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import ExpandableSection from '@/components/ExpandableSection'
 import AutoimmunoProfileModal from '@/components/modals/AutoimmunoProfileModal'
 import CardiologyModal from '@/components/modals/CardiologyModal'
@@ -15,7 +15,7 @@ type SavedTest = {
   sampleDate: Date | string
 }
 
-export default function FavouritesPage() {
+export default function SettingsPage() {
   const [openModal, setOpenModal] = useState<string | null>(null)
   const defaultDate = new Date()
   const savedData: SavedTest[] = []
@@ -44,15 +44,15 @@ export default function FavouritesPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-blue-100/90 px-3 py-1 text-sm font-medium text-blue-800 ring-1 ring-blue-200/60 mb-3">
-                <Heart className="h-4 w-4 fill-red-500 text-red-500" aria-hidden />
-                Favourites
+                <Settings className="h-4 w-4" aria-hidden />
+                Settings
               </div>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-800">
-                Customize your favourites
+                Field preferences
               </h1>
               <p className="mt-2 max-w-2xl text-base text-slate-600 leading-relaxed">
-                Open a section and use the heart icons next to each field to choose what appears in your
-                favourites for new patients.
+                Open a section and use the heart icons next to each field to choose what appears by default
+                for new patients.
               </p>
             </div>
           </div>
@@ -66,8 +66,8 @@ export default function FavouritesPage() {
             colorClass={cardShell(sections[0].accent)}
             contentClassName={contentPanel}
           >
-            <AutoimmunoProfileModal 
-              onClose={() => setOpenModal(null)} 
+            <AutoimmunoProfileModal
+              onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
               savedData={savedData}
@@ -83,8 +83,8 @@ export default function FavouritesPage() {
             colorClass={cardShell(sections[1].accent)}
             contentClassName={contentPanel}
           >
-            <CardiologyModal 
-              onClose={() => setOpenModal(null)} 
+            <CardiologyModal
+              onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
               savedData={savedData}
@@ -100,8 +100,8 @@ export default function FavouritesPage() {
             colorClass={cardShell(sections[2].accent)}
             contentClassName={contentPanel}
           >
-            <RFTModal 
-              onClose={() => setOpenModal(null)} 
+            <RFTModal
+              onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
               savedData={savedData}
@@ -117,8 +117,8 @@ export default function FavouritesPage() {
             colorClass={cardShell(sections[3].accent)}
             contentClassName={contentPanel}
           >
-            <LFTModal 
-              onClose={() => setOpenModal(null)} 
+            <LFTModal
+              onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
               savedData={savedData}
@@ -134,8 +134,8 @@ export default function FavouritesPage() {
             colorClass={cardShell(sections[4].accent)}
             contentClassName={contentPanel}
           >
-            <DiseaseHistoryModal 
-              onClose={() => setOpenModal(null)} 
+            <DiseaseHistoryModal
+              onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
               savedData={savedData}
@@ -151,8 +151,8 @@ export default function FavouritesPage() {
             colorClass={cardShell(sections[5].accent)}
             contentClassName={contentPanel}
           >
-            <ImagingHistopathologyModal 
-              onClose={() => setOpenModal(null)} 
+            <ImagingHistopathologyModal
+              onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
               savedData={savedData}
@@ -168,8 +168,8 @@ export default function FavouritesPage() {
             colorClass={cardShell(sections[6].accent)}
             contentClassName={contentPanel}
           >
-            <HematologyModal 
-              onClose={() => setOpenModal(null)} 
+            <HematologyModal
+              onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
               savedData={savedData}
@@ -182,4 +182,3 @@ export default function FavouritesPage() {
     </div>
   )
 }
-

@@ -1,4 +1,4 @@
-;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="8fbae6e5-0999-9822-97b6-cdd3666c6a87")}catch(e){}}();
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="e979ff05-7563-179f-df36-701685c8569c")}catch(e){}}();
 (globalThis["TURBOPACK"] || (globalThis["TURBOPACK"] = [])).push([typeof document === "object" ? document.currentScript : undefined,
 "[project]/src/app/global-error.tsx [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
@@ -20,11 +20,11 @@ var _s = __turbopack_context__.k.signature();
 function GlobalError(t0) {
     _s();
     const $ = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$compiler$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["c"])(8);
-    if ($[0] !== "73ab6a6f93719a3eaba6d760e79330557d61b2fea8cb8358817238721abefb24") {
+    if ($[0] !== "90b13aa9b205e0331f40889f4ea43fcc93f15298cf08a22ffa9439dd22e8b835") {
         for(let $i = 0; $i < 8; $i += 1){
             $[$i] = Symbol.for("react.memo_cache_sentinel");
         }
-        $[0] = "73ab6a6f93719a3eaba6d760e79330557d61b2fea8cb8358817238721abefb24";
+        $[0] = "90b13aa9b205e0331f40889f4ea43fcc93f15298cf08a22ffa9439dd22e8b835";
     }
     const { error, reset } = t0;
     let t1;
@@ -132,5 +132,5 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 }),
 ]);
 
-//# debugId=8fbae6e5-0999-9822-97b6-cdd3666c6a87
+//# debugId=e979ff05-7563-179f-df36-701685c8569c
 //# sourceMappingURL=src_app_global-error_tsx_0oi~pse._.js.map

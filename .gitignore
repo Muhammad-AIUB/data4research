@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# local build output (custom distDir used when path contains spaces)
+/tmp/
+
 # production
 /build
 

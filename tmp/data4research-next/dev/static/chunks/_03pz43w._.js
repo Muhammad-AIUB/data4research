@@ -1,4 +1,4 @@
-;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="38ca1324-cb92-fb1d-ea45-51c0f3ed7850")}catch(e){}}();
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="71996e42-d7e9-3ffa-c3bc-6ff21dc08c41")}catch(e){}}();
 (globalThis["TURBOPACK"] || (globalThis["TURBOPACK"] = [])).push([typeof document === "object" ? document.currentScript : undefined,
 "[project]/sentry.client.config.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
@@ -9,8 +9,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$sentry$2f$
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$sentry$2d$internal$2f$replay$2f$build$2f$npm$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@sentry-internal/replay/build/npm/esm/index.js [app-client] (ecmascript)");
 ;
 __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$sentry$2f$nextjs$2f$build$2f$esm$2f$client$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["init"]({
-    dsn: ("TURBOPACK compile-time value", ""),
-    enabled: !!("TURBOPACK compile-time value", ""),
+    dsn: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].env.NEXT_PUBLIC_SENTRY_DSN,
+    enabled: !!__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].env.NEXT_PUBLIC_SENTRY_DSN,
     // Sample 10% of transactions for performance monitoring
     tracesSampleRate: 0.1,
     // Capture 100% of sessions with errors, 10% without
@@ -49,5 +49,5 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 }),
 ]);
 
-//# debugId=38ca1324-cb92-fb1d-ea45-51c0f3ed7850
+//# debugId=71996e42-d7e9-3ffa-c3bc-6ff21dc08c41
 //# sourceMappingURL=_03pz43w._.js.map

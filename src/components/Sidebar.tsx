@@ -1,7 +1,7 @@
 'use client'
 
 import { signOut } from 'next-auth/react'
-import { LogOut, User, Home, Users, Heart, ClipboardList } from 'lucide-react'
+import { LogOut, User, Home, Users, Settings, ClipboardList } from 'lucide-react'
 import Link from 'next/link'
 import type { Session } from 'next-auth'
 
@@ -63,11 +63,11 @@ export default function Sidebar({ session }: SidebarProps) {
         </Link>
 
         <Link
-          href="/dashboard/favourites"
+          href="/dashboard/settings"
           className="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors"
         >
-          <Heart size={18} />
-          <span className="text-sm font-medium">Favourites</span>
+          <Settings size={18} />
+          <span className="text-sm font-medium">Settings</span>
         </Link>
 
         <Link

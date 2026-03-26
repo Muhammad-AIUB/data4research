@@ -1,4 +1,4 @@
-;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="94337680-a8c9-dec2-50eb-8d56199b0462")}catch(e){}}();
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="2d51ef24-a7b4-48be-11e5-bdd537594ea3")}catch(e){}}();
 module.exports = [
 "[externals]/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js [external] (next/dist/compiled/next-server/app-route-turbo.runtime.dev.js, cjs)", ((__turbopack_context__, module, exports) => {
 
@@ -186,20 +186,25 @@ const authOptions = {
             async authorize (credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
                 const normalizedEmail = credentials.email.trim().toLowerCase();
-                const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findUnique({
-                    where: {
-                        email: normalizedEmail
-                    }
-                });
-                if (!user) return null;
-                const isValid = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].compare(credentials.password, user.password);
-                if (!isValid) return null;
-                return {
-                    id: user.id,
-                    name: user.name || user.email.split('@')[0],
-                    email: user.email,
-                    role: user.role
-                };
+                try {
+                    const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findUnique({
+                        where: {
+                            email: normalizedEmail
+                        }
+                    });
+                    if (!user) return null;
+                    const isValid = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].compare(credentials.password, user.password);
+                    if (!isValid) return null;
+                    return {
+                        id: user.id,
+                        name: user.name || user.email.split('@')[0],
+                        email: user.email,
+                        role: user.role
+                    };
+                } catch (error) {
+                    console.error('[AUTH] authorize() failed:', error);
+                    return null;
+                }
             }
         })
     ],
@@ -256,5 +261,5 @@ __turbopack_async_result__();
 } catch(e) { __turbopack_async_result__(e); } }, false);}),
 ];
 
-//# debugId=94337680-a8c9-dec2-50eb-8d56199b0462
+//# debugId=2d51ef24-a7b4-48be-11e5-bdd537594ea3
 //# sourceMappingURL=%5Broot-of-the-server%5D__05kri3u._.js.map

@@ -1,6 +1,39 @@
 {
   "pages": {
-    "/_app": []
+    "/_app": [
+      "static/chunks/node_modules_next_dist_compiled_0qz0_9y._.js",
+      "static/chunks/node_modules_next_dist_shared_lib_0c21~uk._.js",
+      "static/chunks/node_modules_next_dist_client_0pe1dg-._.js",
+      "static/chunks/node_modules_next_dist_13rdevn._.js",
+      "static/chunks/node_modules_next_0l8c-0b._.js",
+      "static/chunks/[next]_entry_page-loader_ts_0j~flwh._.js",
+      "static/chunks/node_modules_react-dom_0bruynb._.js",
+      "static/chunks/node_modules_@sentry_core_build_esm_110x~l1._.js",
+      "static/chunks/node_modules_@sentry_browser_build_npm_esm_dev_13xe71j._.js",
+      "static/chunks/node_modules_@sentry-internal_browser-utils_build_esm_0_27uj2._.js",
+      "static/chunks/node_modules_@sentry-internal_replay_build_npm_esm_index_03778zl.js",
+      "static/chunks/node_modules_00l8naa._.js",
+      "static/chunks/[root-of-the-server]__060u_rz._.js",
+      "static/chunks/pages__app_07xvfw~._.js",
+      "static/chunks/turbopack-pages__app_0ifp2_n._.js"
+    ],
+    "/_error": [
+      "static/chunks/node_modules_next_dist_compiled_0qz0_9y._.js",
+      "static/chunks/node_modules_next_dist_shared_lib_0he2fg0._.js",
+      "static/chunks/node_modules_next_dist_client_0pe1dg-._.js",
+      "static/chunks/node_modules_next_dist_101p379._.js",
+      "static/chunks/node_modules_next_router_02w3nnr.js",
+      "static/chunks/[next]_entry_page-loader_ts_0rqw6yo._.js",
+      "static/chunks/node_modules_react-dom_0bruynb._.js",
+      "static/chunks/node_modules_@sentry_core_build_esm_110x~l1._.js",
+      "static/chunks/node_modules_@sentry_browser_build_npm_esm_dev_13xe71j._.js",
+      "static/chunks/node_modules_@sentry-internal_browser-utils_build_esm_0_27uj2._.js",
+      "static/chunks/node_modules_@sentry-internal_replay_build_npm_esm_index_03778zl.js",
+      "static/chunks/node_modules_00l8naa._.js",
+      "static/chunks/[root-of-the-server]__0kfpph9._.js",
+      "static/chunks/pages__error_07xvfw~._.js",
+      "static/chunks/turbopack-pages__error_11uw_co._.js"
+    ]
   },
   "devFiles": [],
   "polyfillFiles": [
