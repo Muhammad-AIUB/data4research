@@ -1,11 +1,9 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
+import DashboardShell from '@/components/DashboardShell'
 import type { Session } from 'next-auth'
 
-// No force-dynamic — getServerSession already opts this into dynamic rendering
-// via cookies(). Child pages retain their own ISR/static caching behavior.
 export default async function DashboardLayout({
   children,
 }: {
@@ -16,12 +14,5 @@ export default async function DashboardLayout({
     redirect('/')
   }
 
-  return (
-    <div className="flex min-h-screen bg-linear-to-br from-slate-100 via-blue-50 to-sky-100">
-      <Sidebar session={session} />
-      <main className="flex-1 p-6">
-        {children}
-      </main>
-    </div>
-  )
+  return <DashboardShell session={session}>{children}</DashboardShell>
 }
