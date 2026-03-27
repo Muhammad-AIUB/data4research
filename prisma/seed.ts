@@ -75,28 +75,6 @@ async function main() {
     data: { email: 'archived+shariar.dmc@data4research.com' },
   })
 
-  await prisma.user.upsert({
-    where: { email: 'shahariar.dmc@data4research.com' },
-    update: { password: hashShahariarDmc, name: 'Dr. Shahariar' },
-    create: {
-      email: 'shahariar.dmc@data4research.com',
-      name: 'Dr. Shahariar',
-      password: hashShahariarDmc,
-      role: 'DOCTOR',
-    },
-  })
-
-  await prisma.user.upsert({
-    where: { email: 'tanvir@data4research.com' },
-    update: { password: hashTanvir, name: 'Tanvir' },
-    create: {
-      email: 'tanvir@data4research.com',
-      name: 'Tanvir',
-      password: hashTanvir,
-      role: 'DOCTOR',
-    },
-  })
-
   // Seed Option data for dropdowns
   await prisma.option.deleteMany({})
 
