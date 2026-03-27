@@ -21,6 +21,8 @@ async function main() {
   const hash1 = await bcrypt.hash('Bslctr@253027', 10)
   const hash2 = await bcrypt.hash('Bslctr@2025', 10)
   const hash3 = await bcrypt.hash('Bslctr@2026', 10)
+  const hashShahariarDmc = await bcrypt.hash('Bslctr@253050', 10)
+  const hashTanvir = await bcrypt.hash('Bslctr@253070', 10)
 
   await prisma.user.upsert({
     where: { email: 'bslctr2022@gmail.com' },
@@ -38,6 +40,28 @@ async function main() {
     where: { email: 'shahariar.dmc@gmail.com' },
     update: {},
     create: { email: 'shahariar.dmc@gmail.com', name: 'Dr. Shahariar', password: hash3, role: 'DOCTOR' }
+  })
+
+  await prisma.user.upsert({
+    where: { email: 'shahariar.dmc@data4research.com' },
+    update: { password: hashShahariarDmc, name: 'Dr. Shahariar' },
+    create: {
+      email: 'shahariar.dmc@data4research.com',
+      name: 'Dr. Shahariar',
+      password: hashShahariarDmc,
+      role: 'DOCTOR',
+    },
+  })
+
+  await prisma.user.upsert({
+    where: { email: 'tanvir@data4research.com' },
+    update: { password: hashTanvir, name: 'Tanvir' },
+    create: {
+      email: 'tanvir@data4research.com',
+      name: 'Tanvir',
+      password: hashTanvir,
+      role: 'DOCTOR',
+    },
   })
 
   // Seed Option data for dropdowns
