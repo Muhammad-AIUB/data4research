@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Session } from "next-auth";
 import { formatTestData } from "@/lib/formatTestData";
 import { isAdmin, scopePatientAccess } from "@/lib/rbac";
+import PatientActions from "@/components/PatientActions";
 
 export const revalidate = 60;
 export const dynamic = "force-dynamic";
@@ -143,14 +144,52 @@ export default async function PatientDetailPage({
     { key: "hematology" as const, label: "Hematology" },
   ] as const;
 
+  // Build export data for the client component
+  const exportData = {
+    name: patient.name,
+    patientId: patient.patientId,
+    age: patient.age,
+    mobile: patient.mobile,
+    nid: patient.nid,
+    ethnicity: patient.ethnicity,
+    religion: patient.religion,
+    dateOfBirth: patient.dateOfBirth ? patient.dateOfBirth.toISOString() : null,
+    spouseMobile: patient.spouseMobile,
+    relativeMobile: patient.relativeMobile,
+    district: patient.district,
+    address: patient.address,
+    shortHistory: patient.shortHistory,
+    surgicalHistory: patient.surgicalHistory,
+    familyHistory: patient.familyHistory,
+    pastIllness: patient.pastIllness,
+    specialNotes: patient.specialNotes,
+    finalDiagnosis: patient.finalDiagnosis,
+    tags: patient.tags,
+    createdAt: patient.createdAt.toISOString(),
+    groupedTests: groupedTests.map(([date, tests]) => ({
+      date,
+      reports: tests.flatMap((test) =>
+        reportTypes
+          .map(({ key, label }) => {
+            const data = test[key];
+            if (data == null) return null;
+            const items = formatTestData(data, key);
+            if (items.length === 0) return null;
+            return { reportType: label, items };
+          })
+          .filter(Boolean) as { reportType: string; items: { label: string; value: string }[] }[],
+      ),
+    })),
+  };
+
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto p-8">
+    <div className="min-h-screen print:h-auto">
+      <div className="max-w-6xl mx-auto p-8 print:p-4 print:max-w-full">
         <div className="flex justify-between items-center mb-6">
           <div>
             <Link
               href="/dashboard/patients"
-              className="text-blue-600 hover:text-blue-700 font-medium mb-2 inline-block"
+              className="text-blue-600 hover:text-blue-700 font-medium mb-2 inline-block print:hidden"
             >
               ← Back to All Patients
             </Link>
@@ -158,12 +197,15 @@ export default async function PatientDetailPage({
               Patient Details
             </h1>
           </div>
-          <Link
-            href={`/dashboard/add-patient/next?patientId=${patient.patientId || patient.id}`}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-md transition-all"
-          >
-            + Add Test Report
-          </Link>
+          <div className="flex items-center gap-3 print:hidden">
+            <PatientActions patient={exportData} />
+            <Link
+              href={`/dashboard/add-patient/next?patientId=${patient.patientId || patient.id}`}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-md transition-all"
+            >
+              + Add Test Report
+            </Link>
+          </div>
         </div>
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-blue-100 p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

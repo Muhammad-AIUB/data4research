@@ -6,6 +6,7 @@ import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
+import ModalPortal from "@/components/ModalPortal"
 import { 
   addFavouriteField,
   isFieldFavourite, 
@@ -172,6 +173,7 @@ export default function BASDAIModal({
   }
 
   return (
+    <ModalPortal>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
@@ -299,7 +301,9 @@ export default function BASDAIModal({
 
             <div className={`rounded-lg border border-indigo-200 bg-indigo-50 p-4`}>
               <p className="font-semibold text-lg">BASDAI Score: <span className="text-blue-700">{form.basdaiScore}</span></p>
-              <p className="text-sm text-gray-600 mt-1">Formula: [(Q1 + Q2 + Q3 + Q4) + ((Q5 + Q6) / 2)] / 5</p>
+              <p className="text-sm text-gray-600 mt-1">
+                Formula: &#91;(Q1 + Q2 + Q3 + Q4) + ((Q5 + Q6) / 2)&#93; / 5
+              </p>
               <a className="text-sm text-blue-600 mt-1 inline-block" href="https://www.physio-pedia.com/BASDAI" target="_blank" rel="noopener noreferrer">Learn more about BASDAI</a>
             </div>
 
@@ -313,5 +317,6 @@ export default function BASDAIModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   )
 }

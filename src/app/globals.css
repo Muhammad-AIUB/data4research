@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Only scan our source tree — prevents Tailwind from picking up
+   compiled/minified artifacts in /tmp or other build directories. */
+@source "../..";
+@source not "../../tmp";
+@source not "../../node_modules";
+
 :root {
   /* Eye-comfortable blue theme */
   --background: #e8f1f8;

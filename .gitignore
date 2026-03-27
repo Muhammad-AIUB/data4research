@@ -17,6 +17,11 @@
 /.next/
 /out/
 
+# Next.js custom distDir / local dev output (chunks, trace, cache)
+# Root-level tmp/ and explicit tree when distDir resolves inside the repo
+/tmp/
+tmp/data4research-next/
+
 # production
 /build
 

@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
+import ModalPortal from "@/components/ModalPortal"
 
 type FormState = {
   age: string
@@ -284,6 +285,7 @@ export default function DiseaseHistoryModal({
   }
 
   return (
+    <ModalPortal>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-white">
         <div className="sticky top-0 flex items-center justify-between bg-linear-to-r from-blue-600 to-purple-600 p-4 text-white">
@@ -657,5 +659,6 @@ export default function DiseaseHistoryModal({
         </form>
       </div>
     </div>
+    </ModalPortal>
   )
 }

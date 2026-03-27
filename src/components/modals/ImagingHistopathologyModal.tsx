@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ModalDatePicker from "@/components/ModalDatePicker";
+import ModalPortal from "@/components/ModalPortal";
 
 interface Props {
   onClose: () => void;
@@ -140,6 +141,7 @@ export default function ImagingHistopathologyModal({
   };
 
   return (
+    <ModalPortal>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
@@ -357,5 +359,6 @@ export default function ImagingHistopathologyModal({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 }

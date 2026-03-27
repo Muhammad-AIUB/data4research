@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Workaround: Turbopack cannot write build artifacts when project path contains spaces.
+  // On Vercel, use the default .next so the platform can locate routes-manifest.json.
+  distDir: process.env.VERCEL ? '.next' : '/tmp/data4research-next',
   reactCompiler: true,
   compress: true,
   serverExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg'],
@@ -18,13 +21,6 @@ const nextConfig: NextConfig = {
         source: '/api/options',
         headers: [
           { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=86400' },
-        ],
-      },
-      {
-        // Cache static assets aggressively
-        source: '/_next/static/(.*)',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ]
