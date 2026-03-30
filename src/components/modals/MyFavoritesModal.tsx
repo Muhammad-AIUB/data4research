@@ -12,7 +12,7 @@ import {
   getFavouriteFieldValue,
   type FavouriteField,
 } from "@/lib/favourites";
-import ModalPortal from "@/components/ModalPortal";
+import ReportFormContainer from "@/components/ReportFormContainer";
 
 type PatientTest = {
   id: string;
@@ -29,9 +29,10 @@ type PatientTest = {
 interface Props {
   onClose: () => void;
   savedData?: PatientTest[];
+  embedded?: boolean;
 }
 
-export default function MyFavoritesModal({ onClose }: Props) {
+export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
   const [favourites, setFavourites] = useState<FavouriteField[]>([]);
   const groupedFavourites = useMemo(() => {
     const grouped: Record<string, Record<string, FavouriteField[]>> = {};
@@ -175,10 +176,13 @@ export default function MyFavoritesModal({ onClose }: Props) {
     hematology: "Hematology",
   };
 
+  const shellClass = embedded
+    ? "w-full flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm max-h-[min(85vh,900px)] min-h-0 overflow-hidden"
+    : "bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4";
+
   return (
-    <ModalPortal>
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4">
+    <ReportFormContainer embedded={embedded}>
+      <div className={shellClass}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
@@ -547,7 +551,6 @@ export default function MyFavoritesModal({ onClose }: Props) {
           </Button>
         </div>
       </div>
-    </div>
-    </ModalPortal>
+    </ReportFormContainer>
   );
 }

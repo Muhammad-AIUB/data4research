@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ModalDatePicker from "@/components/ModalDatePicker";
-import ModalPortal from "@/components/ModalPortal";
+import ReportFormContainer from "@/components/ReportFormContainer";
 
 interface Props {
   onClose: () => void;
@@ -20,6 +20,7 @@ interface Props {
   patientId?: string | null;
   onSaveSuccess?: () => void;
   savedData?: Array<{ sampleDate: Date | string; imaging?: unknown }>;
+  embedded?: boolean;
 }
 
 export default function ImagingHistopathologyModal({
@@ -29,6 +30,7 @@ export default function ImagingHistopathologyModal({
   patientId,
   onSaveSuccess,
   savedData = [],
+  embedded = false,
 }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
@@ -140,10 +142,13 @@ export default function ImagingHistopathologyModal({
     }
   };
 
+  const shellClass = embedded
+    ? "w-full rounded-xl border border-slate-200 bg-white shadow-sm p-6 max-h-[min(85vh,900px)] overflow-y-auto"
+    : "bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto";
+
   return (
-    <ModalPortal>
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <ReportFormContainer embedded={embedded}>
+      <div className={shellClass}>
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold">Imaging, Histopathology</h2>
@@ -358,7 +363,6 @@ export default function ImagingHistopathologyModal({
           </div>
         </form>
       </div>
-    </div>
-    </ModalPortal>
+    </ReportFormContainer>
   );
 }

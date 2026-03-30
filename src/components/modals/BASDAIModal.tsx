@@ -6,7 +6,7 @@ import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
-import ModalPortal from "@/components/ModalPortal"
+import ReportFormContainer from "@/components/ReportFormContainer"
 import { 
   addFavouriteField,
   isFieldFavourite, 
@@ -36,6 +36,7 @@ interface Props {
   patientId?: string | null
   onSaveSuccess?: () => void
   savedData?: PatientTest[]
+  embedded?: boolean
 }
 
 const scaleOptions = Array.from({ length: 11 }, (_, i) => ({
@@ -64,6 +65,7 @@ export default function BASDAIModal({
   patientId,
   onSaveSuccess,
   savedData = [],
+  embedded = false,
 }: Props) {
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
@@ -172,10 +174,13 @@ export default function BASDAIModal({
     }
   }
 
+  const shellClass = embedded
+    ? "w-full flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm max-h-[min(85vh,900px)] min-h-0 overflow-hidden"
+    : "bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+
   return (
-    <ModalPortal>
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
+    <ReportFormContainer embedded={embedded}>
+      <div className={shellClass}>
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">BASDAI Score</h2>
@@ -316,7 +321,6 @@ export default function BASDAIModal({
           </form>
         </div>
       </div>
-    </div>
-    </ModalPortal>
+    </ReportFormContainer>
   )
 }

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
-import ModalPortal from "@/components/ModalPortal"
+import ReportFormContainer from "@/components/ReportFormContainer"
 
 type FormState = {
   age: string
@@ -57,6 +57,7 @@ interface Props {
   patientId?: string | null
   onSaveSuccess?: () => void
   savedData?: Array<{ sampleDate: Date | string; diseaseHistory?: DiseaseHistoryData }>
+  embedded?: boolean
 }
 
 export default function DiseaseHistoryModal({
@@ -66,6 +67,7 @@ export default function DiseaseHistoryModal({
   patientId,
   onSaveSuccess,
   savedData = [],
+  embedded = false,
 }: Props) {
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
@@ -284,10 +286,13 @@ export default function DiseaseHistoryModal({
     }
   }
 
+  const shellClass = embedded
+    ? "w-full max-h-[min(85vh,900px)] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-sm"
+    : "max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-white"
+
   return (
-    <ModalPortal>
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-white">
+    <ReportFormContainer embedded={embedded}>
+      <div className={shellClass}>
         <div className="sticky top-0 flex items-center justify-between bg-linear-to-r from-blue-600 to-purple-600 p-4 text-white">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold">On Examination & Disease History</h2>
@@ -658,7 +663,6 @@ export default function DiseaseHistoryModal({
           </div>
         </form>
       </div>
-    </div>
-    </ModalPortal>
+    </ReportFormContainer>
   )
 }

@@ -67,6 +67,7 @@ export default function SettingsPage() {
             contentClassName={contentPanel}
           >
             <AutoimmunoProfileModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -84,6 +85,7 @@ export default function SettingsPage() {
             contentClassName={contentPanel}
           >
             <CardiologyModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -101,6 +103,7 @@ export default function SettingsPage() {
             contentClassName={contentPanel}
           >
             <RFTModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -118,6 +121,7 @@ export default function SettingsPage() {
             contentClassName={contentPanel}
           >
             <LFTModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -135,6 +139,7 @@ export default function SettingsPage() {
             contentClassName={contentPanel}
           >
             <DiseaseHistoryModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -152,6 +157,7 @@ export default function SettingsPage() {
             contentClassName={contentPanel}
           >
             <ImagingHistopathologyModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -169,6 +175,7 @@ export default function SettingsPage() {
             contentClassName={contentPanel}
           >
             <HematologyModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
