@@ -20,59 +20,81 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  const hash1 = await bcrypt.hash('Bslctr@253027', 10)
-  const hash2 = await bcrypt.hash('Bslctr@2025', 10)
-  const hash3 = await bcrypt.hash('Bslctr@2026', 10)
+  // bslctr2022@gmail.com (ADMIN)
+  const hashAdmin = await bcrypt.hash('Bslctr@253027', 10)
+  // shahariar.dmc@data4research.com (DOCTOR)
+  const hashShahariar = await bcrypt.hash('Bslctr@253050', 10)
+  // tanvir@data4research.com (DOCTOR)
+  const hashTanvir = await bcrypt.hash('Bslctr@253070', 10)
+  // Bslctr2022@gmail.com (DOCTOR) — distinct from lowercase admin email
+  const hashBslctr = await bcrypt.hash('Bslctr@253030', 10)
 
   await prisma.user.upsert({
     where: { email: 'bslctr2022@gmail.com' },
     update: {
       name: 'Admin BSLCTR',
-      password: hash1,
+      password: hashAdmin,
       role: 'ADMIN',
     },
-    create: { email: 'bslctr2022@gmail.com', name: 'Admin BSLCTR', password: hash1, role: 'ADMIN' }
+    create: { email: 'bslctr2022@gmail.com', name: 'Admin BSLCTR', password: hashAdmin, role: 'ADMIN' }
   })
 
   const legacyDoctor = await prisma.user.findUnique({
     where: { email: 'shahariar.dmc@gmail.com' },
   })
 
-  if (legacyDoctor) {
+  const canonicalDoctor = await prisma.user.findUnique({
+    where: { email: 'shahariar.dmc@data4research.com' },
+  })
+
+  if (legacyDoctor && canonicalDoctor) {
+    await prisma.user.deleteMany({
+      where: { email: 'shahariar.dmc@gmail.com' },
+    })
+  } else if (legacyDoctor) {
     await prisma.user.update({
       where: { email: 'shahariar.dmc@gmail.com' },
       data: {
         email: 'shahariar.dmc@data4research.com',
         name: 'Dr. Shahariar',
-        password: hash2,
+        password: hashShahariar,
         role: 'DOCTOR',
       },
-    })
-  } else {
-    await prisma.user.upsert({
-      where: { email: 'shahariar.dmc@data4research.com' },
-      update: {
-        name: 'Dr. Shahariar',
-        password: hash2,
-        role: 'DOCTOR',
-      },
-      create: { email: 'shahariar.dmc@data4research.com', name: 'Dr. Shahariar', password: hash2, role: 'DOCTOR' }
     })
   }
+
+  await prisma.user.upsert({
+    where: { email: 'shahariar.dmc@data4research.com' },
+    update: {
+      name: 'Dr. Shahariar',
+      password: hashShahariar,
+      role: 'DOCTOR',
+    },
+    create: { email: 'shahariar.dmc@data4research.com', name: 'Dr. Shahariar', password: hashShahariar, role: 'DOCTOR' }
+  })
 
   await prisma.user.upsert({
     where: { email: 'tanvir@data4research.com' },
     update: {
       name: 'Tanvir',
-      password: hash3,
+      password: hashTanvir,
       role: 'DOCTOR',
     },
-    create: { email: 'tanvir@data4research.com', name: 'Tanvir', password: hash3, role: 'DOCTOR' }
+    create: { email: 'tanvir@data4research.com', name: 'Tanvir', password: hashTanvir, role: 'DOCTOR' }
   })
 
-  await prisma.user.updateMany({
+  await prisma.user.upsert({
+    where: { email: 'Bslctr2022@gmail.com' },
+    update: {
+      name: 'Bslctr User',
+      password: hashBslctr,
+      role: 'DOCTOR',
+    },
+    create: { email: 'Bslctr2022@gmail.com', name: 'Bslctr User', password: hashBslctr, role: 'DOCTOR' }
+  })
+
+  await prisma.user.deleteMany({
     where: { email: 'shariar.dmc@gmail.com' },
-    data: { email: 'archived+shariar.dmc@data4research.com' },
   })
 
   // Seed Option data for dropdowns

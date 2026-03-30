@@ -16,12 +16,19 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
-        const normalizedEmail = credentials.email.trim().toLowerCase()
+        const rawEmail = credentials.email.trim()
 
         try {
-          const user = await prisma.user.findUnique({
-            where: { email: normalizedEmail }
+          // Exact match first so bslctr2022@gmail.com (admin) vs Bslctr2022@gmail.com (doctor)
+          // are distinct; then lowercase fallback for typical logins.
+          let user = await prisma.user.findUnique({
+            where: { email: rawEmail },
           })
+          if (!user) {
+            user = await prisma.user.findUnique({
+              where: { email: rawEmail.toLowerCase() },
+            })
+          }
 
           if (!user) return null
 
