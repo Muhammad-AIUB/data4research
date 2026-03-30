@@ -679,6 +679,7 @@ function NextPageContent() {
             colorClass={sectionColors[0]}
           >
             <MyFavoritesModal
+              embedded
               onClose={() => setOpenModal(null)}
               savedData={savedTestData}
             />
@@ -693,6 +694,7 @@ function NextPageContent() {
             colorClass={sectionColors[0]}
           >
             <BASDAIModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
@@ -713,6 +715,7 @@ function NextPageContent() {
             colorClass={sectionColors[1]}
           >
             <AutoimmunoProfileModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
@@ -737,6 +740,7 @@ function NextPageContent() {
             colorClass={sectionColors[2]}
           >
             <CardiologyModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
@@ -755,6 +759,7 @@ function NextPageContent() {
             colorClass={sectionColors[3]}
           >
             <RFTModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
@@ -773,6 +778,7 @@ function NextPageContent() {
             colorClass={sectionColors[4]}
           >
             <LFTModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
@@ -795,6 +801,7 @@ function NextPageContent() {
             colorClass={sectionColors[5]}
           >
             <DiseaseHistoryModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
@@ -815,6 +822,7 @@ function NextPageContent() {
             colorClass={sectionColors[6]}
           >
             <ImagingHistopathologyModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}
@@ -835,6 +843,7 @@ function NextPageContent() {
             colorClass={sectionColors[7]}
           >
             <HematologyModal
+              embedded
               onClose={() => setOpenModal(null)}
               defaultDate={selectedDate}
               patientId={patientId}

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ModalDatePicker from "@/components/ModalDatePicker";
-import ModalPortal from "@/components/ModalPortal";
+import ReportFormContainer from "@/components/ReportFormContainer";
 import {
   addFavouriteField,
   isFieldFavourite,
@@ -20,6 +20,8 @@ interface Props {
   patientId?: string | null;
   onSaveSuccess?: () => void;
   savedData?: Array<{ sampleDate: Date | string; rft?: unknown }>;
+  /** Inline inside accordion — no modal overlay */
+  embedded?: boolean;
 }
 
 export default function RFTModal({
@@ -29,6 +31,7 @@ export default function RFTModal({
   patientId,
   onSaveSuccess,
   savedData = [],
+  embedded = false,
 }: Props) {
   const [formData, setFormData] = useState<
     Record<string, { value1: string; value2: string }>
@@ -281,10 +284,13 @@ export default function RFTModal({
 
   let fieldIndex = 0;
 
+  const shellClass = embedded
+    ? "w-full flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm max-h-[min(85vh,900px)] min-h-0 overflow-hidden"
+    : "bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden";
+
   return (
-    <ModalPortal>
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
+    <ReportFormContainer embedded={embedded}>
+      <div className={shellClass}>
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">RFT (Renal Function Test)</h2>
@@ -439,7 +445,6 @@ export default function RFTModal({
           </form>
         </div>
       </div>
-    </div>
-    </ModalPortal>
+    </ReportFormContainer>
   );
 }

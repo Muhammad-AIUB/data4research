@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
-import ModalPortal from "@/components/ModalPortal";
+import ReportFormContainer from "@/components/ReportFormContainer";
 import {
   addFavouriteField,
   isFieldFavourite,
@@ -21,6 +21,7 @@ interface Props {
   patientId?: string | null;
   onSaveSuccess?: () => void;
   savedData?: Array<{ sampleDate: Date | string; autoimmunoProfile?: unknown }>;
+  embedded?: boolean;
 }
 
 export default function AutoimmunoProfileModal({
@@ -30,6 +31,7 @@ export default function AutoimmunoProfileModal({
   patientId,
   onSaveSuccess,
   savedData = [],
+  embedded = false,
 }: Props) {
   const [formData, setFormData] = useState<
     Record<string, { value: string; notes: string }>
@@ -239,10 +241,13 @@ export default function AutoimmunoProfileModal({
     }
   };
 
+  const shellClass = embedded
+    ? "w-full flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm max-h-[min(85vh,900px)] min-h-0 overflow-hidden"
+    : "bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden";
+
   return (
-    <ModalPortal>
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
+    <ReportFormContainer embedded={embedded}>
+      <div className={shellClass}>
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">Autoimmuno Profile</h2>
@@ -570,7 +575,6 @@ export default function AutoimmunoProfileModal({
           </form>
         </div>
       </div>
-    </div>
-    </ModalPortal>
+    </ReportFormContainer>
   );
 }
