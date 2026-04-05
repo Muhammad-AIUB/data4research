@@ -10,6 +10,7 @@ import {
   removeFavouriteField,
   setFavouriteFieldValue,
   getFavouriteFieldValue,
+  FAVOURITES_CHANGED_EVENT,
   type FavouriteField,
 } from "@/lib/favourites";
 import ReportFormContainer from "@/components/ReportFormContainer";
@@ -86,6 +87,16 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
 
   useEffect(() => {
     loadFavourites();
+  }, []);
+
+  useEffect(() => {
+    const sync = () => loadFavourites();
+    window.addEventListener(FAVOURITES_CHANGED_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(FAVOURITES_CHANGED_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   useEffect(() => {
@@ -204,8 +215,9 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
               <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">No favorite fields yet</p>
               <p className="text-gray-400 text-sm mt-2">
-                Click the heart icon on any field in the test modals to add it
-                to favorites
+                Use the heart icons under Field preferences on Settings, or on
+                test forms when adding a patient. The same list applies to every
+                patient for your account.
               </p>
             </div>
           ) : (

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Settings } from 'lucide-react'
 import ExpandableSection from '@/components/ExpandableSection'
+import MyFavoritesModal from '@/components/modals/MyFavoritesModal'
 import AutoimmunoProfileModal from '@/components/modals/AutoimmunoProfileModal'
 import CardiologyModal from '@/components/modals/CardiologyModal'
 import RFTModal from '@/components/modals/RFTModal'
@@ -51,14 +52,29 @@ export default function SettingsPage() {
                 Field preferences
               </h1>
               <p className="mt-2 max-w-2xl text-base text-slate-600 leading-relaxed">
-                Open a section and use the heart icons next to each field to choose what appears by default
-                for new patients.
+                Hearts you set in the sections below are stored in My Favorites (open the first
+                section). One list for your login applies to every patient — not separate per patient.
               </p>
             </div>
           </div>
         </header>
 
         <div className="space-y-3 sm:space-y-4">
+          <ExpandableSection
+            title="My Favorites"
+            isOpen={openModal === "my-favorites"}
+            onToggle={() =>
+              setOpenModal(openModal === "my-favorites" ? null : "my-favorites")
+            }
+            colorClass={`${cardShell("border-l-rose-600")}`}
+            contentClassName={contentPanel}
+          >
+            <MyFavoritesModal
+              embedded
+              onClose={() => setOpenModal(null)}
+            />
+          </ExpandableSection>
+
           <ExpandableSection
             title={sections[0].title}
             isOpen={openModal === "autoimmuno"}
