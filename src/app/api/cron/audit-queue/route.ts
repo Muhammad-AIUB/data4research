@@ -1,3 +1,7 @@
+/**
+ * Drains Redis audit queue into Postgres. Only needed when AUDIT_REDIS_QUEUE=1.
+ * Vercel Cron is optional; a free external scheduler (e.g. cron-job.org) can GET this URL with Bearer CRON_SECRET.
+ */
 import { NextResponse } from "next/server";
 
 import { flushAuditQueue } from "@/lib/auditLog";

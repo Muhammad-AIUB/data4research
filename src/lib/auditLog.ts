@@ -7,6 +7,12 @@ const SENSITIVE_FIELDS = new Set(["password", "nid"]);
 const AUDIT_QUEUE_KEY = "d4r:audit:queue";
 const AUDIT_QUEUE_MAX = 5000;
 
+/** Off by default: Redis queue needs a periodic flush (e.g. external free cron). Without it, logs stay direct DB. */
+function auditRedisQueueEnabled(): boolean {
+  const v = process.env.AUDIT_REDIS_QUEUE?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
 function stripSensitive(
   obj: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> | null {
@@ -99,7 +105,8 @@ function persistAuditDirect(params: LogAuditParams): void {
 }
 
 /**
- * Enqueue audit row to Redis (cron flushes to Postgres) or write directly if Redis off / enqueue fails.
+ * By default writes directly to Postgres. Set AUDIT_REDIS_QUEUE=1 to push to Redis; then call
+ * /api/cron/audit-queue on a schedule (external free cron, etc.) or logs never reach the DB.
  */
 export function logAudit(params: LogAuditParams): void {
   const cleanBefore = stripSensitive(params.before ?? null);
@@ -116,7 +123,7 @@ export function logAudit(params: LogAuditParams): void {
   console.log(JSON.stringify(entry));
 
   const r = getRedis();
-  if (r) {
+  if (r && auditRedisQueueEnabled()) {
     const payload = JSON.stringify({
       userId: params.userId,
       action: params.action,
