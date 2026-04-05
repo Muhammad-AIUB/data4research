@@ -69,16 +69,16 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
     useState<Record<string, string>>(initialFieldValues);
 
   
-  const fieldColors = [
-    "bg-blue-50 border-blue-200",
-    "bg-green-50 border-green-200",
-    "bg-purple-50 border-purple-200",
-    "bg-yellow-50 border-yellow-200",
-    "bg-pink-50 border-pink-200",
-    "bg-indigo-50 border-indigo-200",
-    "bg-orange-50 border-orange-200",
-    "bg-cyan-50 border-cyan-200",
-  ];
+  /** Subtle left stripe per report block (aligned with Settings accents) */
+  const reportTypeAccents: Record<string, string> = {
+    autoimmunoProfile: "border-l-blue-500",
+    cardiology: "border-l-emerald-500",
+    rft: "border-l-violet-500",
+    lft: "border-l-amber-500",
+    diseaseHistory: "border-l-rose-500",
+    imaging: "border-l-indigo-500",
+    hematology: "border-l-orange-500",
+  };
 
   const loadFavourites = () => {
     const favs = getFavourites();
@@ -182,46 +182,118 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
     cardiology: "Cardiology",
     rft: "RFT",
     lft: "LFT",
-    diseaseHistory: "Disease History",
+    diseaseHistory: "On Examination & Disease History",
     imaging: "Imaging, Histopathology",
     hematology: "Hematology",
+    basdai: "BASDAI",
+  };
+
+  const reportTitleForFavourite = (
+    fav: FavouriteField,
+    reportTypeKey: string,
+  ) => {
+    const n = fav.reportName?.trim();
+    if (n) return n;
+    return reportTypeLabels[reportTypeKey] ?? reportTypeKey;
+  };
+
+  const sectionPartForHeading = (
+    groupedSectionKey: string,
+    fav: FavouriteField,
+  ) => {
+    if (groupedSectionKey !== "Other") return groupedSectionKey;
+    const st = fav.sectionTitle?.trim();
+    if (st) return st;
+    return "Other fields";
+  };
+
+  /** One line: full report title + section, e.g. "On Examination & Disease History Physical Measurements" */
+  const fullContextHeading = (
+    reportTypeKey: string,
+    groupedSectionKey: string,
+    sectionFields: FavouriteField[],
+  ) => {
+    const first = sectionFields[0];
+    if (!first) return reportTypeLabels[reportTypeKey] ?? reportTypeKey;
+    const report = reportTitleForFavourite(first, reportTypeKey);
+    const section = sectionPartForHeading(groupedSectionKey, first);
+    return `${report} ${section}`.trim();
   };
 
   const shellClass = embedded
-    ? "w-full flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm max-h-[min(85vh,900px)] min-h-0 overflow-hidden"
-    : "bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4";
+    ? "w-full flex flex-col rounded-xl border border-slate-200/90 bg-white shadow-sm max-h-[min(85vh,900px)] min-h-0 overflow-hidden ring-1 ring-slate-100/80"
+    : "bg-white rounded-2xl shadow-xl shadow-slate-200/60 ring-1 ring-slate-200/60 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4";
 
   return (
     <ReportFormContainer embedded={embedded}>
       <div className={shellClass}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-3">
-            <Heart className="h-6 w-6 text-red-500" fill="currentColor" />
-            <h2 className="text-2xl font-bold text-gray-900">My Favorites</h2>
+        {embedded ? (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-rose-100/80 bg-gradient-to-r from-rose-50/90 via-white to-slate-50/30">
+            <p className="text-sm text-slate-600 leading-snug min-w-0">
+              Default values you set here apply whenever you open these fields.
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-white/90 ring-1 ring-transparent hover:ring-slate-200/80 transition-all"
+              aria-label="Close section"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between gap-4 p-6 border-b border-slate-100 bg-gradient-to-br from-rose-50/80 via-white to-slate-50/40">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-rose-200/60">
+                <Heart
+                  className="h-6 w-6 text-rose-500"
+                  fill="currentColor"
+                  aria-hidden
+                />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                  My Favorites
+                </h2>
+                <p className="text-sm text-slate-600 mt-0.5">
+                  Quick access fields and saved defaults for your account
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-white/90 ring-1 ring-slate-200/50 hover:ring-slate-300/80 transition-all"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/40">
           {favourites.length === 0 ? (
-            <div className="text-center py-12">
-              <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No favorite fields yet</p>
-              <p className="text-gray-400 text-sm mt-2">
+            <div className="mx-auto max-w-md text-center rounded-2xl border border-dashed border-rose-200/70 bg-gradient-to-b from-rose-50/50 to-white px-6 py-14 shadow-sm">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-md ring-1 ring-rose-100">
+                <Heart
+                  className="h-8 w-8 text-rose-300"
+                  strokeWidth={1.25}
+                  aria-hidden
+                />
+              </div>
+              <p className="text-lg font-semibold text-slate-800">
+                No favorite fields yet
+              </p>
+              <p className="text-sm text-slate-500 mt-2 leading-relaxed">
                 Use the heart icons under Field preferences on Settings, or on
                 test forms when adding a patient. The same list applies to every
                 patient for your account.
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {Object.entries(groupedFavourites).map(
                 ([reportType, sections]) => {
                   
@@ -233,35 +305,39 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
                     return null;
                   }
 
+                  const leftAccent =
+                    reportTypeAccents[reportType] ?? "border-l-slate-400";
+
                   return (
                     <div
                       key={reportType}
-                      className="bg-gray-50 rounded-lg p-4 border"
+                      className={`rounded-xl border border-slate-200/90 bg-white shadow-sm overflow-hidden border-l-4 ${leftAccent}`}
                     >
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                        {reportTypeLabels[reportType] || reportType}
-                      </h3>
-                      <div className="space-y-6">
+                      <div className="p-4 space-y-5">
                         {Object.entries(sections).map(
-                          ([sectionTitle, fields], sectionIndex) => {
+                          ([sectionTitle, fields]) => {
                             
                             if (!Array.isArray(fields)) {
                               return null;
                             }
+
+                            const contextHeading = fullContextHeading(
+                              reportType,
+                              sectionTitle,
+                              fields,
+                            );
 
                             return (
                               <div
                                 key={`${reportType}-${sectionTitle}`}
                                 className="space-y-3"
                               >
-                                {/* Always show section header with delete button */}
-                                <div className="flex items-center justify-between mb-3 border-b pb-2">
-                                  <h4 className="font-semibold text-base text-blue-700">
-                                    {sectionTitle === "Other"
-                                      ? "Other Fields"
-                                      : sectionTitle}
+                                <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50/90 px-3 py-2.5 border border-slate-100/90">
+                                  <h4 className="font-semibold text-sm sm:text-base text-slate-900 leading-snug">
+                                    {contextHeading}
                                   </h4>
                                   <button
+                                    type="button"
                                     onClick={() =>
                                       handleRemoveSection(
                                         reportType,
@@ -269,21 +345,17 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
                                         fields,
                                       )
                                     }
-                                    className="p-2 hover:bg-red-50 rounded-full transition-colors text-red-500 hover:text-red-600 shrink-0"
+                                    className="inline-flex items-center gap-1.5 shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-700 bg-white hover:bg-rose-50 border border-rose-200/70 shadow-sm transition-colors"
                                     title={`Remove all fields from ${sectionTitle === "Other" ? "Other Fields" : sectionTitle}`}
                                   >
-                                    <Trash2 className="h-5 w-5" />
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Remove section
                                   </button>
                                 </div>
-                                <div className="space-y-2">
-                                  {fields.map((fav, fieldIndex) => {
+                                <div className="space-y-2.5">
+                                  {fields.map((fav) => {
                                     const key = `${fav.reportType}:${fav.fieldName}`;
                                     const savedValue = fieldValues[key] || "";
-                                    const colorIndex =
-                                      (sectionIndex * fields.length +
-                                        fieldIndex) %
-                                      fieldColors.length;
-                                    const colorClass = fieldColors[colorIndex];
 
                                     
                                     const isNotesField =
@@ -352,34 +424,41 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
                                       }
                                     }
 
+                                    const fieldDisplayTitle = isNotesField
+                                      ? fav.fieldLabel.replace(" - Notes", "")
+                                      : isValue1Field || isValue2Field
+                                        ? (
+                                            fav.fieldLabel.split(" - ")[0] ??
+                                            fav.fieldLabel
+                                          ).trim()
+                                        : fav.fieldLabel;
+
+                                    const value2FieldForLabels = fields.find(
+                                      (f) =>
+                                        f.fieldName ===
+                                        `${mainFieldName}_value2`,
+                                    );
+                                    const unit1Label =
+                                      getUnitFromLabel(fav.fieldLabel) ||
+                                      "Unit 1";
+                                    const unit2Label = value2FieldForLabels
+                                      ? getUnitFromLabel(
+                                          value2FieldForLabels.fieldLabel,
+                                        ) || "Unit 2"
+                                      : "Unit 2";
+
                                     return (
                                       <div
                                         key={`${fav.reportType}-${fav.fieldName}`}
-                                        className={`rounded p-3 border ${colorClass} transition-colors`}
+                                        className="rounded-lg border border-slate-200/85 bg-white p-3.5 shadow-sm ring-1 ring-slate-100/70 hover:border-rose-200/55 hover:shadow-md transition-all duration-200"
                                       >
                                         <div className="flex items-start gap-4">
                                           <div className="flex-1 min-w-0 space-y-3">
                                             <div>
                                               <p className="font-medium text-gray-900 text-sm">
-                                                {(() => {
-                                                  if (isNotesField) {
-                                                    return fav.fieldLabel.replace(
-                                                      " - Notes",
-                                                      "",
-                                                    );
-                                                  } else if (
-                                                    isValue1Field ||
-                                                    isValue2Field
-                                                  ) {
-                                                    
-                                                    return fav.fieldLabel.split(
-                                                      " - ",
-                                                    )[0];
-                                                  }
-                                                  return fav.fieldLabel;
-                                                })()}
+                                                {fieldDisplayTitle}
                                               </p>
-                                              <p className="text-xs text-gray-500 mt-1">
+                                              <p className="text-[10px] sm:text-xs text-slate-400 mt-1 font-mono break-all">
                                                 {fav.fieldName}
                                               </p>
                                             </div>
@@ -449,9 +528,8 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
                                                       htmlFor={`value1-${key}`}
                                                       className="text-xs font-medium text-gray-700"
                                                     >
-                                                      {getUnitFromLabel(
-                                                        fav.fieldLabel,
-                                                      ) || "Value (Unit 1)"}
+                                                      {fieldDisplayTitle} (
+                                                      {unit1Label})
                                                     </Label>
                                                     <Input
                                                       id={`value1-${key}`}
@@ -474,20 +552,8 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
                                                       htmlFor={`value2-${value2Key}`}
                                                       className="text-xs font-medium text-gray-700"
                                                     >
-                                                      {(() => {
-                                                        const value2Field =
-                                                          fields.find(
-                                                            (f) =>
-                                                              f.fieldName ===
-                                                              `${mainFieldName}_value2`,
-                                                          );
-                                                        return value2Field
-                                                          ? getUnitFromLabel(
-                                                              value2Field.fieldLabel,
-                                                            ) ||
-                                                              "Value (Unit 2)"
-                                                          : "Value (Unit 2)";
-                                                      })()}
+                                                      {fieldDisplayTitle} (
+                                                      {unit2Label})
                                                     </Label>
                                                     <Input
                                                       id={`value2-${value2Key}`}
@@ -557,8 +623,8 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
-          <Button onClick={onClose} variant="outline">
+        <div className="flex justify-end gap-3 px-4 py-4 sm:px-6 border-t border-slate-100 bg-gradient-to-r from-slate-50/90 to-white">
+          <Button onClick={onClose} variant="outline" className="min-w-[7rem]">
             Close
           </Button>
         </div>

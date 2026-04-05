@@ -18,6 +18,7 @@ import BASDAIModal from "@/components/modals/BASDAIModal";
 import { Button } from "@/components/ui/button";
 import { formatTestData } from "@/lib/formatTestData";
 import searchIndex from "@/lib/searchIndex";
+import { Heart } from "lucide-react";
 
 type TestDataSection = Record<string, unknown> | null;
 type TestData = {
@@ -600,6 +601,10 @@ function NextPageContent() {
     setSearchTerm("");
   };
 
+  const favoritesSectionShell =
+    "bg-white/95 backdrop-blur-sm border-slate-200/90 border-l-rose-600 border-l-4";
+  const favoritesContentPanel = "bg-slate-50/90";
+
   const sectionColors = [
     "bg-red-50 border-red-200",
     "bg-blue-50 border-blue-200",
@@ -676,7 +681,16 @@ function NextPageContent() {
             onToggle={() =>
               setOpenModal(openModal === "my-favorites" ? null : "my-favorites")
             }
-            colorClass={sectionColors[0]}
+            colorClass={favoritesSectionShell}
+            contentClassName={favoritesContentPanel}
+            icon={
+              <Heart
+                className="h-5 w-5 text-rose-600"
+                fill="currentColor"
+                aria-hidden
+              />
+            }
+            iconWrapperClassName="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-red-50/90 text-rose-600 ring-1 ring-rose-200/70 shadow-sm"
           >
             <MyFavoritesModal
               embedded

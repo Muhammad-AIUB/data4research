@@ -7,7 +7,8 @@ const LEGACY_VALUES_KEY = "data4research_favourite_values";
 
 export interface FavouriteField {
   reportType: string;
-  reportName: string;
+  /** Human-readable report title (e.g. "Hematology"); may be missing on old stored rows */
+  reportName?: string;
   fieldName: string;
   fieldLabel: string;
   sectionTitle?: string;

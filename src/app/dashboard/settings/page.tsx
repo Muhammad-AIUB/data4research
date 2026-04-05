@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings } from 'lucide-react'
+import { Settings, Heart } from 'lucide-react'
 import ExpandableSection from '@/components/ExpandableSection'
 import MyFavoritesModal from '@/components/modals/MyFavoritesModal'
 import AutoimmunoProfileModal from '@/components/modals/AutoimmunoProfileModal'
@@ -68,6 +68,14 @@ export default function SettingsPage() {
             }
             colorClass={`${cardShell("border-l-rose-600")}`}
             contentClassName={contentPanel}
+            icon={
+              <Heart
+                className="h-5 w-5 text-rose-600"
+                fill="currentColor"
+                aria-hidden
+              />
+            }
+            iconWrapperClassName="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-red-50/90 text-rose-600 ring-1 ring-rose-200/70 shadow-sm"
           >
             <MyFavoritesModal
               embedded
