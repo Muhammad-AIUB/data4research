@@ -14,6 +14,44 @@ import {
   removeFavouriteField,
 } from "@/lib/favourites";
 
+const AUTO_REPORT_TYPE = "autoimmunoProfile" as const;
+const AUTO_REPORT_NAME = "Autoimmuno Profile";
+
+function addAutoSectionFavourites(
+  fields: Array<[string, string]>,
+  sectionTitle: string,
+) {
+  for (const [fieldName, label] of fields) {
+    addFavouriteField(
+      AUTO_REPORT_TYPE,
+      AUTO_REPORT_NAME,
+      fieldName,
+      label,
+      sectionTitle,
+    );
+    addFavouriteField(
+      AUTO_REPORT_TYPE,
+      AUTO_REPORT_NAME,
+      `${fieldName}_notes`,
+      `${label} - Notes`,
+      sectionTitle,
+    );
+  }
+}
+
+function removeAutoSectionFavourites(fields: Array<[string, string]>) {
+  for (const [fieldName] of fields) {
+    removeFavouriteField(AUTO_REPORT_TYPE, fieldName);
+    removeFavouriteField(AUTO_REPORT_TYPE, `${fieldName}_notes`);
+  }
+}
+
+function isAutoSectionAllFavourited(fields: Array<[string, string]>): boolean {
+  return fields.every(([fieldName]) =>
+    isFieldFavourite(AUTO_REPORT_TYPE, fieldName),
+  );
+}
+
 interface Props {
   onClose: () => void;
   defaultDate: Date;
@@ -121,20 +159,6 @@ export default function AutoimmunoProfileModal({
     "bg-cyan-50 border-cyan-200",
   ];
 
-  const toggleFieldFavourite = (fieldName: string, fieldLabel: string, sectionTitle?: string) => {
-    const reportType = "autoimmunoProfile";
-    const reportName = "Autoimmuno Profile";
-    const isFav = isFieldFavourite(reportType, fieldName);
-    if (isFav) {
-      removeFavouriteField(reportType, fieldName);
-      removeFavouriteField(reportType, `${fieldName}_notes`);
-    } else {
-      addFavouriteField(reportType, reportName, fieldName, fieldLabel, sectionTitle);
-      addFavouriteField(reportType, reportName, `${fieldName}_notes`, `${fieldLabel} - Notes`, sectionTitle);
-    }
-    setFavoritesUpdated((prev) => prev + 1);
-  };
-
   const renderField = (fieldName: string, label: string, index: number) => {
     const colorClass = fieldColors[index % fieldColors.length];
 
@@ -143,16 +167,8 @@ export default function AutoimmunoProfileModal({
         className={`grid grid-cols-3 gap-2 items-end p-2 rounded ${colorClass}`}
       >
         <div className="col-span-1">
-          <div className="flex items-center justify-between mb-1">
+          <div className="mb-1">
             <Label className="text-sm">{label}</Label>
-            <button
-              type="button"
-              onClick={() => toggleFieldFavourite(fieldName, label)}
-              className="p-1 rounded hover:bg-gray-100"
-              title={isFieldFavourite("autoimmunoProfile", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
-            >
-              <Heart className={`h-5 w-5 ${isFieldFavourite("autoimmunoProfile", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
-            </button>
           </div>
           <Select
             value={getFieldValue(fieldName)}
@@ -182,11 +198,37 @@ export default function AutoimmunoProfileModal({
     fields: Array<[string, string]>,
     startIndex: number,
   ) => {
-
+    const allFav = isAutoSectionAllFavourited(fields);
     return (
       <div className="mb-6 pb-4 border-b">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-200">
           <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+          <button
+            type="button"
+            onClick={() => {
+              if (allFav) {
+                removeAutoSectionFavourites(fields);
+              } else {
+                addAutoSectionFavourites(fields, title);
+              }
+              setFavoritesUpdated((p) => p + 1);
+            }}
+            className="flex items-center gap-1.5 shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium text-blue-800 bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80"
+            title={
+              allFav
+                ? `Remove all fields in this section from favorites`
+                : `Add all fields in this section to favorites (value + notes)`
+            }
+          >
+            <Heart
+              className={`h-5 w-5 ${
+                allFav
+                  ? "text-red-500 fill-red-500"
+                  : "text-gray-500 hover:text-red-500"
+              }`}
+            />
+            <span>Favorites</span>
+          </button>
         </div>
         <div className="space-y-2">
           {fields.map(([fieldName, label], idx) => (

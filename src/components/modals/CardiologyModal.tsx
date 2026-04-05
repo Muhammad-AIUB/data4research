@@ -14,6 +14,70 @@ import {
   removeFavouriteField,
 } from "@/lib/favourites";
 
+const CARDIO_REPORT_TYPE = "cardiology" as const;
+const CARDIO_REPORT_NAME = "Cardiology";
+
+type CardioSectionFav = { field: string; label: string };
+
+const CARDIO_VASCULAR_FAVS: CardioSectionFav[] = [
+  { field: "ecgReport", label: "ECG" },
+  { field: "echocardiogramType", label: "Echocardiogram - Type" },
+  { field: "echocardiogramReport", label: "Echocardiogram" },
+  { field: "ettReport", label: "ETT" },
+];
+
+/** Primary lipid fields only (same as previous row hearts; mmol/L columns were not favorited). */
+const CARDIO_LIPID_FAVS: CardioSectionFav[] = [
+  { field: "totalCholesterol", label: "Total Cholesterol" },
+  { field: "triglycerides", label: "Triglycerides" },
+  { field: "ldl", label: "Low-Density Lipoprotein (LDL) Cholesterol" },
+  { field: "hdl", label: "High-Density Lipoprotein (HDL) Cholesterol" },
+  { field: "vldl", label: "Very Low-Density Lipoprotein (VLDL) Cholesterol" },
+  {
+    field: "tcHdlRatio",
+    label: "Total Cholesterol / HDL Ratio (TC/HDL)",
+  },
+];
+
+const CARDIO_MARKERS_FAVS: CardioSectionFav[] = [
+  { field: "lpPla2", label: "Lp-PLA2" },
+  { field: "tropI", label: "Trop I" },
+  { field: "highSensitiveTropI", label: "High Sensitive Trop I" },
+  { field: "ckMb", label: "CK MB" },
+];
+
+const CARDIO_DIAGNOSTIC_FAVS: CardioSectionFav[] = [
+  { field: "angiogram", label: "Angiogram" },
+  { field: "tiltTableTest", label: "Tilt Table Test" },
+];
+
+function addCardioSectionFavourites(
+  entries: CardioSectionFav[],
+  sectionTitle: string,
+) {
+  for (const e of entries) {
+    addFavouriteField(
+      CARDIO_REPORT_TYPE,
+      CARDIO_REPORT_NAME,
+      e.field,
+      e.label,
+      sectionTitle,
+    );
+  }
+}
+
+function removeCardioSectionFavourites(entries: CardioSectionFav[]) {
+  for (const e of entries) {
+    removeFavouriteField(CARDIO_REPORT_TYPE, e.field);
+  }
+}
+
+function isCardioSectionAllFavourited(entries: CardioSectionFav[]): boolean {
+  return entries.every((e) =>
+    isFieldFavourite(CARDIO_REPORT_TYPE, e.field),
+  );
+}
+
 interface Props {
   onClose: () => void;
   defaultDate: Date;
@@ -139,18 +203,11 @@ export default function CardiologyModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-1">
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1">
               <Label className="text-sm">
-                {label} {unit && <span className="text-gray-500">({unit})</span>}
+                {label}{" "}
+                {unit && <span className="text-gray-500">({unit})</span>}
               </Label>
-              <button
-                type="button"
-                onClick={() => toggleFieldFavourite(fieldName, label)}
-                className="p-1 rounded hover:bg-gray-100"
-                title={isFieldFavourite("cardiology", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
-              >
-                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
-              </button>
             </div>
             <Input
               value={getFieldValue(fieldName)}
@@ -177,16 +234,8 @@ export default function CardiologyModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-3">
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1">
               <Label className="text-sm">{label}</Label>
-              <button
-                type="button"
-                onClick={() => toggleFieldFavourite(fieldName, label)}
-                className="p-1 rounded hover:bg-gray-100"
-                title={isFieldFavourite("cardiology", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
-              >
-                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
-              </button>
             </div>
             <Select
               value={getFieldValue(fieldName)}
@@ -217,16 +266,8 @@ export default function CardiologyModal({
       <div className={`p-2 rounded ${colorClass}`}>
         <div className="flex items-start gap-2">
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1">
               <Label className="text-sm">{label}</Label>
-              <button
-                type="button"
-                onClick={() => toggleFieldFavourite(fieldName, label)}
-                className="p-1 rounded hover:bg-gray-100"
-                title={isFieldFavourite("cardiology", fieldName) ? "Remove from Favorites" : "Add to Favorites"}
-              >
-                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", fieldName) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
-              </button>
             </div>
             <textarea
               value={getFieldValue(fieldName)}
@@ -281,51 +322,47 @@ export default function CardiologyModal({
     }
   };
 
-  const toggleFieldFavourite = (
-    fieldName: string,
-    fieldLabel: string,
-    sectionTitle?: string,
-    hasDualValues: boolean = false,
-  ) => {
-    const reportType = "cardiology";
-    const reportName = "Cardiology";
-
-    if (hasDualValues) {
-      const isFav = isFieldFavourite(reportType, `${fieldName}_value1`);
-      if (isFav) {
-        removeFavouriteField(reportType, `${fieldName}_value1`);
-        removeFavouriteField(reportType, `${fieldName}_value2`);
-      } else {
-        addFavouriteField(
-          reportType,
-          reportName,
-          `${fieldName}_value1`,
-          `${fieldLabel} - Value 1`,
-          sectionTitle,
-        );
-        addFavouriteField(
-          reportType,
-          reportName,
-          `${fieldName}_value2`,
-          `${fieldLabel} - Value 2`,
-          sectionTitle,
-        );
-      }
-    } else {
-      const isFav = isFieldFavourite(reportType, fieldName);
-      if (isFav) removeFavouriteField(reportType, fieldName);
-      else addFavouriteField(reportType, reportName, fieldName, fieldLabel, sectionTitle);
-    }
-
-    setFavoritesUpdated((prev) => prev + 1);
-  };
-
   const renderSectionHeader = (
     title: string,
+    sectionFavs?: { entries: CardioSectionFav[]; sectionTitle: string },
   ) => {
+    const allFav =
+      sectionFavs !== undefined &&
+      isCardioSectionAllFavourited(sectionFavs.entries);
     return (
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-200">
         <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+        {sectionFavs ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (allFav) {
+                removeCardioSectionFavourites(sectionFavs.entries);
+              } else {
+                addCardioSectionFavourites(
+                  sectionFavs.entries,
+                  sectionFavs.sectionTitle,
+                );
+              }
+              setFavoritesUpdated((p) => p + 1);
+            }}
+            className="flex items-center gap-1.5 shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium text-blue-800 bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80"
+            title={
+              allFav
+                ? `Remove all ${title} fields from favorites`
+                : `Add all ${title} fields to favorites`
+            }
+          >
+            <Heart
+              className={`h-5 w-5 ${
+                allFav
+                  ? "text-red-500 fill-red-500"
+                  : "text-gray-500 hover:text-red-500"
+              }`}
+            />
+            <span>Favorites</span>
+          </button>
+        ) : null}
       </div>
     );
   };
@@ -395,7 +432,10 @@ export default function CardiologyModal({
           >
             {/* Cardiovascular Tests */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Cardiovascular Tests")}
+              {renderSectionHeader("Cardiovascular Tests", {
+                entries: CARDIO_VASCULAR_FAVS,
+                sectionTitle: "Cardiovascular Tests",
+              })}
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-4">
                   {renderField("ecgReport", "ECG", fieldIndex++)}
@@ -425,7 +465,10 @@ export default function CardiologyModal({
 
             {/* Lipid Profile */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Lipid Profile")}
+              {renderSectionHeader("Lipid Profile", {
+                entries: CARDIO_LIPID_FAVS,
+                sectionTitle: "Lipid Profile",
+              })}
               <div className="space-y-2">
                 {(() => {
                   const lipidTests = [
@@ -471,16 +514,8 @@ export default function CardiologyModal({
                       >
                         <div className="grid grid-cols-3 gap-2 items-end">
                           <div className="col-span-1">
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="mb-1">
                               <Label className="text-sm">{test.label}</Label>
-                              <button
-                                type="button"
-                                onClick={() => toggleFieldFavourite(test.name, test.label, "Lipid Profile")}
-                                className="p-1 rounded hover:bg-gray-100"
-                                title={isFieldFavourite("cardiology", test.name) ? "Remove from Favorites" : "Add to Favorites"}
-                              >
-                                <Heart className={`h-5 w-5 ${isFieldFavourite("cardiology", test.name) ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`} />
-                              </button>
                             </div>
                           </div>
                           <div>
@@ -521,7 +556,10 @@ export default function CardiologyModal({
 
             {/* Cardiac Markers */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Cardiac Markers")}
+              {renderSectionHeader("Cardiac Markers", {
+                entries: CARDIO_MARKERS_FAVS,
+                sectionTitle: "Cardiac Markers",
+              })}
               <div className="space-y-2">
                 {renderField("lpPla2", "Lp-PLA2", fieldIndex++, "nmol/min/mL")}
                 {renderField("tropI", "Trop I", fieldIndex++)}
@@ -536,7 +574,10 @@ export default function CardiologyModal({
 
             {/* Diagnostic Procedures */}
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Diagnostic Procedures")}
+              {renderSectionHeader("Diagnostic Procedures", {
+                entries: CARDIO_DIAGNOSTIC_FAVS,
+                sectionTitle: "Diagnostic Procedures",
+              })}
               <div className="space-y-2">
                 {renderTextAreaField("angiogram", "Angiogram", fieldIndex++)}
                 {renderTextAreaField(
