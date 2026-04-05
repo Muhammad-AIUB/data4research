@@ -1,10 +1,21 @@
 import type { NextConfig } from "next";
+import os from "node:os";
+import path from "node:path";
 import { withSentryConfig } from "@sentry/nextjs";
 
+// Turbopack can fail when the project path contains spaces. Only then use a temp dist dir
+// (cross-platform). Otherwise keep `.next` next to the app — a Unix-style `/tmp/...` distDir
+// on Windows breaks dev chunk loading ("module factory is not available").
+const projectPathHasSpaces = process.cwd().includes(" ");
+const distDir =
+  process.env.VERCEL
+    ? ".next"
+    : projectPathHasSpaces
+      ? path.join(os.tmpdir(), "data4research-next")
+      : ".next";
+
 const nextConfig: NextConfig = {
-  // Workaround: Turbopack cannot write build artifacts when project path contains spaces.
-  // On Vercel, use the default .next so the platform can locate routes-manifest.json.
-  distDir: process.env.VERCEL ? '.next' : '/tmp/data4research-next',
+  distDir,
   reactCompiler: true,
   compress: true,
   serverExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg'],
