@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
 import ReportFormContainer from "@/components/ReportFormContainer"
+import { useFavouritesSync } from "@/hooks/useFavouritesSync"
 import { 
   addFavouriteField,
   isFieldFavourite, 
@@ -34,7 +35,7 @@ interface Props {
   defaultDate: Date
   onDataChange?: (data: BASDAIData, date: Date) => void
   patientId?: string | null
-  onSaveSuccess?: () => void
+  onSaveSuccess?: (savedTest?: unknown) => void
   savedData?: PatientTest[]
   embedded?: boolean
 }
@@ -70,6 +71,7 @@ export default function BASDAIModal({
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
   const [, setFavoritesUpdated] = useState(0)
+  useFavouritesSync()
 
   const [form, setForm] = useState<BASDAIData>({
     q1Fatigue: 0,
@@ -161,11 +163,18 @@ export default function BASDAIModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
+      const data = await res
+        .json()
+        .catch(() => ({} as { message?: string; test?: unknown }))
       if (res.ok) {
-        onSaveSuccess?.()
+        onSaveSuccess?.(data.test)
         onDataChange?.(form, reportDate)
         alert("Saved successfully!")
         onClose()
+      } else {
+        alert(
+          (typeof data.message === "string" && data.message) || "Save failed",
+        )
       }
     } catch {
       alert("Save failed")

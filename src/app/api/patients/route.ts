@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authorizeRole } from "@/lib/authorizeRole";
 import { logAudit, getChangedFields, extractRequestMeta } from "@/lib/auditLog";
+import { bumpPatientTestsCacheVersions } from "@/lib/patientTestsCache";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { isAdmin, scopePatientAccess } from "@/lib/rbac";
 import { createRequestId } from "@/lib/requestId";
@@ -186,7 +187,7 @@ export async function POST(request: Request) {
     if (auth.error) return auth.error;
 
     const user = auth.session.user;
-    const rateLimited = checkRateLimit(user.id);
+    const rateLimited = await checkRateLimit(user.id);
     if (rateLimited) return rateLimited;
 
     const dbUser = await prisma.user.findUnique({
@@ -341,7 +342,7 @@ export async function DELETE(request: Request) {
     if (auth.error) return auth.error;
 
     const user = auth.session.user;
-    const rateLimited = checkRateLimit(user.id);
+    const rateLimited = await checkRateLimit(user.id);
     if (rateLimited) return rateLimited;
 
     const { searchParams } = new URL(request.url);
@@ -375,6 +376,8 @@ export async function DELETE(request: Request) {
     await prisma.patient.delete({
       where: { id: patient.id },
     });
+
+    await bumpPatientTestsCacheVersions(user.id, patient.id);
 
     const { ipAddress, userAgent } = extractRequestMeta(request);
     logAudit({
@@ -423,7 +426,7 @@ export async function PUT(request: Request) {
     if (auth.error) return auth.error;
 
     const user = auth.session.user;
-    const rateLimited = checkRateLimit(user.id);
+    const rateLimited = await checkRateLimit(user.id);
     if (rateLimited) return rateLimited;
 
     const body = await request.json();

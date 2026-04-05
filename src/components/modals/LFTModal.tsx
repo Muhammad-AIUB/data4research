@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import ReportFormContainer from "@/components/ReportFormContainer";
+import { useFavouritesSync } from "@/hooks/useFavouritesSync";
 import {
   addFavouriteField,
   isFieldFavourite,
@@ -146,7 +147,7 @@ interface Props {
   defaultDate: Date;
   onDataChange?: (data: unknown, date: Date) => void;
   patientId?: string | null;
-  onSaveSuccess?: () => void;
+  onSaveSuccess?: (savedTest?: unknown) => void;
   savedData?: Array<{ sampleDate: Date | string; lft?: unknown }>;
   embedded?: boolean;
   hideDatePicker?: boolean;
@@ -168,8 +169,8 @@ export default function LFTModal({
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
   const [, setFavoritesUpdated] = useState(0);
+  useFavouritesSync();
 
-  
   useEffect(() => {
     if (savedData && savedData.length > 0) {
       const dateStr = reportDate.toISOString().split("T")[0];
@@ -403,14 +404,20 @@ export default function LFTModal({
         }),
       });
 
+      const data = await response
+        .json()
+        .catch(() => ({} as { message?: string; test?: unknown }));
+
       if (response.ok) {
-        if (onSaveSuccess) onSaveSuccess();
+        onSaveSuccess?.(data.test);
         if (onDataChange) onDataChange(formData, reportDate);
         alert("LFT data saved successfully!");
         onClose();
       } else {
-        const error = await response.json();
-        alert(error.message || "Failed to save data. Please try again.");
+        alert(
+          (typeof data.message === "string" && data.message) ||
+            "Failed to save data. Please try again.",
+        );
       }
     } catch (error) {
       console.error("Error saving LFT data:", error);

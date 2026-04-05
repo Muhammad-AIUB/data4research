@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import ModalDatePicker from "@/components/ModalDatePicker"
 import ReportFormContainer from "@/components/ReportFormContainer"
+import { useFavouritesSync } from "@/hooks/useFavouritesSync"
 
 const DH_REPORT_TYPE = "diseaseHistory" as const
 const DH_REPORT_NAME = "On Examination & Disease History"
@@ -108,7 +109,7 @@ interface Props {
   defaultDate: Date
   onDataChange?: (data: DiseaseHistoryData, date: Date) => void
   patientId?: string | null
-  onSaveSuccess?: () => void
+  onSaveSuccess?: (savedTest?: unknown) => void
   savedData?: Array<{ sampleDate: Date | string; diseaseHistory?: DiseaseHistoryData }>
   embedded?: boolean
   hideDatePicker?: boolean
@@ -129,6 +130,7 @@ export default function DiseaseHistoryModal({
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
   const [, setFavoritesUpdated] = useState(0)
+  useFavouritesSync()
 
   const renderSectionHeader = (
     title: string,
@@ -367,11 +369,18 @@ export default function DiseaseHistoryModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
+      const data = await res
+        .json()
+        .catch(() => ({} as { message?: string; test?: unknown }))
       if (res.ok) {
-        onSaveSuccess?.()
+        onSaveSuccess?.(data.test)
         onDataChange?.(payload.diseaseHistory, reportDate)
         alert("Saved successfully!")
         onClose()
+      } else {
+        alert(
+          (typeof data.message === "string" && data.message) || "Save failed",
+        )
       }
     } catch {
       alert("Save failed")

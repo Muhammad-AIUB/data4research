@@ -476,8 +476,8 @@ function NextPageContent() {
     try {
       const currentPatientId = patientId || testData.patientId;
       const url = currentPatientId
-        ? `/api/patient-tests?patientId=${currentPatientId}&page=1&limit=100`
-        : `/api/patient-tests?page=1&limit=100`;
+        ? `/api/patient-tests?patientId=${encodeURIComponent(currentPatientId)}&page=1&limit=40`
+        : `/api/patient-tests?page=1&limit=40`;
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -495,6 +495,26 @@ function NextPageContent() {
       setLoadingSavedData(false);
     }
   }, [patientId, testData.patientId]);
+
+  const onModalSaveSuccess = useCallback(
+    (savedTest?: unknown) => {
+      if (
+        savedTest &&
+        typeof savedTest === "object" &&
+        savedTest !== null &&
+        "id" in savedTest
+      ) {
+        const t = savedTest as PatientTest;
+        setSavedTestData((prev) => {
+          const rest = prev.filter((x) => x.id !== t.id);
+          return [t, ...rest];
+        });
+        return;
+      }
+      void fetchSavedTestData();
+    },
+    [fetchSavedTestData],
+  );
 
   useEffect(() => {
     if (patientId) {
@@ -548,15 +568,35 @@ function NextPageContent() {
         }),
       });
 
+      const data = await response
+        .json()
+        .catch(() => ({} as { message?: string; test?: unknown }));
+
       if (response.ok) {
         alert("Patient test data submitted successfully!");
-        fetchSavedTestData().catch(() => {});
+        if (
+          data.test &&
+          typeof data.test === "object" &&
+          data.test !== null &&
+          "id" in data.test
+        ) {
+          const t = data.test as PatientTest;
+          setSavedTestData((prev) => {
+            const withoutTemp = prev.filter((x) => x.id !== optimisticTest.id);
+            const rest = withoutTemp.filter((x) => x.id !== t.id);
+            return [t, ...rest];
+          });
+        } else {
+          setSavedTestData((prev) =>
+            prev.filter((t) => t.id !== optimisticTest.id),
+          );
+          void fetchSavedTestData();
+        }
         setLoading(false);
       } else {
         setSavedTestData((prev) => prev.filter((t) => t.id !== optimisticTest.id));
-        const error = await response.json();
         alert(
-          error.message ||
+          (typeof data.message === "string" && data.message) ||
             "Failed to submit patient test data. Please try again.",
         );
         setLoading(false);
@@ -716,7 +756,7 @@ function NextPageContent() {
               onDataChange={(data, date) =>
                 updateTestData("basdai", data as TestDataSection, date)
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
 
@@ -741,7 +781,7 @@ function NextPageContent() {
                   date,
                 )
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
 
@@ -762,7 +802,7 @@ function NextPageContent() {
               onDataChange={(data, date) =>
                 updateTestData("cardiology", data as TestDataSection, date)
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
 
@@ -781,7 +821,7 @@ function NextPageContent() {
               onDataChange={(data, date) =>
                 updateTestData("rft", data as TestDataSection, date)
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
 
@@ -800,7 +840,7 @@ function NextPageContent() {
               onDataChange={(data, date) =>
                 updateTestData("lft", data as TestDataSection, date)
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
 
@@ -823,7 +863,7 @@ function NextPageContent() {
               onDataChange={(data, date) =>
                 updateTestData("diseaseHistory", data as TestDataSection, date)
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
 
@@ -844,7 +884,7 @@ function NextPageContent() {
               onDataChange={(data, date) =>
                 updateTestData("imaging", data as TestDataSection, date)
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
 
@@ -865,7 +905,7 @@ function NextPageContent() {
               onDataChange={(data, date) =>
                 updateTestData("hematology", data as TestDataSection, date)
               }
-              onSaveSuccess={fetchSavedTestData}
+              onSaveSuccess={onModalSaveSuccess}
             />
           </ExpandableSection>
         </div>

@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
-import { setFavouritesUserId } from "@/lib/favourites";
+import {
+  clearFavouritesCache,
+  hydrateFavouritesFromApi,
+} from "@/lib/favourites";
 import type { Session } from "next-auth";
 
 interface Props {
@@ -14,11 +17,13 @@ interface Props {
 export default function DashboardShell({ session, children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Sync before child render in the same pass (layout effect runs too late for first paint).
-  setFavouritesUserId(session.user?.id ?? null);
   useEffect(() => {
-    return () => setFavouritesUserId(null);
-  }, []);
+    if (!session.user?.id) {
+      clearFavouritesCache();
+      return;
+    }
+    void hydrateFavouritesFromApi();
+  }, [session.user?.id]);
 
   return (
     <div className="flex min-h-screen bg-linear-to-br from-slate-100 via-blue-50 to-sky-100">

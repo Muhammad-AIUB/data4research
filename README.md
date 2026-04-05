@@ -21,7 +21,7 @@
 **Keywords**: Full-Stack Development • Next.js 16 • React 19 • TypeScript • Real-Time Unit Conversion • Intelligent Automation • Medical Data Management • Performance Optimization • User Experience Design • Database Architecture • API Development • Business Impact • ROI Optimization
 
 **Key Features Implemented**: 
-- ⭐ **Field-Level Favourite System** - localStorage-based, mark individual fields as favourites
+- ⭐ **Field-Level Favourite System** - PostgreSQL-backed (`UserFieldFavorite`), mark individual fields as favourites
 - 🔄 **Real-Time Unit Conversion** - Bidirectional auto-conversion (mg/dL↔mmol/L, °C↔°F, kg↔lbs)
 - 🧮 **Auto-Calculations** - BMI, MAP, TSAT, eGFR automatically calculated
 - 📊 **7 Test Categories** - 350+ medical fields with modal-based entry
@@ -50,7 +50,7 @@
 
 ### 🎯 Top 7 Innovations
 
-1. **⭐ Field-Level Favourite System** - Mark individual input fields as favourites (not report-level). Uses localStorage for instant access. Implemented in `src/lib/favourites.ts` with field-level granularity.
+1. **⭐ Field-Level Favourite System** - Mark individual input fields as favourites (not report-level). Persisted via `/api/user-favourites` and Prisma (`UserFieldFavorite`). Client cache in `src/lib/favourites.ts` with field-level granularity.
 
 2. **🔄 Real-Time Unit Conversion** - Auto bidirectional conversion implemented in modals: mg/dL↔mmol/L (Cardiology, RFT, LFT), °C↔°F (Disease History), kg↔lbs (Disease History), cm↔feet/inches (Disease History). See `src/components/modals/` for implementation.
 
@@ -118,7 +118,7 @@
 **Authentication**: NextAuth v4 with role-based access (ADMIN/DOCTOR)  
 **Patient Management**: Registration, auto ID generation, tags, search  
 **Test Reports**: 7 categories, 350+ fields, modal-based entry, date-grouped  
-**Favourite System**: Field-level favourites, localStorage, quick access  
+**Favourite System**: Field-level favourites, stored in PostgreSQL, quick access  
 **Unit Conversion**: Real-time bidirectional (mg/dL↔mmol/L, °C↔°F, kg↔lbs)  
 **Auto-Calculations**: BMI, MAP, TSAT, eGFR, Ideal Body Weight  
 **Data Display**: Readable format (not JSON), date-grouped, searchable  

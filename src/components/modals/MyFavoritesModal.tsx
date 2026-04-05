@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   getFavourites,
-  removeFavouriteField,
+  removeFavouriteFieldsBatch,
   setFavouriteFieldValue,
   getFavouriteFieldValue,
   FAVOURITES_CHANGED_EVENT,
+  hydrateFavouritesFromApi,
+  isFavouritesCacheReady,
   type FavouriteField,
 } from "@/lib/favourites";
 import ReportFormContainer from "@/components/ReportFormContainer";
@@ -35,6 +37,9 @@ interface Props {
 
 export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
   const [favourites, setFavourites] = useState<FavouriteField[]>([]);
+  const [favouritesLoading, setFavouritesLoading] = useState(
+    () => !isFavouritesCacheReady(),
+  );
   const groupedFavourites = useMemo(() => {
     const grouped: Record<string, Record<string, FavouriteField[]>> = {};
     favourites.forEach((fav) => {
@@ -86,16 +91,18 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
   };
 
   useEffect(() => {
-    loadFavourites();
-  }, []);
-
-  useEffect(() => {
     const sync = () => loadFavourites();
+    const bootstrap = async () => {
+      if (!isFavouritesCacheReady()) {
+        await hydrateFavouritesFromApi();
+      }
+      loadFavourites();
+      setFavouritesLoading(false);
+    };
+    void bootstrap();
     window.addEventListener(FAVOURITES_CHANGED_EVENT, sync);
-    window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener(FAVOURITES_CHANGED_EVENT, sync);
-      window.removeEventListener("storage", sync);
     };
   }, []);
 
@@ -114,67 +121,58 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
   };
 
   const handleRemoveSection = (
-    reportType: string,
-    sectionTitle: string,
+    _reportType: string,
+    _sectionTitle: string,
     fields: FavouriteField[],
   ) => {
-    
-    fields.forEach((fav) => {
-      removeFavouriteField(fav.reportType, fav.fieldName);
-      const key = `${fav.reportType}:${fav.fieldName}`;
-      setFieldValues((prev) => {
-        const updated = { ...prev };
-        delete updated[key];
-        return updated;
-      });
+    const toRemove: Array<{ reportType: string; fieldName: string }> = [];
+    const valueKeysToDrop = new Set<string>();
 
-      
+    const queueRemove = (rt: string, fn: string) => {
+      toRemove.push({ reportType: rt, fieldName: fn });
+      valueKeysToDrop.add(`${rt}:${fn}`);
+    };
+
+    fields.forEach((fav) => {
+      queueRemove(fav.reportType, fav.fieldName);
+
       if (
         fav.reportType === "autoimmunoProfile" &&
         !fav.fieldName.endsWith("_notes")
       ) {
-        const notesFieldName = `${fav.fieldName}_notes`;
-        removeFavouriteField(fav.reportType, notesFieldName);
-        const notesKey = `${fav.reportType}:${notesFieldName}`;
-        setFieldValues((prev) => {
-          const updated = { ...prev };
-          delete updated[notesKey];
-          return updated;
-        });
+        queueRemove(fav.reportType, `${fav.fieldName}_notes`);
       }
 
-      
       if (
         (fav.reportType === "rft" || fav.reportType === "lft") &&
         fav.fieldName.endsWith("_value1")
       ) {
-        const value2FieldName = fav.fieldName.replace("_value1", "_value2");
-        removeFavouriteField(fav.reportType, value2FieldName);
-        const value2Key = `${fav.reportType}:${value2FieldName}`;
-        setFieldValues((prev) => {
-          const updated = { ...prev };
-          delete updated[value2Key];
-          return updated;
-        });
+        queueRemove(
+          fav.reportType,
+          fav.fieldName.replace("_value1", "_value2"),
+        );
       }
 
-      
       if (
         (fav.reportType === "rft" || fav.reportType === "lft") &&
         fav.fieldName.endsWith("_value2")
       ) {
-        const value1FieldName = fav.fieldName.replace("_value2", "_value1");
-        removeFavouriteField(fav.reportType, value1FieldName);
-        const value1Key = `${fav.reportType}:${value1FieldName}`;
-        setFieldValues((prev) => {
-          const updated = { ...prev };
-          delete updated[value1Key];
-          return updated;
-        });
+        queueRemove(
+          fav.reportType,
+          fav.fieldName.replace("_value2", "_value1"),
+        );
       }
     });
-    loadFavourites();
-    
+
+    void (async () => {
+      await removeFavouriteFieldsBatch(toRemove);
+      setFieldValues((prev) => {
+        const next = { ...prev };
+        for (const k of valueKeysToDrop) delete next[k];
+        return next;
+      });
+      loadFavourites();
+    })();
   };
 
   const reportTypeLabels: Record<string, string> = {
@@ -274,7 +272,11 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/40">
-          {favourites.length === 0 ? (
+          {favouritesLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-500 text-sm">
+              <p>Loading favourites…</p>
+            </div>
+          ) : favourites.length === 0 ? (
             <div className="mx-auto max-w-md text-center rounded-2xl border border-dashed border-rose-200/70 bg-gradient-to-b from-rose-50/50 to-white px-6 py-14 shadow-sm">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-md ring-1 ring-rose-100">
                 <Heart

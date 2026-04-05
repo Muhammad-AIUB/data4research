@@ -1,70 +1,68 @@
-// ====================================================
-// IN-MEMORY RATE LIMITER — Write endpoints only
-// ====================================================
-// Sliding-window counter scoped per userId.
-// No Redis or external dependencies — suitable for single-instance deployments.
-// For multi-instance, swap to Redis or edge KV.
-//
-// IMPORTANT: This store lives in server process memory.
-// It resets on server restart, which is acceptable for a
-// regulated app where restarts are infrequent.
+// Distributed write rate limit (Redis / Upstash REST) with in-memory fallback when Redis unset.
 
 import { NextResponse } from "next/server";
 
-interface TokenBucket {
-  count: number;
-  resetAt: number; // epoch ms
-}
+import { getRedis } from "@/lib/redis";
 
-// userId → bucket
-const buckets = new Map<string, TokenBucket>();
-
-// Limits: 30 write requests per 60-second window per user
 const MAX_REQUESTS = 30;
 const WINDOW_MS = 60_000;
 
-// Periodic cleanup to prevent memory leaks from expired buckets
-const CLEANUP_INTERVAL_MS = 5 * 60_000; // every 5 minutes
+interface TokenBucket {
+  count: number;
+  resetAt: number;
+}
+
+const buckets = new Map<string, TokenBucket>();
 let lastCleanup = Date.now();
+const CLEANUP_INTERVAL_MS = 5 * 60_000;
 
 function cleanupExpired() {
   const now = Date.now();
   if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
   lastCleanup = now;
   for (const [key, bucket] of buckets) {
-    if (now > bucket.resetAt) {
-      buckets.delete(key);
-    }
+    if (now > bucket.resetAt) buckets.delete(key);
   }
 }
 
-/**
- * Check rate limit for a write operation.
- * Returns null if allowed, or a 429 NextResponse if exceeded.
- */
-export function checkRateLimit(userId: string): NextResponse | null {
+function checkRateLimitInMemory(userId: string): NextResponse | null {
   cleanupExpired();
-
   const now = Date.now();
   const bucket = buckets.get(userId);
-
   if (!bucket || now > bucket.resetAt) {
-    // New window
     buckets.set(userId, { count: 1, resetAt: now + WINDOW_MS });
     return null;
   }
-
   if (bucket.count >= MAX_REQUESTS) {
-    const retryAfter = Math.ceil((bucket.resetAt - now) / 1000);
+    const retryAfter = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
     return NextResponse.json(
       { message: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(retryAfter) },
-      },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } },
     );
   }
-
   bucket.count++;
   return null;
+}
+
+export async function checkRateLimit(userId: string): Promise<NextResponse | null> {
+  const r = getRedis();
+  if (!r) {
+    return checkRateLimitInMemory(userId);
+  }
+  const key = `d4r:rl:write:${userId}`;
+  try {
+    const n = await r.incr(key);
+    if (n === 1) await r.pexpire(key, WINDOW_MS);
+    if (n > MAX_REQUESTS) {
+      const ttl = await r.pttl(key);
+      const retryAfter = Math.max(1, Math.ceil((ttl > 0 ? ttl : WINDOW_MS) / 1000));
+      return NextResponse.json(
+        { message: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      );
+    }
+    return null;
+  } catch {
+    return checkRateLimitInMemory(userId);
+  }
 }

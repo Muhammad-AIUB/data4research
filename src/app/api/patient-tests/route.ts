@@ -6,11 +6,20 @@ import { prisma } from "@/lib/prisma";
 import { authorizeRole } from "@/lib/authorizeRole";
 import { logAudit, extractRequestMeta } from "@/lib/auditLog";
 import { checkRateLimit } from "@/lib/rateLimit";
+import {
+  bumpPatientTestsCacheVersions,
+  getCachedPatientTestsJson,
+  getPatientTestsListVersion,
+  setCachedPatientTestsJson,
+} from "@/lib/patientTestsCache";
 import { scopePatientAccess, scopePatientTestAccess } from "@/lib/rbac";
 import { createRequestId } from "@/lib/requestId";
 import { createPatientTestSchema } from "@/lib/validations";
 
-async function findAccessiblePatient(patientId: string, userId: Parameters<typeof scopePatientAccess>[0]) {
+async function findAccessiblePatient(
+  patientId: string,
+  userId: Parameters<typeof scopePatientAccess>[0],
+) {
   const isUUID =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
       patientId,
@@ -38,11 +47,12 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(
       100,
-      Math.max(1, parseInt(searchParams.get("limit") || "50", 10)),
+      Math.max(1, parseInt(searchParams.get("limit") || "40", 10)),
     );
     const offset = (page - 1) * limit;
     let whereClause = scopePatientTestAccess(user);
 
+    let scope = "all";
     if (patientId?.trim()) {
       const patient = await findAccessiblePatient(patientId.trim(), user);
 
@@ -60,6 +70,27 @@ export async function GET(request: Request) {
       }
 
       whereClause = scopePatientTestAccess(user, { patientId: patient.id });
+      scope = patient.id;
+    }
+
+    const version = await getPatientTestsListVersion(user.id, scope);
+    const cached = await getCachedPatientTestsJson(
+      user.id,
+      scope,
+      page,
+      limit,
+      version,
+    );
+    if (cached) {
+      return new NextResponse(cached, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control":
+            "private, s-maxage=60, stale-while-revalidate=120",
+          "X-Cache": "HIT",
+        },
+      });
     }
 
     const rows = await prisma.patientTest.findMany({
@@ -87,15 +118,25 @@ export async function GET(request: Request) {
     const hasMore = rows.length > limit;
     const tests = hasMore ? rows.slice(0, limit) : rows;
 
-    return NextResponse.json(
-      { tests, hasMore, page, limit },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": "private, s-maxage=60, stale-while-revalidate=120",
-        },
-      },
+    const payload = { tests, hasMore, page, limit };
+    const body = JSON.stringify(payload);
+    await setCachedPatientTestsJson(
+      user.id,
+      scope,
+      page,
+      limit,
+      version,
+      body,
     );
+
+    return new NextResponse(body, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "private, s-maxage=60, stale-while-revalidate=120",
+        "X-Cache": "MISS",
+      },
+    });
   } catch (error: unknown) {
     Sentry.captureException(error, {
       tags: { requestId, route: "GET /api/patient-tests" },
@@ -130,7 +171,7 @@ export async function POST(request: Request) {
     if (auth.error) return auth.error;
 
     const user = auth.session.user;
-    const rateLimited = checkRateLimit(user.id);
+    const rateLimited = await checkRateLimit(user.id);
     if (rateLimited) return rateLimited;
 
     const body = await request.json();
@@ -193,7 +234,10 @@ export async function POST(request: Request) {
 
     const reportDate = sampleDate || new Date().toISOString();
     let localDate: Date;
-    if (typeof reportDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(reportDate)) {
+    if (
+      typeof reportDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(reportDate)
+    ) {
       const [year, month, day] = reportDate.split("-").map(Number);
       localDate = new Date(year, month - 1, day);
     } else {
@@ -220,6 +264,8 @@ export async function POST(request: Request) {
         basdai: parsedTestData.basdai || jsonNull,
       },
     });
+
+    await bumpPatientTestsCacheVersions(user.id, savedTest.patientId);
 
     const { ipAddress, userAgent } = extractRequestMeta(request);
     logAudit({

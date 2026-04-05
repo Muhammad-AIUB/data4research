@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
+import { getRedis } from "@/lib/redis";
+
 const SENSITIVE_FIELDS = new Set(["password", "nid"]);
+const AUDIT_QUEUE_KEY = "d4r:audit:queue";
+const AUDIT_QUEUE_MAX = 5000;
 
 function stripSensitive(
   obj: Record<string, unknown> | null | undefined,
@@ -21,7 +25,8 @@ export function getChangedFields(
   before: Record<string, unknown> | null,
   after: Record<string, unknown> | null,
 ): { before: Record<string, unknown> | null; after: Record<string, unknown> | null } {
-  if (!before || !after) return { before: stripSensitive(before), after: stripSensitive(after) };
+  if (!before || !after)
+    return { before: stripSensitive(before), after: stripSensitive(after) };
 
   const changedBefore: Record<string, unknown> = {};
   const changedAfter: Record<string, unknown> = {};
@@ -64,27 +69,9 @@ interface LogAuditParams {
   userAgent?: string | null;
 }
 
-/**
- * Persist an audit log entry to the database.
- * Fire-and-forget: errors are logged but never thrown,
- * so the calling API operation is never blocked.
- */
-export function logAudit(params: LogAuditParams): void {
+function persistAuditDirect(params: LogAuditParams): void {
   const cleanBefore = stripSensitive(params.before ?? null);
   const cleanAfter = stripSensitive(params.after ?? null);
-
-  // Structured stdout for redundancy / log aggregation
-  const entry = {
-    level: "AUDIT",
-    timestamp: new Date().toISOString(),
-    userId: params.userId,
-    action: params.action,
-    resource: params.resource,
-    resourceId: params.resourceId,
-  };
-  console.log(JSON.stringify(entry));
-
-  // Persist to database — fire and forget
   prisma.auditLog
     .create({
       data: {
@@ -92,8 +79,10 @@ export function logAudit(params: LogAuditParams): void {
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId,
-        before: cleanBefore !== null ? (cleanBefore as Prisma.InputJsonValue) : undefined,
-        after: cleanAfter !== null ? (cleanAfter as Prisma.InputJsonValue) : undefined,
+        before:
+          cleanBefore !== null ? (cleanBefore as Prisma.InputJsonValue) : undefined,
+        after:
+          cleanAfter !== null ? (cleanAfter as Prisma.InputJsonValue) : undefined,
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent ?? null,
       },
@@ -107,4 +96,128 @@ export function logAudit(params: LogAuditParams): void {
         }),
       );
     });
+}
+
+/**
+ * Enqueue audit row to Redis (cron flushes to Postgres) or write directly if Redis off / enqueue fails.
+ */
+export function logAudit(params: LogAuditParams): void {
+  const cleanBefore = stripSensitive(params.before ?? null);
+  const cleanAfter = stripSensitive(params.after ?? null);
+
+  const entry = {
+    level: "AUDIT",
+    timestamp: new Date().toISOString(),
+    userId: params.userId,
+    action: params.action,
+    resource: params.resource,
+    resourceId: params.resourceId,
+  };
+  console.log(JSON.stringify(entry));
+
+  const r = getRedis();
+  if (r) {
+    const payload = JSON.stringify({
+      userId: params.userId,
+      action: params.action,
+      resource: params.resource,
+      resourceId: params.resourceId,
+      before: cleanBefore,
+      after: cleanAfter,
+      ipAddress: params.ipAddress ?? null,
+      userAgent: params.userAgent ?? null,
+    });
+    void r
+      .lpush(AUDIT_QUEUE_KEY, payload)
+      .then(() => r.ltrim(AUDIT_QUEUE_KEY, 0, AUDIT_QUEUE_MAX - 1))
+      .catch(() => {
+        persistAuditDirect(params);
+      });
+    return;
+  }
+
+  persistAuditDirect(params);
+}
+
+type QueuedAuditRow = {
+  userId: string;
+  action: string;
+  resource: string;
+  resourceId: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+};
+
+/** Drain up to `maxItems` audit rows from Redis into Postgres (cron / internal). */
+export async function flushAuditQueue(maxItems: number): Promise<{
+  processed: number;
+  errors: number;
+}> {
+  const r = getRedis();
+  if (!r) return { processed: 0, errors: 0 };
+
+  const batch: QueuedAuditRow[] = [];
+  try {
+    for (let i = 0; i < maxItems; i++) {
+      const raw = await r.rpop(AUDIT_QUEUE_KEY);
+      if (!raw) break;
+      try {
+        batch.push(JSON.parse(raw) as QueuedAuditRow);
+      } catch {
+        /* skip malformed */
+      }
+    }
+  } catch {
+    return { processed: 0, errors: 1 };
+  }
+
+  if (batch.length === 0) return { processed: 0, errors: 0 };
+
+  let errors = 0;
+  try {
+    await prisma.auditLog.createMany({
+      data: batch.map((row) => ({
+        userId: row.userId,
+        action: row.action,
+        resource: row.resource,
+        resourceId: row.resourceId,
+        before:
+          row.before !== null ? (row.before as Prisma.InputJsonValue) : undefined,
+        after:
+          row.after !== null ? (row.after as Prisma.InputJsonValue) : undefined,
+        ipAddress: row.ipAddress,
+        userAgent: row.userAgent,
+      })),
+    });
+  } catch {
+    errors = 1;
+    for (const row of batch) {
+      try {
+        await prisma.auditLog.create({
+          data: {
+            userId: row.userId,
+            action: row.action,
+            resource: row.resource,
+            resourceId: row.resourceId,
+            before:
+              row.before !== null
+                ? (row.before as Prisma.InputJsonValue)
+                : undefined,
+            after:
+              row.after !== null
+                ? (row.after as Prisma.InputJsonValue)
+                : undefined,
+            ipAddress: row.ipAddress,
+            userAgent: row.userAgent,
+          },
+        });
+      } catch {
+        errors++;
+      }
+    }
+  }
+
+  return { processed: batch.length, errors };
 }

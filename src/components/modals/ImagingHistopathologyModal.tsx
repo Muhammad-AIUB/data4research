@@ -12,13 +12,14 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import ReportFormContainer from "@/components/ReportFormContainer";
+import { useFavouritesSync } from "@/hooks/useFavouritesSync";
 
 interface Props {
   onClose: () => void;
   defaultDate: Date;
   onDataChange?: (data: unknown, date: Date) => void;
   patientId?: string | null;
-  onSaveSuccess?: () => void;
+  onSaveSuccess?: (savedTest?: unknown) => void;
   savedData?: Array<{ sampleDate: Date | string; imaging?: unknown }>;
   embedded?: boolean;
   hideDatePicker?: boolean;
@@ -39,6 +40,7 @@ export default function ImagingHistopathologyModal({
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
   const [, setFavoritesUpdated] = useState(0);
+  useFavouritesSync();
 
   const renderSectionHeader = (
     title: string,
@@ -129,14 +131,20 @@ export default function ImagingHistopathologyModal({
         }),
       });
 
+      const data = await response
+        .json()
+        .catch(() => ({} as { message?: string; test?: unknown }));
+
       if (response.ok) {
-        if (onSaveSuccess) onSaveSuccess();
+        onSaveSuccess?.(data.test);
         if (onDataChange) onDataChange(formData, reportDate);
         alert("Imaging & Histopathology data saved successfully!");
         onClose();
       } else {
-        const error = await response.json();
-        alert(error.message || "Failed to save data. Please try again.");
+        alert(
+          (typeof data.message === "string" && data.message) ||
+            "Failed to save data. Please try again.",
+        );
       }
     } catch (error) {
       console.error("Error saving Imaging & Histopathology data:", error);

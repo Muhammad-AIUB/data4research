@@ -11,13 +11,31 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
+  id        String               @id @default(uuid())
   name      String?
-  email     String    @unique
+  email     String               @unique
   password  String
-  role      String    @default("DOCTOR")
-  createdAt DateTime  @default(now())
+  role      String               @default("DOCTOR")
+  createdAt DateTime             @default(now())
   patients  Patient[]
+  favorites UserFieldFavorite[]
+}
+
+/// Per-user field preferences (My Favorites) and default values — replaces localStorage.
+model UserFieldFavorite {
+  id           String   @id @default(uuid())
+  userId       String
+  reportType   String
+  fieldName    String
+  fieldLabel   String
+  reportName   String?
+  sectionTitle String?
+  defaultValue String   @default("")
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reportType, fieldName])
+  @@index([userId])
 }
 
 model Option {

@@ -64,3 +64,27 @@ export const createPatientTestSchema = z.object({
 });
 
 export type CreatePatientTestInput = z.infer<typeof createPatientTestSchema>;
+
+// --- User field favourites (POST/PATCH /api/user-favourites) ---
+
+const favText = z.string().trim().min(1).max(500);
+const favTextOptional = z.string().trim().max(500).optional();
+
+export const upsertUserFieldFavoriteSchema = z.object({
+  reportType: favText,
+  reportName: favTextOptional,
+  fieldName: favText.max(200),
+  fieldLabel: favText.max(500),
+  sectionTitle: z.string().trim().max(500).optional(),
+});
+
+export const patchUserFieldFavoriteValueSchema = z.object({
+  reportType: favText,
+  fieldName: favText.max(200),
+  value: z.string().max(10_000),
+});
+
+export const deleteUserFieldFavoriteParamsSchema = z.object({
+  reportType: favText,
+  fieldName: favText.max(200),
+});

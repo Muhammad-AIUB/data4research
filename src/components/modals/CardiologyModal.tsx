@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectItem, SelectValue } from "@/components/ui/select";
 import ModalDatePicker from "@/components/ModalDatePicker";
 import ReportFormContainer from "@/components/ReportFormContainer";
+import { useFavouritesSync } from "@/hooks/useFavouritesSync";
 import {
   addFavouriteField,
   isFieldFavourite,
@@ -83,7 +84,7 @@ interface Props {
   defaultDate: Date;
   onDataChange?: (data: unknown, date: Date) => void;
   patientId?: string | null;
-  onSaveSuccess?: () => void;
+  onSaveSuccess?: (savedTest?: unknown) => void;
   savedData?: Array<{ sampleDate: Date | string; cardiology?: unknown }>;
   embedded?: boolean;
   hideDatePicker?: boolean;
@@ -105,6 +106,7 @@ export default function CardiologyModal({
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
   const [, setFavoritesUpdated] = useState(0);
+  useFavouritesSync();
 
   const formatDateString = (date: Date) => {
     const year = date.getFullYear();
@@ -305,14 +307,20 @@ export default function CardiologyModal({
         }),
       });
 
+      const data = await response
+        .json()
+        .catch(() => ({} as { message?: string; test?: unknown }));
+
       if (response.ok) {
-        if (onSaveSuccess) onSaveSuccess();
+        onSaveSuccess?.(data.test);
         if (onDataChange) onDataChange(formData, reportDate);
         alert("Cardiology data saved successfully!");
         onClose();
       } else {
-        const error = await response.json();
-        alert(error.message || "Failed to save data. Please try again.");
+        alert(
+          (typeof data.message === "string" && data.message) ||
+            "Failed to save data. Please try again.",
+        );
       }
     } catch (error) {
       console.error("Error saving Cardiology data:", error);
