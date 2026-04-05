@@ -68,6 +68,8 @@ export default function SettingsPage() {
           >
             <AutoimmunoProfileModal
               embedded
+              hideDatePicker
+              hideFormActions
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -86,6 +88,8 @@ export default function SettingsPage() {
           >
             <CardiologyModal
               embedded
+              hideDatePicker
+              hideFormActions
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -104,6 +108,8 @@ export default function SettingsPage() {
           >
             <RFTModal
               embedded
+              hideDatePicker
+              hideFormActions
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -122,6 +128,8 @@ export default function SettingsPage() {
           >
             <LFTModal
               embedded
+              hideDatePicker
+              hideFormActions
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -140,6 +148,8 @@ export default function SettingsPage() {
           >
             <DiseaseHistoryModal
               embedded
+              hideDatePicker
+              hideFormActions
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -158,6 +168,8 @@ export default function SettingsPage() {
           >
             <ImagingHistopathologyModal
               embedded
+              hideDatePicker
+              hideFormActions
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}
@@ -176,6 +188,8 @@ export default function SettingsPage() {
           >
             <HematologyModal
               embedded
+              hideDatePicker
+              hideFormActions
               onClose={() => setOpenModal(null)}
               defaultDate={defaultDate}
               patientId={undefined}

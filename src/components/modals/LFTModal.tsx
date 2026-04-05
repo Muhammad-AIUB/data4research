@@ -22,6 +22,8 @@ interface Props {
   onSaveSuccess?: () => void;
   savedData?: Array<{ sampleDate: Date | string; lft?: unknown }>;
   embedded?: boolean;
+  hideDatePicker?: boolean;
+  hideFormActions?: boolean;
 }
 
 export default function LFTModal({
@@ -32,6 +34,8 @@ export default function LFTModal({
   onSaveSuccess,
   savedData = [],
   embedded = false,
+  hideDatePicker = false,
+  hideFormActions = false,
 }: Props) {
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [reportDate, setReportDate] = useState(defaultDate);
@@ -360,13 +364,16 @@ export default function LFTModal({
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">LFT (Liver Function Test)</h2>
-            <ModalDatePicker
-              selectedDate={reportDate}
-              onDateChange={setReportDate}
-              defaultDate={defaultDate}
-            />
+            {!hideDatePicker && (
+              <ModalDatePicker
+                selectedDate={reportDate}
+                onDateChange={setReportDate}
+                defaultDate={defaultDate}
+              />
+            )}
           </div>
           <div className="flex items-center gap-2">
+            {!hideFormActions && (
             <div className="hidden sm:flex gap-2 mr-2">
               <Button
                 type="button"
@@ -393,6 +400,7 @@ export default function LFTModal({
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
             <button
               onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-full text-white"
@@ -701,6 +709,7 @@ export default function LFTModal({
               </div>
             </div>
 
+            {!hideFormActions && (
             <div className="flex gap-2 justify-end pt-4 border-t mt-4">
               <Button
                 type="button"
@@ -714,6 +723,7 @@ export default function LFTModal({
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
           </form>
         </div>
       </div>

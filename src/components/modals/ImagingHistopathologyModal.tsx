@@ -21,6 +21,8 @@ interface Props {
   onSaveSuccess?: () => void;
   savedData?: Array<{ sampleDate: Date | string; imaging?: unknown }>;
   embedded?: boolean;
+  hideDatePicker?: boolean;
+  hideFormActions?: boolean;
 }
 
 export default function ImagingHistopathologyModal({
@@ -31,6 +33,8 @@ export default function ImagingHistopathologyModal({
   onSaveSuccess,
   savedData = [],
   embedded = false,
+  hideDatePicker = false,
+  hideFormActions = false,
 }: Props) {
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
@@ -152,13 +156,16 @@ export default function ImagingHistopathologyModal({
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold">Imaging, Histopathology</h2>
-            <ModalDatePicker
-              selectedDate={reportDate}
-              onDateChange={setReportDate}
-              defaultDate={defaultDate}
-            />
+            {!hideDatePicker && (
+              <ModalDatePicker
+                selectedDate={reportDate}
+                onDateChange={setReportDate}
+                defaultDate={defaultDate}
+              />
+            )}
           </div>
           <div className="flex items-center gap-2">
+            {!hideFormActions && (
             <div className="hidden sm:flex gap-2 mr-2">
               <Button
                 type="button"
@@ -185,6 +192,7 @@ export default function ImagingHistopathologyModal({
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full"
@@ -348,6 +356,7 @@ export default function ImagingHistopathologyModal({
               className="w-full px-3 py-2 border rounded-md min-h-20"
             />
           </div>
+          {!hideFormActions && (
           <div className="flex gap-2 justify-end">
             <Button
               type="button"
@@ -361,6 +370,7 @@ export default function ImagingHistopathologyModal({
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>
+          )}
         </form>
       </div>
     </ReportFormContainer>

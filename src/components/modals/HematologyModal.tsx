@@ -21,11 +21,13 @@ interface Props {
   onSaveSuccess?: () => void
   savedData?: Array<{ sampleDate: Date | string; hematology?: Record<string, unknown> | null }>
   embedded?: boolean
+  hideDatePicker?: boolean
+  hideFormActions?: boolean
 }
 
 type DualValue = { value1: string; value2: string }
 
-export default function HematologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [], embedded = false }: Props) {
+export default function HematologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [], embedded = false, hideDatePicker = false, hideFormActions = false }: Props) {
   const [formData, setFormData] = useState<Record<string, string | DualValue>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
@@ -284,13 +286,16 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">Hematology</h2>
-            <ModalDatePicker
-              selectedDate={reportDate}
-              onDateChange={setReportDate}
-              defaultDate={defaultDate}
-            />
+            {!hideDatePicker && (
+              <ModalDatePicker
+                selectedDate={reportDate}
+                onDateChange={setReportDate}
+                defaultDate={defaultDate}
+              />
+            )}
           </div>
           <div className="flex items-center gap-2">
+            {!hideFormActions && (
             <div className="hidden sm:flex gap-2 mr-2">
               <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-white border-white/40">
                 Cancel
@@ -308,6 +313,7 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
             <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white">
               <X className="w-5 h-5" />
             </button>
@@ -485,12 +491,14 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
               </div>
             </div>
 
+            {!hideFormActions && (
             <div className="flex gap-2 justify-end pt-4 border-t mt-4">
               <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
               <Button type="submit" disabled={saving}>
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
           </form>
         </div>
       </div>

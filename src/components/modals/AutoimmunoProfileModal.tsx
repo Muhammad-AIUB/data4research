@@ -22,6 +22,10 @@ interface Props {
   onSaveSuccess?: () => void;
   savedData?: Array<{ sampleDate: Date | string; autoimmunoProfile?: unknown }>;
   embedded?: boolean;
+  /** Field preferences (Settings) — no sample date UI */
+  hideDatePicker?: boolean;
+  /** Field preferences (Settings) — no save/cancel */
+  hideFormActions?: boolean;
 }
 
 export default function AutoimmunoProfileModal({
@@ -32,6 +36,8 @@ export default function AutoimmunoProfileModal({
   onSaveSuccess,
   savedData = [],
   embedded = false,
+  hideDatePicker = false,
+  hideFormActions = false,
 }: Props) {
   const [formData, setFormData] = useState<
     Record<string, { value: string; notes: string }>
@@ -251,13 +257,16 @@ export default function AutoimmunoProfileModal({
         <div className="flex justify-between items-center bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-t-lg shadow-md shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold">Autoimmuno Profile</h2>
-            <ModalDatePicker
-              selectedDate={reportDate}
-              onDateChange={setReportDate}
-              defaultDate={defaultDate}
-            />
+            {!hideDatePicker && (
+              <ModalDatePicker
+                selectedDate={reportDate}
+                onDateChange={setReportDate}
+                defaultDate={defaultDate}
+              />
+            )}
           </div>
           <div className="flex items-center gap-2">
+            {!hideFormActions && (
             <div className="hidden sm:flex gap-2 mr-2">
               <Button
                 type="button"
@@ -284,6 +293,7 @@ export default function AutoimmunoProfileModal({
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
             <button
               onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-full text-white"
@@ -559,6 +569,7 @@ export default function AutoimmunoProfileModal({
               107,
             )}
 
+            {!hideFormActions && (
             <div className="flex gap-2 justify-end pt-4 border-t mt-4">
               <Button
                 type="button"
@@ -572,6 +583,7 @@ export default function AutoimmunoProfileModal({
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
           </form>
         </div>
       </div>

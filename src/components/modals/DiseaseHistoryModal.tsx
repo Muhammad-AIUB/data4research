@@ -58,6 +58,8 @@ interface Props {
   onSaveSuccess?: () => void
   savedData?: Array<{ sampleDate: Date | string; diseaseHistory?: DiseaseHistoryData }>
   embedded?: boolean
+  hideDatePicker?: boolean
+  hideFormActions?: boolean
 }
 
 export default function DiseaseHistoryModal({
@@ -68,6 +70,8 @@ export default function DiseaseHistoryModal({
   onSaveSuccess,
   savedData = [],
   embedded = false,
+  hideDatePicker = false,
+  hideFormActions = false,
 }: Props) {
   const [reportDate, setReportDate] = useState<Date>(defaultDate)
   const [saving, setSaving] = useState(false)
@@ -296,9 +300,12 @@ export default function DiseaseHistoryModal({
         <div className="sticky top-0 flex items-center justify-between bg-linear-to-r from-blue-600 to-purple-600 p-4 text-white">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold">On Examination & Disease History</h2>
-            <ModalDatePicker selectedDate={reportDate} onDateChange={setReportDate} defaultDate={defaultDate} />
+            {!hideDatePicker && (
+              <ModalDatePicker selectedDate={reportDate} onDateChange={setReportDate} defaultDate={defaultDate} />
+            )}
           </div>
           <div className="flex items-center gap-2">
+            {!hideFormActions && (
             <div className="hidden sm:flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving} className="bg-white/10 hover:bg-white/20 text-white border-white/30">
                 Cancel
@@ -316,6 +323,7 @@ export default function DiseaseHistoryModal({
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
+            )}
             <button onClick={onClose} className="rounded-full p-2 hover:bg-white/20">
               <X className="h-6 w-6" />
             </button>
@@ -652,7 +660,7 @@ export default function DiseaseHistoryModal({
           </div>
           </div>
 
-          {/* Save Buttons */}
+          {!hideFormActions && (
           <div className="flex justify-end gap-4 border-t pt-6">
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Cancel
@@ -661,6 +669,7 @@ export default function DiseaseHistoryModal({
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>
+          )}
         </form>
       </div>
     </ReportFormContainer>
