@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from "react"
 import { X, Heart } from "lucide-react"
-import { 
+import {
   addFavouriteField,
   isFieldFavourite,
-  removeFavouriteField
-} from "@/lib/favourites"
+  removeFavouriteField,
+} from "@/lib/favourites";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import ModalDatePicker from "@/components/ModalDatePicker"
 import ReportFormContainer from "@/components/ReportFormContainer"
+
+type DualValue = { value1: string; value2: string };
 
 interface Props {
   onClose: () => void
@@ -25,27 +27,152 @@ interface Props {
   hideFormActions?: boolean
 }
 
-type DualValue = { value1: string; value2: string }
+/** Section-level favourite: singles or dual (_value1/_value2) — labels must match per-field hearts. */
+type HemSectionFav =
+  | { kind: "single"; field: string; label: string }
+  | { kind: "dual"; field: string; label: string; unit1: string; unit2: string };
+
+const REPORT_TYPE = "hematology" as const;
+const REPORT_NAME = "Hematology";
+
+const HEM_CBC_FAVS: HemSectionFav[] = [
+  { kind: "single", field: "rbc", label: "RBC" },
+  { kind: "single", field: "hemoglobin", label: "Hb / Hgb" },
+  { kind: "single", field: "hct", label: "Hct" },
+  { kind: "single", field: "mcv", label: "MCV" },
+  { kind: "single", field: "mch", label: "MCH" },
+  { kind: "single", field: "mchc", label: "MCHC" },
+  { kind: "single", field: "rdw", label: "RDW" },
+  { kind: "single", field: "wbc", label: "WBC" },
+  { kind: "dual", field: "neutrophils", label: "Neutrophils", unit1: "%", unit2: "cells/µL" },
+  { kind: "dual", field: "lymphocytes", label: "Lymphocytes", unit1: "%", unit2: "cells/µL" },
+  { kind: "dual", field: "monocytes", label: "Monocytes", unit1: "%", unit2: "cells/µL" },
+  { kind: "dual", field: "eosinophils", label: "Eosinophils", unit1: "%", unit2: "cells/µL" },
+  { kind: "dual", field: "basophils", label: "Basophils", unit1: "%", unit2: "cells/µL" },
+  { kind: "single", field: "immatureGranulocytes", label: "Immature Granulocytes" },
+  { kind: "single", field: "nrbc", label: "nRBC" },
+  { kind: "single", field: "plt", label: "PLT" },
+  { kind: "single", field: "mpv", label: "MPV" },
+  { kind: "single", field: "pdw", label: "PDW" },
+  { kind: "single", field: "pct", label: "PCT" },
+  { kind: "single", field: "esr", label: "ESR" },
+];
+
+const HEM_COAG_FAVS: HemSectionFav[] = [
+  { kind: "single", field: "ptPatient", label: "Prothrombin Time Patient" },
+  { kind: "single", field: "ptTest", label: "Prothrombin Time Test" },
+  { kind: "single", field: "inr", label: "INR" },
+  { kind: "single", field: "aptt", label: "APTT" },
+  { kind: "dual", field: "fibrinogen", label: "Fibrinogen", unit1: "g/L", unit2: "mg/dL" },
+  { kind: "single", field: "dDimer", label: "D-dimer" },
+  { kind: "single", field: "bleedingTime", label: "Bleeding Time" },
+  { kind: "single", field: "clottingTime", label: "Clotting Time" },
+  { kind: "single", field: "reticulocyteCount", label: "Reticulocyte count" },
+];
+
+const HEM_CHEM_FAVS: HemSectionFav[] = [
+  { kind: "single", field: "pbf", label: "PBF" },
+  { kind: "single", field: "ldh", label: "LDH" },
+  { kind: "dual", field: "serumIron", label: "S. Iron / S. Fe", unit1: "µmol/L", unit2: "µg/dL" },
+  { kind: "single", field: "tibc", label: "TIBC" },
+  { kind: "single", field: "ferritin", label: "S. Ferritin" },
+  { kind: "single", field: "tsat", label: "TSAT" },
+  { kind: "single", field: "boneMarrowStudy", label: "Bone Marrow Study" },
+  { kind: "single", field: "b12", label: "S. B12 level" },
+  { kind: "dual", field: "folate", label: "S. Folate", unit1: "µg/L", unit2: "ng/mL" },
+];
+
+function addHemSectionFavourites(entries: HemSectionFav[], sectionTitle: string) {
+  for (const e of entries) {
+    if (e.kind === "single") {
+      addFavouriteField(REPORT_TYPE, REPORT_NAME, e.field, e.label, sectionTitle);
+    } else {
+      addFavouriteField(
+        REPORT_TYPE,
+        REPORT_NAME,
+        `${e.field}_value1`,
+        `${e.label} - Value (${e.unit1})`,
+        sectionTitle,
+      );
+      addFavouriteField(
+        REPORT_TYPE,
+        REPORT_NAME,
+        `${e.field}_value2`,
+        `${e.label} - Value (${e.unit2})`,
+        sectionTitle,
+      );
+    }
+  }
+}
+
+function removeHemSectionFavourites(entries: HemSectionFav[]) {
+  for (const e of entries) {
+    if (e.kind === "single") {
+      removeFavouriteField(REPORT_TYPE, e.field);
+    } else {
+      removeFavouriteField(REPORT_TYPE, `${e.field}_value1`);
+      removeFavouriteField(REPORT_TYPE, `${e.field}_value2`);
+    }
+  }
+}
+
+function isHemSectionAllFavourited(entries: HemSectionFav[]): boolean {
+  return entries.every((e) => {
+    if (e.kind === "single") return isFieldFavourite(REPORT_TYPE, e.field);
+    return isFieldFavourite(REPORT_TYPE, `${e.field}_value1`);
+  });
+}
 
 export default function HematologyModal({ onClose, defaultDate, onDataChange, patientId, onSaveSuccess, savedData = [], embedded = false, hideDatePicker = false, hideFormActions = false }: Props) {
   const [formData, setFormData] = useState<Record<string, string | DualValue>>({})
   const [reportDate, setReportDate] = useState(defaultDate)
   const [saving, setSaving] = useState(false)
-  const [, setFavoritesUpdated] = useState(0)
-  
-  
-  const dualFields = new Set([
-    'neutrophils', 'lymphocytes', 'monocytes', 'eosinophils', 'basophils',
-    'serumIron' 
-  ])
+  const [, setFavoritesUpdated] = useState(0);
 
-  const renderSectionHeader = (title: string) => {
+  const renderSectionHeader = (
+    title: string,
+    sectionFavs?: { entries: HemSectionFav[]; sectionTitle: string },
+  ) => {
+    const allFav =
+      sectionFavs !== undefined &&
+      isHemSectionAllFavourited(sectionFavs.entries);
     return (
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-200">
         <h3 className="font-semibold text-lg text-blue-700">{title}</h3>
+        {sectionFavs ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (allFav) {
+                removeHemSectionFavourites(sectionFavs.entries);
+              } else {
+                addHemSectionFavourites(
+                  sectionFavs.entries,
+                  sectionFavs.sectionTitle,
+                );
+              }
+              setFavoritesUpdated((p) => p + 1);
+            }}
+            className="flex items-center gap-1.5 shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium text-blue-800 bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80"
+            title={
+              allFav
+                ? `Remove all ${title} fields from favorites`
+                : `Add all ${title} sub-fields to favorites`
+            }
+          >
+            <Heart
+              className={`h-5 w-5 ${
+                allFav
+                  ? "text-red-500 fill-red-500"
+                  : "text-gray-500 hover:text-red-500"
+              }`}
+            />
+            <span>Favorites</span>
+          </button>
+        ) : null}
       </div>
-    )
-  }
+    );
+  };
 
   
   useEffect(() => {
@@ -110,39 +237,16 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
 
   const renderField = (name: string, label: string, index: number, unit?: string) => {
     const color = fieldColors[index % fieldColors.length]
-    
+
     return (
       <div className={`p-2 rounded ${color}`}>
         <div className="grid grid-cols-3 gap-2 items-end">
           <div className="col-span-2">
-            <div className="flex items-center justify-between mb-1">
-              <Label className="text-sm font-medium">{label} {unit && <span className="text-gray-500">({unit})</span>}</Label>
-              <button
-                type="button"
-                onClick={() => {
-                  const reportType = 'hematology'
-                  const reportName = 'Hematology'
-                  if (dualFields.has(name)) {
-                    const isFav = isFieldFavourite(reportType, `${name}_value1`)
-                    if (isFav) {
-                      removeFavouriteField(reportType, `${name}_value1`)
-                      removeFavouriteField(reportType, `${name}_value2`)
-                    } else {
-                      addFavouriteField(reportType, reportName, `${name}_value1`, `${label} - Value (% )`)
-                      addFavouriteField(reportType, reportName, `${name}_value2`, `${label} - Value (cells/µL)`)
-                    }
-                  } else {
-                    const isFav = isFieldFavourite(reportType, name)
-                    if (isFav) removeFavouriteField(reportType, name)
-                    else addFavouriteField(reportType, reportName, name, label)
-                  }
-                  setFavoritesUpdated(prev => prev + 1)
-                }}
-                className="p-1 rounded hover:bg-gray-100"
-                title={dualFields.has(name) ? (isFieldFavourite('hematology', `${name}_value1`) ? 'Remove from Favorites' : 'Add to Favorites') : (isFieldFavourite('hematology', name) ? 'Remove from Favorites' : 'Add to Favorites')}
-              >
-                <Heart className={`h-5 w-5 ${dualFields.has(name) ? (isFieldFavourite('hematology', `${name}_value1`) ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500') : (isFieldFavourite('hematology', name) ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500')}`} />
-              </button>
+            <div className="mb-1">
+              <Label className="text-sm font-medium">
+                {label}{" "}
+                {unit && <span className="text-gray-500">({unit})</span>}
+              </Label>
             </div>
             <Input
               value={getFieldValue(name)}
@@ -158,33 +262,13 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
 
   const renderDualField = (name: string, label: string, index: number, unit1: string, unit2: string, convert: (dir: "to2" | "to1", val: number) => number) => {
     const color = fieldColors[index % fieldColors.length]
-    
+
     return (
       <div className={`p-2 rounded ${color}`}>
         <div className="grid grid-cols-4 gap-2 items-end">
           <div className="col-span-1">
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1">
               <Label className="text-sm font-medium">{label}</Label>
-              <button
-                type="button"
-                onClick={() => {
-                  const reportType = 'hematology'
-                  const reportName = 'Hematology'
-                  const isFav = isFieldFavourite(reportType, `${name}_value1`)
-                  if (isFav) {
-                    removeFavouriteField(reportType, `${name}_value1`)
-                    removeFavouriteField(reportType, `${name}_value2`)
-                  } else {
-                    addFavouriteField(reportType, reportName, `${name}_value1`, `${label} - Value (${unit1})`)
-                    addFavouriteField(reportType, reportName, `${name}_value2`, `${label} - Value (${unit2})`)
-                  }
-                  setFavoritesUpdated(prev => prev + 1)
-                }}
-                className="p-1 rounded hover:bg-gray-100"
-                title={isFieldFavourite('hematology', `${name}_value1`) ? 'Remove from Favorites' : 'Add to Favorites'}
-              >
-                <Heart className={`h-5 w-5 ${isFieldFavourite('hematology', `${name}_value1`) ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
-              </button>
             </div>
           </div>
           <div>
@@ -322,7 +406,10 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
         <div className="overflow-y-auto p-6 flex-1">
           <form id="hematology-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("CBC")}
+              {renderSectionHeader("CBC", {
+                entries: HEM_CBC_FAVS,
+                sectionTitle: "CBC",
+              })}
               <div className="grid grid-cols-2 gap-2">
                 {renderField("rbc", "RBC", i++, "million/µL")}
                 {renderField("hemoglobin", "Hb / Hgb", i++, "g/dL")}
@@ -348,33 +435,14 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
             </div>
 
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Coagulation")}
+              {renderSectionHeader("Coagulation", {
+                entries: HEM_COAG_FAVS,
+                sectionTitle: "Coagulation",
+              })}
               <div className="space-y-2">
                 <div className={`p-2 rounded ${fieldColors[i % fieldColors.length]}`}>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2">
                     <Label className="text-sm font-medium">Prothrombin Time</Label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const reportType = 'hematology'
-                        const reportName = 'Hematology'
-                        const isFav = isFieldFavourite(reportType, 'ptPatient')
-                        if (isFav) {
-                          removeFavouriteField(reportType, 'ptPatient')
-                          removeFavouriteField(reportType, 'ptTest')
-                          removeFavouriteField(reportType, 'inr')
-                        } else {
-                          addFavouriteField(reportType, reportName, 'ptPatient', 'Prothrombin Time Patient')
-                          addFavouriteField(reportType, reportName, 'ptTest', 'Prothrombin Time Test')
-                          addFavouriteField(reportType, reportName, 'inr', 'INR')
-                        }
-                        setFavoritesUpdated(prev => prev + 1)
-                      }}
-                      className="p-1 rounded hover:bg-gray-100"
-                      title={isFieldFavourite('hematology', 'ptPatient') ? 'Remove from Favorites' : 'Add to Favorites'}
-                    >
-                      <Heart className={`h-5 w-5 ${isFieldFavourite('hematology', 'ptPatient') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
-                    </button>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
@@ -404,35 +472,18 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
             </div>
 
             <div className="mb-6 pb-4 border-b">
-              {renderSectionHeader("Chemistry")}
+              {renderSectionHeader("Chemistry", {
+                entries: HEM_CHEM_FAVS,
+                sectionTitle: "Chemistry",
+              })}
               <div className="grid grid-cols-2 gap-2">
                 {renderField("pbf", "PBF", i++)}
                 {renderField("ldh", "LDH", i++, "U/L")}
                 <div className={`p-2 rounded ${fieldColors[i % fieldColors.length]}`}>
                   <div className="grid grid-cols-3 gap-2 items-end">
                     <div className="col-span-1">
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="mb-1">
                         <Label className="text-sm font-medium">S. Iron / S. Fe</Label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const reportType = 'hematology'
-                            const reportName = 'Hematology'
-                            const isFav = isFieldFavourite(reportType, 'serumIron_value1')
-                            if (isFav) {
-                              removeFavouriteField(reportType, 'serumIron_value1')
-                              removeFavouriteField(reportType, 'serumIron_value2')
-                            } else {
-                              addFavouriteField(reportType, reportName, 'serumIron_value1', 'S. Iron / S. Fe - Value (µmol/L)')
-                              addFavouriteField(reportType, reportName, 'serumIron_value2', 'S. Iron / S. Fe - Value (µg/dL)')
-                            }
-                            setFavoritesUpdated(prev => prev + 1)
-                          }}
-                          className="p-1 rounded hover:bg-gray-100"
-                          title={isFieldFavourite('hematology', 'serumIron_value1') ? 'Remove from Favorites' : 'Add to Favorites'}
-                        >
-                          <Heart className={`h-5 w-5 ${isFieldFavourite('hematology', 'serumIron_value1') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
-                        </button>
                       </div>
                     </div>
                     <div>
