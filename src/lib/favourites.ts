@@ -305,6 +305,57 @@ export function areAnySectionFieldsFavourite(
   return fields.some(([fieldName]) => isFieldFavourite(reportType, fieldName));
 }
 
+/**
+ * PATCH only keys whose values differ from baseline. Updates cache optimistically;
+ * rolls back on first failed PATCH.
+ */
+export async function persistFavouriteFieldValuesIfChanged(
+  next: Record<string, string>,
+  baseline: Record<string, string>,
+): Promise<boolean> {
+  if (typeof window === "undefined") return true;
+  const changes: Array<{
+    key: string;
+    reportType: string;
+    fieldName: string;
+    value: string;
+  }> = [];
+  const keys = new Set([
+    ...Object.keys(next),
+    ...Object.keys(baseline),
+  ]);
+  for (const key of keys) {
+    const n = next[key] ?? "";
+    const b = baseline[key] ?? "";
+    if (n === b) continue;
+    const colon = key.indexOf(":");
+    if (colon <= 0) continue;
+    changes.push({
+      key,
+      reportType: key.slice(0, colon),
+      fieldName: key.slice(colon + 1),
+      value: n,
+    });
+  }
+  if (changes.length === 0) return true;
+
+  const prev = snapshotCache();
+  const merged = { ...cache.values };
+  for (const c of changes) merged[c.key] = c.value;
+  cache.values = merged;
+  notifyFavouritesChanged();
+
+  for (const c of changes) {
+    const ok = await patchValue(c.reportType, c.fieldName, c.value);
+    if (!ok) {
+      cache = prev;
+      notifyFavouritesChanged();
+      return false;
+    }
+  }
+  return true;
+}
+
 export function setFavouriteFieldValue(
   reportType: string,
   fieldName: string,

@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, Heart } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import ExpandableSection from '@/components/ExpandableSection'
-import MyFavoritesModal from '@/components/modals/MyFavoritesModal'
 import AutoimmunoProfileModal from '@/components/modals/AutoimmunoProfileModal'
 import CardiologyModal from '@/components/modals/CardiologyModal'
 import RFTModal from '@/components/modals/RFTModal'
@@ -52,37 +51,14 @@ export default function SettingsPage() {
                 Field preferences
               </h1>
               <p className="mt-2 max-w-2xl text-base text-slate-600 leading-relaxed">
-                Hearts you set in the sections below are stored in My Favorites (open the first
-                section). One list for your login applies to every patient — not separate per patient.
+                Bookmarked fields you set in the sections below are saved as defaults for your account.
+                One list for your login applies to every patient — not separate per patient.
               </p>
             </div>
           </div>
         </header>
 
         <div className="space-y-3 sm:space-y-4">
-          <ExpandableSection
-            title="My Favorites"
-            isOpen={openModal === "my-favorites"}
-            onToggle={() =>
-              setOpenModal(openModal === "my-favorites" ? null : "my-favorites")
-            }
-            colorClass={`${cardShell("border-l-rose-600")}`}
-            contentClassName={contentPanel}
-            icon={
-              <Heart
-                className="h-5 w-5 text-rose-600"
-                fill="currentColor"
-                aria-hidden
-              />
-            }
-            iconWrapperClassName="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-red-50/90 text-rose-600 ring-1 ring-rose-200/70 shadow-sm"
-          >
-            <MyFavoritesModal
-              embedded
-              onClose={() => setOpenModal(null)}
-            />
-          </ExpandableSection>
-
           <ExpandableSection
             title={sections[0].title}
             isOpen={openModal === "autoimmuno"}

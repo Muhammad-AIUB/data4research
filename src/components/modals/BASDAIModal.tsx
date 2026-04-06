@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X, Heart } from "lucide-react"
+import { X } from "lucide-react"
+import { FavouriteFieldIcon } from "@/components/FavouriteFieldIcon"
 import { Select, SelectItem, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -251,9 +252,9 @@ export default function BASDAIModal({
                             setFavoritesUpdated(prev => prev + 1)
                           }}
                           className="p-1 rounded hover:bg-gray-100"
-                          title={isFieldFavourite('basdai', basdaiFields[idx][0]) ? 'Remove from Favorites' : 'Add to Favorites'}
+                          title={isFieldFavourite('basdai', basdaiFields[idx][0]) ? 'Remove bookmark' : 'Save bookmark'}
                         >
-                          <Heart className={`h-5 w-5 ${isFieldFavourite('basdai', basdaiFields[idx][0]) ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                          <FavouriteFieldIcon active={isFieldFavourite('basdai', basdaiFields[idx][0])} />
                         </button>
                       </div>
                       <Select
@@ -288,9 +289,9 @@ export default function BASDAIModal({
                             setFavoritesUpdated(prev => prev + 1)
                           }}
                           className="p-1 rounded hover:bg-gray-100"
-                          title={isFieldFavourite('basdai', basdaiFields[5][0]) ? 'Remove from Favorites' : 'Add to Favorites'}
+                          title={isFieldFavourite('basdai', basdaiFields[5][0]) ? 'Remove bookmark' : 'Save bookmark'}
                         >
-                          <Heart className={`h-5 w-5 ${isFieldFavourite('basdai', basdaiFields[5][0]) ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                          <FavouriteFieldIcon active={isFieldFavourite('basdai', basdaiFields[5][0])} />
                         </button>
                       </div>
                       <Select

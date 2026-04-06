@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Heart } from "lucide-react";
+import { X } from "lucide-react";
+import { FavouriteFieldIcon } from "@/components/FavouriteFieldIcon";
 import {
   addFavouriteField,
   isFieldFavourite,
@@ -227,9 +228,9 @@ export default function ImagingHistopathologyModal({
                   setFavoritesUpdated(prev => prev + 1)
                 }}
                 className="p-1 rounded hover:bg-gray-100"
-                title={isFieldFavourite('imaging', 'xray') ? 'Remove from Favorites' : 'Add to Favorites'}
+                title={isFieldFavourite('imaging', 'xray') ? 'Remove bookmark' : 'Save bookmark'}
               >
-                <Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'xray') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+                <FavouriteFieldIcon active={isFieldFavourite('imaging', 'xray')} />
               </button>
             </div>
             <Input
@@ -242,7 +243,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>CT Scan</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'ctScan'); if (isFav) removeFavouriteField('imaging', 'ctScan'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'ctScan', 'CT Scan'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'ctScan') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'ctScan') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'ctScan'); if (isFav) removeFavouriteField('imaging', 'ctScan'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'ctScan', 'CT Scan'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'ctScan') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'ctScan')} /></button>
               </div>
               <Input
                 value={formData.ctScan}
@@ -254,7 +255,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>MRI</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'mri'); if (isFav) removeFavouriteField('imaging', 'mri'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'mri', 'MRI'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'mri') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'mri') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'mri'); if (isFav) removeFavouriteField('imaging', 'mri'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'mri', 'MRI'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'mri') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'mri')} /></button>
               </div>
               <Input
                 value={formData.mri}
@@ -266,7 +267,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Ultrasound</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'ultrasound'); if (isFav) removeFavouriteField('imaging', 'ultrasound'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'ultrasound', 'Ultrasound'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'ultrasound') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'ultrasound') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'ultrasound'); if (isFav) removeFavouriteField('imaging', 'ultrasound'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'ultrasound', 'Ultrasound'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'ultrasound') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'ultrasound')} /></button>
               </div>
               <Input
                 value={formData.ultrasound}
@@ -278,7 +279,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>PET Scan</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'petScan'); if (isFav) removeFavouriteField('imaging', 'petScan'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'petScan', 'PET Scan'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'petScan') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'petScan') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'petScan'); if (isFav) removeFavouriteField('imaging', 'petScan'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'petScan', 'PET Scan'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'petScan') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'petScan')} /></button>
               </div>
               <Input
                 value={formData.petScan}
@@ -290,7 +291,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Mammography</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'mammography'); if (isFav) removeFavouriteField('imaging', 'mammography'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'mammography', 'Mammography'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'mammography') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'mammography') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'mammography'); if (isFav) removeFavouriteField('imaging', 'mammography'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'mammography', 'Mammography'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'mammography') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'mammography')} /></button>
               </div>
               <Input
                 value={formData.mammography}
@@ -302,7 +303,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Biopsy</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'biopsy'); if (isFav) removeFavouriteField('imaging', 'biopsy'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'biopsy', 'Biopsy'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'biopsy') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'biopsy') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'biopsy'); if (isFav) removeFavouriteField('imaging', 'biopsy'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'biopsy', 'Biopsy'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'biopsy') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'biopsy')} /></button>
               </div>
               <Input
                 value={formData.biopsy}
@@ -314,7 +315,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Histopathology</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'histopathology'); if (isFav) removeFavouriteField('imaging', 'histopathology'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'histopathology', 'Histopathology'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'histopathology') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'histopathology') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'histopathology'); if (isFav) removeFavouriteField('imaging', 'histopathology'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'histopathology', 'Histopathology'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'histopathology') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'histopathology')} /></button>
               </div>
               <Input
                 value={formData.histopathology}
@@ -326,7 +327,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Cytology</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'cytology'); if (isFav) removeFavouriteField('imaging', 'cytology'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'cytology', 'Cytology'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'cytology') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'cytology') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'cytology'); if (isFav) removeFavouriteField('imaging', 'cytology'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'cytology', 'Cytology'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'cytology') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'cytology')} /></button>
               </div>
               <Input
                 value={formData.cytology}
@@ -338,7 +339,7 @@ export default function ImagingHistopathologyModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Immunohistochemistry</Label>
-                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'immunohistochemistry'); if (isFav) removeFavouriteField('imaging', 'immunohistochemistry'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'immunohistochemistry', 'Immunohistochemistry'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'immunohistochemistry') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'immunohistochemistry') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+                <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'immunohistochemistry'); if (isFav) removeFavouriteField('imaging', 'immunohistochemistry'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'immunohistochemistry', 'Immunohistochemistry'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'immunohistochemistry') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'immunohistochemistry')} /></button>
               </div>
               <Input
                 value={formData.immunohistochemistry}
@@ -354,7 +355,7 @@ export default function ImagingHistopathologyModal({
           <div>
             <div className="flex items-center justify-between mb-1">
               <Label>Notes</Label>
-              <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'notes'); if (isFav) removeFavouriteField('imaging', 'notes'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'notes', 'Notes'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'notes') ? 'Remove from Favorites' : 'Add to Favorites'}><Heart className={`h-5 w-5 ${isFieldFavourite('imaging', 'notes') ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}`} /></button>
+              <button type="button" onClick={() => { const isFav = isFieldFavourite('imaging', 'notes'); if (isFav) removeFavouriteField('imaging', 'notes'); else addFavouriteField('imaging', 'Imaging, Histopathology', 'notes', 'Notes'); setFavoritesUpdated(prev => prev + 1) }} className="p-1 rounded hover:bg-gray-100" title={isFieldFavourite('imaging', 'notes') ? 'Remove bookmark' : 'Save bookmark'}><FavouriteFieldIcon active={isFieldFavourite('imaging', 'notes')} /></button>
             </div>
             <textarea
               value={formData.notes}

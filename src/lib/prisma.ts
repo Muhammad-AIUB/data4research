@@ -35,7 +35,13 @@ function createPrismaClient(): PrismaClient {
 // This prevents build failures when DATABASE_URL is unavailable.
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop: string | symbol) {
-    const client = globalForPrisma.prisma || (globalForPrisma.prisma = createPrismaClient())
-    return Reflect.get(client, prop)
+    const client =
+      globalForPrisma.prisma ||
+      (globalForPrisma.prisma = createPrismaClient());
+    const value = Reflect.get(client, prop, client);
+    if (typeof value === "function") {
+      return value.bind(client);
+    }
+    return value;
   },
-})
+});

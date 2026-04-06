@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { X, Heart } from "lucide-react"
+import { X } from "lucide-react"
+import { FavouriteFieldIcon } from "@/components/FavouriteFieldIcon"
 import {
   addFavouriteField,
   isFieldFavourite,
@@ -162,14 +163,8 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
                 : `Add all ${title} sub-fields to favorites`
             }
           >
-            <Heart
-              className={`h-5 w-5 ${
-                allFav
-                  ? "text-red-500 fill-red-500"
-                  : "text-gray-500 hover:text-red-500"
-              }`}
-            />
-            <span>Favorites</span>
+            <FavouriteFieldIcon active={allFav} />
+            <span>Bookmark section</span>
           </button>
         ) : null}
       </div>

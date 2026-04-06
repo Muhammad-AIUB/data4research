@@ -18,7 +18,7 @@ import BASDAIModal from "@/components/modals/BASDAIModal";
 import { Button } from "@/components/ui/button";
 import { formatTestData } from "@/lib/formatTestData";
 import searchIndex from "@/lib/searchIndex";
-import { Heart } from "lucide-react";
+import { Stethoscope } from "lucide-react";
 
 type TestDataSection = Record<string, unknown> | null;
 type TestData = {
@@ -642,7 +642,7 @@ function NextPageContent() {
   };
 
   const favoritesSectionShell =
-    "bg-white/95 backdrop-blur-sm border-slate-200/90 border-l-rose-600 border-l-4";
+    "bg-white/95 backdrop-blur-sm border-slate-200/90 border-l-sky-600 border-l-4";
   const favoritesContentPanel = "bg-slate-50/90";
 
   const sectionColors = [
@@ -716,7 +716,7 @@ function NextPageContent() {
 
         <div className="space-y-4">
           <ExpandableSection
-            title="My Favorites"
+            title="Saved field defaults"
             isOpen={openModal === "my-favorites"}
             onToggle={() =>
               setOpenModal(openModal === "my-favorites" ? null : "my-favorites")
@@ -724,13 +724,12 @@ function NextPageContent() {
             colorClass={favoritesSectionShell}
             contentClassName={favoritesContentPanel}
             icon={
-              <Heart
-                className="h-5 w-5 text-rose-600"
-                fill="currentColor"
+              <Stethoscope
+                className="h-5 w-5 text-sky-600"
                 aria-hidden
               />
             }
-            iconWrapperClassName="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-red-50/90 text-rose-600 ring-1 ring-rose-200/70 shadow-sm"
+            iconWrapperClassName="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-50 to-cyan-50/90 text-sky-600 ring-1 ring-sky-200/70 shadow-sm"
           >
             <MyFavoritesModal
               embedded

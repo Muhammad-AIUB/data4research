@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -92,28 +93,66 @@ export async function POST(request: Request) {
     const { reportType, reportName, fieldName, fieldLabel, sectionTitle } =
       parsed.data;
 
-    await prisma.userFieldFavorite.upsert({
-      where: {
-        userId_reportType_fieldName: {
-          userId: user.id,
-          reportType,
-          fieldName,
-        },
-      },
-      create: {
+    const whereUnique = {
+      userId_reportType_fieldName: {
         userId: user.id,
         reportType,
         fieldName,
-        fieldLabel,
-        reportName: reportName ?? null,
-        sectionTitle: sectionTitle ?? null,
       },
-      update: {
-        fieldLabel,
-        reportName: reportName ?? null,
-        sectionTitle: sectionTitle ?? null,
-      },
-    });
+    };
+
+    const delegate = prisma.userFieldFavorite;
+    if (!delegate?.create || !delegate?.update || !delegate?.findUnique) {
+      return NextResponse.json(
+        {
+          message:
+            "Database client is out of date. Run: npx prisma migrate deploy && npx prisma generate, then restart the dev server.",
+          requestId,
+        },
+        { status: 503 },
+      );
+    }
+
+    const existing = await delegate.findUnique({ where: whereUnique });
+    if (existing) {
+      await delegate.update({
+        where: whereUnique,
+        data: {
+          fieldLabel,
+          reportName: reportName ?? null,
+          sectionTitle: sectionTitle ?? null,
+        },
+      });
+    } else {
+      try {
+        await delegate.create({
+          data: {
+            userId: user.id,
+            reportType,
+            fieldName,
+            fieldLabel,
+            reportName: reportName ?? null,
+            sectionTitle: sectionTitle ?? null,
+          },
+        });
+      } catch (e: unknown) {
+        if (
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === "P2002"
+        ) {
+          await delegate.update({
+            where: whereUnique,
+            data: {
+              fieldLabel,
+              reportName: reportName ?? null,
+              sectionTitle: sectionTitle ?? null,
+            },
+          });
+        } else {
+          throw e;
+        }
+      }
+    }
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error: unknown) {

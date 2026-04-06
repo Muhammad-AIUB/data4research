@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Heart } from "lucide-react";
+import { X } from "lucide-react";
+import { FavouriteFieldIcon } from "@/components/FavouriteFieldIcon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -217,18 +218,12 @@ export default function AutoimmunoProfileModal({
             className="flex items-center gap-1.5 shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium text-blue-800 bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80"
             title={
               allFav
-                ? `Remove all fields in this section from favorites`
-                : `Add all fields in this section to favorites (value + notes)`
+                ? `Remove all fields in this section from saved defaults`
+                : `Bookmark all fields in this section (value + notes)`
             }
           >
-            <Heart
-              className={`h-5 w-5 ${
-                allFav
-                  ? "text-red-500 fill-red-500"
-                  : "text-gray-500 hover:text-red-500"
-              }`}
-            />
-            <span>Favorites</span>
+            <FavouriteFieldIcon active={allFav} />
+            <span>Bookmark section</span>
           </button>
         </div>
         <div className="space-y-2">
