@@ -16,6 +16,13 @@ import {
   type FavouriteField,
 } from "@/lib/favourites";
 import ReportFormContainer from "@/components/ReportFormContainer";
+import { DiseaseHistoryFavouritesBundle } from "@/components/modals/favourites/DiseaseHistoryFavouritesBundle";
+
+const DISEASE_HISTORY_LAYOUT_SECTIONS = new Set([
+  "Physical Measurements",
+  "Vital Signs",
+  "Clinical Findings",
+]);
 
 type PatientTest = {
   id: string;
@@ -395,8 +402,30 @@ export default function MyFavoritesModal({ onClose, embedded = false }: Props) {
                     className={`rounded-xl border border-slate-200/90 bg-white shadow-sm overflow-hidden border-l-4 ${leftAccent}`}
                   >
                     <div className="p-4 space-y-5">
+                      {reportType === "diseaseHistory" ? (
+                        <DiseaseHistoryFavouritesBundle
+                          sections={sections}
+                          fieldValues={fieldValues}
+                          setFieldValues={setFieldValues}
+                          onRemoveSection={handleRemoveSection}
+                          sectionHeading={(sectionTitle, sectionFields) =>
+                            fullContextHeading(
+                              reportType,
+                              sectionTitle,
+                              sectionFields,
+                            )
+                          }
+                        />
+                      ) : null}
                       {Object.entries(sections).map(([sectionTitle, fields]) => {
                         if (!Array.isArray(fields)) {
+                          return null;
+                        }
+
+                        if (
+                          reportType === "diseaseHistory" &&
+                          DISEASE_HISTORY_LAYOUT_SECTIONS.has(sectionTitle)
+                        ) {
                           return null;
                         }
 
