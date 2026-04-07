@@ -56,15 +56,15 @@ type PatientTest = {
   basdai?: TestDataSection;
 };
 
-function buildDefaultsPreviewData(
+
+function buildDefaultsFromFavourites(
   favourites: FavouriteField[],
   values: Record<string, string>,
 ): Record<string, Record<string, unknown>> {
   const result: Record<string, Record<string, unknown>> = {};
 
   for (const fav of favourites) {
-    const reportType = fav.reportType;
-    const fieldName = fav.fieldName;
+    const { reportType, fieldName } = fav;
     const raw = values[`${reportType}:${fieldName}`] ?? "";
     if (!raw.trim()) continue;
     if (!result[reportType]) result[reportType] = {};
@@ -97,7 +97,6 @@ function buildDefaultsPreviewData(
     const existing = result[reportType][fieldName];
     if (existing && typeof existing === "object" && !Array.isArray(existing)) {
       (existing as Record<string, unknown>).value = raw;
-      result[reportType][fieldName] = existing;
     } else {
       result[reportType][fieldName] = raw;
     }
@@ -106,78 +105,32 @@ function buildDefaultsPreviewData(
   return result;
 }
 
-const TEST_SECTION_KEYS: Array<keyof Omit<TestData, "patientId" | "sampleDate">> = [
-  "autoimmunoProfile",
-  "cardiology",
-  "rft",
-  "lft",
-  "diseaseHistory",
-  "imaging",
-  "hematology",
-  "basdai",
+const DEFAULTS_REPORT_BLOCKS: Array<{
+  key: string;
+  label: string;
+  color: string;
+}> = [
+  { key: "autoimmunoProfile", label: "Autoimmuno Profile", color: "text-blue-700" },
+  { key: "cardiology", label: "Cardiology", color: "text-green-700" },
+  { key: "rft", label: "RFT", color: "text-purple-700" },
+  { key: "lft", label: "LFT", color: "text-yellow-700" },
+  { key: "diseaseHistory", label: "On Examination & Disease History", color: "text-rose-700" },
+  { key: "imaging", label: "Imaging, Histopathology", color: "text-indigo-700" },
+  { key: "hematology", label: "Hematology", color: "text-orange-700" },
+  { key: "basdai", label: "BASDAI", color: "text-cyan-700" },
 ];
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function extractSectionData(section: unknown): Record<string, unknown> | null {
-  if (!section) return null;
-  if (isRecord(section) && "data" in section && isRecord(section.data)) {
-    return section.data;
-  }
-  return isRecord(section) ? section : null;
-}
-
-function withMergedDefaults(
-  current: TestData,
-  defaultsBySection: Record<string, Record<string, unknown>>,
-  sampleDateIso: string,
-): TestData {
-  const merged = { ...current };
-
-  for (const key of TEST_SECTION_KEYS) {
-    const defaults = defaultsBySection[key];
-    if (!defaults || Object.keys(defaults).length === 0) continue;
-
-    const existing = current[key];
-    const existingData = extractSectionData(existing);
-    const mergedData = {
-      ...defaults,
-      ...(existingData || {}),
-    };
-
-    if (isRecord(existing) && "data" in existing) {
-      merged[key] = {
-        ...existing,
-        data: mergedData,
-        date:
-          typeof (existing as Record<string, unknown>).date === "string"
-            ? ((existing as Record<string, unknown>).date as string)
-            : sampleDateIso,
-      } as TestDataSection;
-    } else {
-      merged[key] = {
-        data: mergedData,
-        date: sampleDateIso,
-      } as TestDataSection;
-    }
-  }
-
-  return merged;
-}
-
-function SavedDefaultsPreview() {
+function DefaultsReportBlock({
+  savedTestData,
+}: {
+  savedTestData: PatientTest[];
+}) {
   const [loading, setLoading] = useState(() => !isFavouritesCacheReady());
-  const [previewData, setPreviewData] = useState<
-    Record<string, Record<string, unknown>>
-  >({});
+  const [data, setData] = useState<Record<string, Record<string, unknown>>>({});
 
   useEffect(() => {
     const sync = () => {
-      const favs = getFavourites();
-      const values = getFavouriteFieldValues();
-      setPreviewData(buildDefaultsPreviewData(favs, values));
+      setData(buildDefaultsFromFavourites(getFavourites(), getFavouriteFieldValues()));
       setLoading(false);
     };
 
@@ -191,56 +144,52 @@ function SavedDefaultsPreview() {
     return () => window.removeEventListener(FAVOURITES_CHANGED_EVENT, sync);
   }, []);
 
-  const reportBlocks: Array<{ key: keyof TestData; label: string; color: string }> = [
-    { key: "autoimmunoProfile", label: "Autoimmuno Profile", color: "text-blue-700" },
-    { key: "cardiology", label: "Cardiology", color: "text-green-700" },
-    { key: "rft", label: "RFT", color: "text-purple-700" },
-    { key: "lft", label: "LFT", color: "text-yellow-700" },
-    { key: "diseaseHistory", label: "On Examination & Disease History", color: "text-rose-700" },
-    { key: "imaging", label: "Imaging, Histopathology", color: "text-indigo-700" },
-    { key: "hematology", label: "Hematology", color: "text-orange-700" },
-    { key: "basdai", label: "BASDAI", color: "text-cyan-700" },
-  ];
+  const sectionsAlreadySaved = useMemo(() => {
+    const set = new Set<string>();
+    for (const test of savedTestData) {
+      for (const b of DEFAULTS_REPORT_BLOCKS) {
+        const section = test[b.key as keyof PatientTest];
+        if (section && typeof section === "object") set.add(b.key);
+      }
+    }
+    return set;
+  }, [savedTestData]);
 
-  if (loading) {
-    return <div className="text-center py-8 text-gray-500">Loading default values...</div>;
-  }
-
-  const hasAny = reportBlocks.some(
+  const visibleBlocks = DEFAULTS_REPORT_BLOCKS.filter(
     (b) =>
-      previewData[b.key] &&
-      formatTestData(previewData[b.key], b.key).length > 0,
+      data[b.key] &&
+      formatTestData(data[b.key], b.key).length > 0 &&
+      !sectionsAlreadySaved.has(b.key),
   );
 
-  if (!hasAny) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No saved default values found. Save defaults from My Favorites/Settings.
-      </div>
-    );
-  }
+  if (loading || visibleBlocks.length === 0) return null;
 
   return (
-    <div className="space-y-4">
-      {reportBlocks.map((b) => {
-        const formatted = previewData[b.key]
-          ? formatTestData(previewData[b.key], b.key)
-          : [];
-        if (formatted.length === 0) return null;
-        return (
-          <div key={b.key} className="bg-white rounded p-4 border-l-4 border-slate-400">
-            <h4 className={`font-semibold mb-2 ${b.color}`}>{b.label}</h4>
-            <div className="bg-gray-50 p-3 rounded space-y-1">
-              {formatted.map((item, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <span className="font-medium text-gray-700">{item.label}:</span>
-                  <span className="text-gray-900">{item.value}</span>
-                </div>
-              ))}
+    <div className="bg-white border rounded-lg p-4 shadow-sm border-l-4 border-sky-400">
+      <div className="flex justify-between items-center mb-4 border-b pb-2">
+        <h3 className="text-xl font-semibold text-sky-600">
+          Saved Default Values
+        </h3>
+        <span className="text-xs text-gray-500">From My Favorites / Settings</span>
+      </div>
+      <div className="space-y-3">
+        {visibleBlocks.map((b) => {
+          const formatted = formatTestData(data[b.key], b.key);
+          return (
+            <div key={b.key} className="mb-3">
+              <h4 className={`font-semibold mb-2 ${b.color}`}>{b.label}</h4>
+              <div className="bg-gray-50 p-3 rounded space-y-1">
+                {formatted.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-700">{item.label}:</span>
+                    <span className="text-gray-900">{item.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -720,6 +669,7 @@ function NextPageContent() {
     fetchSavedTestData();
   }, [patientId, fetchSavedTestData]);
 
+
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
     setTestData((prev) => ({ ...prev, sampleDate: date.toISOString() }));
@@ -747,23 +697,25 @@ function NextPageContent() {
       return;
     }
     setLoading(true);
-    if (!isFavouritesCacheReady()) {
-      await hydrateFavouritesFromApi();
-    }
-    const defaultsRaw = buildDefaultsPreviewData(
-      getFavourites(),
-      getFavouriteFieldValues(),
-    );
-    const preparedTestData = withMergedDefaults(
-      testData,
-      defaultsRaw,
-      selectedDate.toISOString(),
-    );
+    const unwrap = (section: TestDataSection): TestDataSection => {
+      if (!section || typeof section !== "object") return section;
+      if ("data" in section && section.data && typeof section.data === "object") {
+        return section.data as TestDataSection;
+      }
+      return section;
+    };
     const optimisticTest = {
-      ...preparedTestData,
       id: `temp-${Date.now()}`,
       createdAt: new Date(),
-      sampleDate: preparedTestData.sampleDate,
+      sampleDate: testData.sampleDate,
+      autoimmunoProfile: unwrap(testData.autoimmunoProfile),
+      cardiology: unwrap(testData.cardiology),
+      rft: unwrap(testData.rft),
+      lft: unwrap(testData.lft),
+      diseaseHistory: unwrap(testData.diseaseHistory),
+      imaging: unwrap(testData.imaging),
+      hematology: unwrap(testData.hematology),
+      basdai: unwrap(testData.basdai),
     };
     setSavedTestData((prev) => [optimisticTest as PatientTest, ...prev]);
     
@@ -772,7 +724,7 @@ function NextPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...preparedTestData,
+          ...testData,
           patientId,
         }),
       });
@@ -1133,6 +1085,8 @@ function NextPageContent() {
         <div className="mt-6">
           <h2 className="text-2xl font-bold mb-4">Saved Test Reports</h2>
 
+          <DefaultsReportBlock savedTestData={savedTestData} />
+
           {loadingSavedData ? (
             <div className="text-center py-8 text-gray-500">
               Loading saved data...
@@ -1146,10 +1100,6 @@ function NextPageContent() {
           )}
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Saved Default Values (Preview)</h2>
-          <SavedDefaultsPreview />
-        </div>
       </div>
     </div>
   );

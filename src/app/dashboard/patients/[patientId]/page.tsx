@@ -142,6 +142,7 @@ export default async function PatientDetailPage({
     { key: "diseaseHistory" as const, label: "Disease History" },
     { key: "imaging" as const, label: "Imaging, Histopathology" },
     { key: "hematology" as const, label: "Hematology" },
+    { key: "basdai" as const, label: "BASDAI" },
   ] as const;
 
   // Build export data for the client component
@@ -416,11 +417,11 @@ export default async function PatientDetailPage({
                                   <div className="flex items-center justify-between mb-2">
                                     <h4 className="font-semibold text-slate-800">{label}</h4>
                                   </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-md">
+                                  <div className="bg-gray-50 p-3 rounded-md space-y-1">
                                     {items.map((item, idx) => (
-                                      <div key={idx} className="flex justify-between items-center text-sm">
-                                        <span className="text-slate-500">{item.label}</span>
-                                        <span className="text-gray-900 font-medium">{item.value}</span>
+                                      <div key={idx} className="flex justify-between text-sm">
+                                        <span className="font-medium text-gray-700">{item.label}:</span>
+                                        <span className="text-gray-900">{item.value}</span>
                                       </div>
                                     ))}
                                   </div>
