@@ -17,6 +17,14 @@ import MyFavoritesModal from "@/components/modals/MyFavoritesModal";
 import BASDAIModal from "@/components/modals/BASDAIModal";
 import { Button } from "@/components/ui/button";
 import { formatTestData } from "@/lib/formatTestData";
+import {
+  FAVOURITES_CHANGED_EVENT,
+  getFavouriteFieldValues,
+  getFavourites,
+  hydrateFavouritesFromApi,
+  isFavouritesCacheReady,
+  type FavouriteField,
+} from "@/lib/favourites";
 import searchIndex from "@/lib/searchIndex";
 import { Stethoscope } from "lucide-react";
 
@@ -47,6 +55,134 @@ type PatientTest = {
   hematology?: TestDataSection;
   basdai?: TestDataSection;
 };
+
+function buildDefaultsPreviewData(
+  favourites: FavouriteField[],
+  values: Record<string, string>,
+): Record<string, Record<string, unknown>> {
+  const result: Record<string, Record<string, unknown>> = {};
+
+  for (const fav of favourites) {
+    const reportType = fav.reportType;
+    const fieldName = fav.fieldName;
+    const raw = values[`${reportType}:${fieldName}`] ?? "";
+    if (!raw.trim()) continue;
+    if (!result[reportType]) result[reportType] = {};
+
+    if (fieldName.endsWith("_value1") || fieldName.endsWith("_value2")) {
+      const base = fieldName.replace(/_value[12]$/, "");
+      const key = fieldName.endsWith("_value1") ? "value1" : "value2";
+      const existing = result[reportType][base];
+      const obj =
+        existing && typeof existing === "object" && !Array.isArray(existing)
+          ? (existing as Record<string, unknown>)
+          : {};
+      obj[key] = raw;
+      result[reportType][base] = obj;
+      continue;
+    }
+
+    if (fieldName.endsWith("_notes")) {
+      const base = fieldName.replace(/_notes$/, "");
+      const existing = result[reportType][base];
+      const obj =
+        existing && typeof existing === "object" && !Array.isArray(existing)
+          ? (existing as Record<string, unknown>)
+          : {};
+      obj.notes = raw;
+      result[reportType][base] = obj;
+      continue;
+    }
+
+    const existing = result[reportType][fieldName];
+    if (existing && typeof existing === "object" && !Array.isArray(existing)) {
+      (existing as Record<string, unknown>).value = raw;
+      result[reportType][fieldName] = existing;
+    } else {
+      result[reportType][fieldName] = raw;
+    }
+  }
+
+  return result;
+}
+
+function SavedDefaultsPreview() {
+  const [loading, setLoading] = useState(() => !isFavouritesCacheReady());
+  const [previewData, setPreviewData] = useState<
+    Record<string, Record<string, unknown>>
+  >({});
+
+  useEffect(() => {
+    const sync = () => {
+      const favs = getFavourites();
+      const values = getFavouriteFieldValues();
+      setPreviewData(buildDefaultsPreviewData(favs, values));
+      setLoading(false);
+    };
+
+    const bootstrap = async () => {
+      if (!isFavouritesCacheReady()) await hydrateFavouritesFromApi();
+      sync();
+    };
+
+    void bootstrap();
+    window.addEventListener(FAVOURITES_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(FAVOURITES_CHANGED_EVENT, sync);
+  }, []);
+
+  const reportBlocks: Array<{ key: keyof TestData; label: string; color: string }> = [
+    { key: "autoimmunoProfile", label: "Autoimmuno Profile", color: "text-blue-700" },
+    { key: "cardiology", label: "Cardiology", color: "text-green-700" },
+    { key: "rft", label: "RFT", color: "text-purple-700" },
+    { key: "lft", label: "LFT", color: "text-yellow-700" },
+    { key: "diseaseHistory", label: "On Examination & Disease History", color: "text-rose-700" },
+    { key: "imaging", label: "Imaging, Histopathology", color: "text-indigo-700" },
+    { key: "hematology", label: "Hematology", color: "text-orange-700" },
+    { key: "basdai", label: "BASDAI", color: "text-cyan-700" },
+  ];
+
+  if (loading) {
+    return <div className="text-center py-8 text-gray-500">Loading default values...</div>;
+  }
+
+  const hasAny = reportBlocks.some(
+    (b) =>
+      previewData[b.key] &&
+      formatTestData(previewData[b.key], b.key).length > 0,
+  );
+
+  if (!hasAny) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No saved default values found. Save defaults from My Favorites/Settings.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {reportBlocks.map((b) => {
+        const formatted = previewData[b.key]
+          ? formatTestData(previewData[b.key], b.key)
+          : [];
+        if (formatted.length === 0) return null;
+        return (
+          <div key={b.key} className="bg-white rounded p-4 border-l-4 border-slate-400">
+            <h4 className={`font-semibold mb-2 ${b.color}`}>{b.label}</h4>
+            <div className="bg-gray-50 p-3 rounded space-y-1">
+              {formatted.map((item, idx) => (
+                <div key={idx} className="flex justify-between text-sm">
+                  <span className="font-medium text-gray-700">{item.label}:</span>
+                  <span className="text-gray-900">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function SavedReportsDisplay({
   savedTestData,
@@ -935,6 +1071,11 @@ function NextPageContent() {
           ) : (
             <SavedReportsDisplay savedTestData={savedTestData} />
           )}
+        </div>
+
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Saved Default Values (Preview)</h2>
+          <SavedDefaultsPreview />
         </div>
       </div>
     </div>
