@@ -117,6 +117,78 @@ export default async function PatientDetailPage({
     );
   }
 
+  // ---------- Fetch user defaults (favourites with values) ----------
+  const favouriteRows = await prisma.userFieldFavorite.findMany({
+    where: { userId: session.user.id },
+    orderBy: [{ createdAt: "asc" }],
+  });
+
+  const defaultsBySection: Record<string, Record<string, unknown>> = {};
+  for (const row of favouriteRows) {
+    const raw = row.defaultValue ?? "";
+    if (!raw.trim()) continue;
+    const rt = row.reportType;
+    const fn = row.fieldName;
+    if (!defaultsBySection[rt]) defaultsBySection[rt] = {};
+
+    if (fn.endsWith("_value1") || fn.endsWith("_value2")) {
+      const base = fn.replace(/_value[12]$/, "");
+      const k = fn.endsWith("_value1") ? "value1" : "value2";
+      const existing = defaultsBySection[rt][base];
+      const obj =
+        existing && typeof existing === "object" && !Array.isArray(existing)
+          ? (existing as Record<string, unknown>)
+          : {};
+      obj[k] = raw;
+      defaultsBySection[rt][base] = obj;
+      continue;
+    }
+    if (fn.endsWith("_notes")) {
+      const base = fn.replace(/_notes$/, "");
+      const existing = defaultsBySection[rt][base];
+      const obj =
+        existing && typeof existing === "object" && !Array.isArray(existing)
+          ? (existing as Record<string, unknown>)
+          : {};
+      obj.notes = raw;
+      defaultsBySection[rt][base] = obj;
+      continue;
+    }
+    const existing = defaultsBySection[rt][fn];
+    if (existing && typeof existing === "object" && !Array.isArray(existing)) {
+      (existing as Record<string, unknown>).value = raw;
+    } else {
+      defaultsBySection[rt][fn] = raw;
+    }
+  }
+
+  const sectionsAlreadySaved = new Set<string>();
+  for (const test of patient.tests) {
+    for (const rt of ["autoimmunoProfile", "cardiology", "rft", "lft", "diseaseHistory", "imaging", "hematology", "basdai"] as const) {
+      if (test[rt] && typeof test[rt] === "object") sectionsAlreadySaved.add(rt);
+    }
+  }
+
+  const defaultsBlocks = ([
+    { key: "autoimmunoProfile", label: "Autoimmuno Profile", color: "text-blue-700" },
+    { key: "cardiology", label: "Cardiology", color: "text-green-700" },
+    { key: "rft", label: "RFT", color: "text-purple-700" },
+    { key: "lft", label: "LFT", color: "text-yellow-700" },
+    { key: "diseaseHistory", label: "Disease History", color: "text-rose-700" },
+    { key: "imaging", label: "Imaging, Histopathology", color: "text-indigo-700" },
+    { key: "hematology", label: "Hematology", color: "text-orange-700" },
+    { key: "basdai", label: "BASDAI", color: "text-cyan-700" },
+  ] as const)
+    .filter((b) => {
+      if (sectionsAlreadySaved.has(b.key)) return false;
+      const d = defaultsBySection[b.key];
+      return d && formatTestData(d, b.key).length > 0;
+    })
+    .map((b) => ({
+      ...b,
+      items: formatTestData(defaultsBySection[b.key], b.key),
+    }));
+
   // ---------- Pre-compute test grouping ONCE, outside JSX ----------
   // Prisma already returns tests sorted by createdAt desc, sampleDate desc.
   // Group by formatted sampleDate; Map preserves insertion order (= newest first).
@@ -373,6 +445,32 @@ export default async function PatientDetailPage({
           <h2 className="text-2xl font-semibold mb-4 text-slate-800">
             Test Reports ({patient.tests.length})
           </h2>
+
+          {defaultsBlocks.length > 0 && (
+            <div className="bg-white border rounded-lg p-4 shadow-sm border-l-4 border-sky-400 mb-6">
+              <div className="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 className="text-xl font-semibold text-sky-600">
+                  Saved Default Values
+                </h3>
+                <span className="text-xs text-gray-500">From My Favorites / Settings</span>
+              </div>
+              <div className="space-y-3">
+                {defaultsBlocks.map((b) => (
+                  <div key={b.key} className="mb-3">
+                    <h4 className={`font-semibold mb-2 ${b.color}`}>{b.label}</h4>
+                    <div className="bg-gray-50 p-3 rounded-md space-y-1">
+                      {b.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-sm">
+                          <span className="font-medium text-gray-700">{item.label}:</span>
+                          <span className="text-gray-900">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {patient.tests.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
