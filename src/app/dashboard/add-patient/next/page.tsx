@@ -106,6 +106,67 @@ function buildDefaultsPreviewData(
   return result;
 }
 
+const TEST_SECTION_KEYS: Array<keyof Omit<TestData, "patientId" | "sampleDate">> = [
+  "autoimmunoProfile",
+  "cardiology",
+  "rft",
+  "lft",
+  "diseaseHistory",
+  "imaging",
+  "hematology",
+  "basdai",
+];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractSectionData(section: unknown): Record<string, unknown> | null {
+  if (!section) return null;
+  if (isRecord(section) && "data" in section && isRecord(section.data)) {
+    return section.data;
+  }
+  return isRecord(section) ? section : null;
+}
+
+function withMergedDefaults(
+  current: TestData,
+  defaultsBySection: Record<string, Record<string, unknown>>,
+  sampleDateIso: string,
+): TestData {
+  const merged = { ...current };
+
+  for (const key of TEST_SECTION_KEYS) {
+    const defaults = defaultsBySection[key];
+    if (!defaults || Object.keys(defaults).length === 0) continue;
+
+    const existing = current[key];
+    const existingData = extractSectionData(existing);
+    const mergedData = {
+      ...defaults,
+      ...(existingData || {}),
+    };
+
+    if (isRecord(existing) && "data" in existing) {
+      merged[key] = {
+        ...existing,
+        data: mergedData,
+        date:
+          typeof (existing as Record<string, unknown>).date === "string"
+            ? ((existing as Record<string, unknown>).date as string)
+            : sampleDateIso,
+      } as TestDataSection;
+    } else {
+      merged[key] = {
+        data: mergedData,
+        date: sampleDateIso,
+      } as TestDataSection;
+    }
+  }
+
+  return merged;
+}
+
 function SavedDefaultsPreview() {
   const [loading, setLoading] = useState(() => !isFavouritesCacheReady());
   const [previewData, setPreviewData] = useState<
@@ -686,11 +747,23 @@ function NextPageContent() {
       return;
     }
     setLoading(true);
+    if (!isFavouritesCacheReady()) {
+      await hydrateFavouritesFromApi();
+    }
+    const defaultsRaw = buildDefaultsPreviewData(
+      getFavourites(),
+      getFavouriteFieldValues(),
+    );
+    const preparedTestData = withMergedDefaults(
+      testData,
+      defaultsRaw,
+      selectedDate.toISOString(),
+    );
     const optimisticTest = {
-      ...testData,
+      ...preparedTestData,
       id: `temp-${Date.now()}`,
       createdAt: new Date(),
-      sampleDate: testData.sampleDate,
+      sampleDate: preparedTestData.sampleDate,
     };
     setSavedTestData((prev) => [optimisticTest as PatientTest, ...prev]);
     
@@ -699,7 +772,7 @@ function NextPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...testData,
+          ...preparedTestData,
           patientId,
         }),
       });
