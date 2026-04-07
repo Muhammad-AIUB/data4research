@@ -22,10 +22,10 @@ const CARDIO_REPORT_NAME = "Cardiology";
 type CardioSectionFav = { field: string; label: string };
 
 const CARDIO_VASCULAR_FAVS: CardioSectionFav[] = [
-  { field: "ecgReport", label: "ECG" },
-  { field: "echocardiogramType", label: "Echocardiogram - Type" },
-  { field: "echocardiogramReport", label: "Echocardiogram" },
-  { field: "ettReport", label: "ETT" },
+  { field: "ecgReport", label: "ECG — Report" },
+  { field: "echocardiogramType", label: "Echocardiogram — Type" },
+  { field: "echocardiogramReport", label: "Echocardiogram — Report" },
+  { field: "ettReport", label: "ETT — Report" },
 ];
 
 /** Primary lipid fields only (same as previous row hearts; mmol/L columns were not favorited). */
@@ -43,15 +43,50 @@ const CARDIO_LIPID_FAVS: CardioSectionFav[] = [
 
 const CARDIO_MARKERS_FAVS: CardioSectionFav[] = [
   { field: "lpPla2", label: "Lp-PLA2" },
-  { field: "tropI", label: "Trop I" },
-  { field: "highSensitiveTropI", label: "High Sensitive Trop I" },
-  { field: "ckMb", label: "CK MB" },
+  { field: "tropI", label: "Troponin I" },
+  {
+    field: "highSensitiveTropI",
+    label: "High-sensitivity Troponin I (hs-Trop I)",
+  },
+  { field: "ckMb", label: "CK-MB" },
 ];
 
 const CARDIO_DIAGNOSTIC_FAVS: CardioSectionFav[] = [
   { field: "angiogram", label: "Angiogram" },
   { field: "tiltTableTest", label: "Tilt Table Test" },
 ];
+
+/** mg/dL per 1 mmol/L (conventional conversion factors). */
+const MGDL_PER_MMOL_CHOLESTEROL = 38.67;
+const MGDL_PER_MMOL_TRIGLYCERIDE = 88.57;
+
+function parseNum(s: string): number | null {
+  const n = parseFloat(String(s).replace(",", ".").trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+function mgDlCholToMmol(mgDl: number): string {
+  return (mgDl / MGDL_PER_MMOL_CHOLESTEROL).toFixed(2);
+}
+
+function mmolCholToMgDl(mmol: number): string {
+  return (mmol * MGDL_PER_MMOL_CHOLESTEROL).toFixed(2);
+}
+
+function mgDlTgToMmol(mgDl: number): string {
+  return (mgDl / MGDL_PER_MMOL_TRIGLYCERIDE).toFixed(2);
+}
+
+function mmolTgToMgDl(mmol: number): string {
+  return (mmol * MGDL_PER_MMOL_TRIGLYCERIDE).toFixed(2);
+}
+
+type LipidMgBase =
+  | "totalCholesterol"
+  | "triglycerides"
+  | "ldl"
+  | "hdl"
+  | "vldl";
 
 function addCardioSectionFavourites(
   entries: CardioSectionFav[],
@@ -178,6 +213,86 @@ export default function CardiologyModal({
       ...prev,
       [fieldName]: value,
     }));
+  };
+
+  const handleLipidMgChange = (baseName: LipidMgBase, value: string) => {
+    const isTg = baseName === "triglycerides";
+    setFormData((prev) => {
+      const next: Record<string, string> = { ...prev, [baseName]: value };
+      const n = parseNum(value);
+      if (n === null || value.trim() === "") {
+        next[`${baseName}Mmol`] = "";
+      } else {
+        next[`${baseName}Mmol`] = isTg ? mgDlTgToMmol(n) : mgDlCholToMmol(n);
+      }
+      if (baseName === "totalCholesterol" || baseName === "hdl") {
+        const tc = parseNum(next.totalCholesterol ?? "");
+        const hdl = parseNum(next.hdl ?? "");
+        if (tc === null || hdl === null || hdl === 0) next.tcHdlRatio = "";
+        else next.tcHdlRatio = (tc / hdl).toFixed(2);
+      }
+      return next;
+    });
+  };
+
+  const handleLipidMmolChange = (baseName: LipidMgBase, value: string) => {
+    const isTg = baseName === "triglycerides";
+    const mmolKey = `${baseName}Mmol`;
+    setFormData((prev) => {
+      const next: Record<string, string> = { ...prev, [mmolKey]: value };
+      const n = parseNum(value);
+      if (n === null || value.trim() === "") {
+        next[baseName] = "";
+      } else {
+        next[baseName] = isTg ? mmolTgToMgDl(n) : mmolCholToMgDl(n);
+      }
+      const tc = parseNum(next.totalCholesterol ?? "");
+      const hdl = parseNum(next.hdl ?? "");
+      if (tc === null || hdl === null || hdl === 0) next.tcHdlRatio = "";
+      else next.tcHdlRatio = (tc / hdl).toFixed(2);
+      return next;
+    });
+  };
+
+  const applyVldlFromTriglycerides = () => {
+    setFormData((prev) => {
+      const tg = parseNum(prev.triglycerides ?? "");
+      if (tg === null) {
+        alert("Enter Triglycerides (mg/dL) first.");
+        return prev;
+      }
+      const vldl = tg / 5;
+      const next = { ...prev };
+      next.vldl = vldl.toFixed(1);
+      next.vldlMmol = mgDlCholToMmol(vldl);
+      return next;
+    });
+  };
+
+  const applyLdlFriedewald = () => {
+    setFormData((prev) => {
+      const tc = parseNum(prev.totalCholesterol ?? "");
+      const hdl = parseNum(prev.hdl ?? "");
+      const tg = parseNum(prev.triglycerides ?? "");
+      if (tc === null || hdl === null || tg === null) {
+        alert(
+          "Enter Total Cholesterol, HDL, and Triglycerides (mg/dL) first.",
+        );
+        return prev;
+      }
+      if (tg >= 400) {
+        alert(
+          "Friedewald LDL is not reliable when triglycerides are ≥ 400 mg/dL.",
+        );
+        return prev;
+      }
+      const ldl = tc - hdl - tg / 5;
+      const next = { ...prev };
+      const ldlRounded = Math.max(0, ldl);
+      next.ldl = ldlRounded.toFixed(1);
+      next.ldlMmol = mgDlCholToMmol(ldlRounded);
+      return next;
+    });
   };
 
   const getFieldValue = (fieldName: string) => formData[fieldName] || "";
@@ -441,13 +556,13 @@ export default function CardiologyModal({
               })}
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-4">
-                  {renderField("ecgReport", "ECG", fieldIndex++)}
+                  {renderField("ecgReport", "ECG — Report", fieldIndex++)}
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-1">
                     {renderSelectField(
                       "echocardiogramType",
-                      "Echocardiogram - Type",
+                      "Echocardiogram — Type",
                       fieldIndex++,
                       ["2D", "3D", "4D"],
                     )}
@@ -455,13 +570,13 @@ export default function CardiologyModal({
                   <div className="col-span-2">
                     {renderField(
                       "echocardiogramReport",
-                      "Echocardiogram",
+                      "Echocardiogram — Report",
                       fieldIndex++,
                     )}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
-                  {renderField("ettReport", "ETT", fieldIndex++)}
+                  {renderField("ettReport", "ETT — Report", fieldIndex++)}
                 </div>
               </div>
             </div>
@@ -472,88 +587,126 @@ export default function CardiologyModal({
                 entries: CARDIO_LIPID_FAVS,
                 sectionTitle: "Lipid Profile",
               })}
+              <p className="text-xs text-slate-600 mb-2">
+                mg/dL and mmol/L sync (cholesterol ÷ 38.67, triglycerides ÷
+                88.57). TC/HDL updates when Total Cholesterol or HDL (mg/dL)
+                changes.
+              </p>
               <div className="space-y-2">
-                {(() => {
-                  const lipidTests = [
+                {(
+                  [
                     {
-                      name: "totalCholesterol",
+                      name: "totalCholesterol" as const,
                       label: "Total Cholesterol",
-                      hasMmol: true,
                     },
                     {
-                      name: "triglycerides",
+                      name: "triglycerides" as const,
                       label: "Triglycerides",
-                      hasMmol: true,
                     },
                     {
-                      name: "ldl",
+                      name: "ldl" as const,
                       label: "Low-Density Lipoprotein (LDL) Cholesterol",
-                      hasMmol: true,
                     },
                     {
-                      name: "hdl",
+                      name: "hdl" as const,
                       label: "High-Density Lipoprotein (HDL) Cholesterol",
-                      hasMmol: true,
                     },
                     {
-                      name: "vldl",
+                      name: "vldl" as const,
                       label: "Very Low-Density Lipoprotein (VLDL) Cholesterol",
-                      hasMmol: true,
                     },
-                    {
-                      name: "tcHdlRatio",
-                      label: "Total Cholesterol / HDL Ratio (TC/HDL)",
-                      hasMmol: false,
-                    },
-                  ];
-                  return lipidTests.map((test) => {
-                    const currentIndex = fieldIndex++;
-                    const colorClass =
-                      fieldColors[currentIndex % fieldColors.length];
-                    return (
-                      <div
-                        key={test.name}
-                        className={`p-2 rounded ${colorClass}`}
-                      >
-                        <div className="grid grid-cols-3 gap-2 items-end">
-                          <div className="col-span-1">
-                            <div className="mb-1">
-                              <Label className="text-sm">{test.label}</Label>
-                            </div>
+                  ] as const
+                ).map((test) => {
+                  const currentIndex = fieldIndex++;
+                  const colorClass =
+                    fieldColors[currentIndex % fieldColors.length];
+                  return (
+                    <div
+                      key={test.name}
+                      className={`p-2 rounded ${colorClass}`}
+                    >
+                      <div className="grid grid-cols-3 gap-2 items-end">
+                        <div className="col-span-1">
+                          <div className="mb-1">
+                            <Label className="text-sm">{test.label}</Label>
                           </div>
-                          <div>
-                            <Label className="text-sm">Value (mg/dL)</Label>
-                            <Input
-                              value={getFieldValue(test.name)}
-                              onChange={(e) =>
-                                updateField(test.name, e.target.value)
-                              }
-                              placeholder="mg/dL"
-                              className="bg-white h-12 text-base"
-                            />
-                          </div>
-                          {test.hasMmol && (
-                            <div>
-                              <Label className="text-sm">Value (mmol/L)</Label>
-                              <Input
-                                value={getFieldValue(`${test.name}Mmol`)}
-                                onChange={(e) =>
-                                  updateField(
-                                    `${test.name}Mmol`,
-                                    e.target.value,
-                                  )
-                                }
-                                placeholder="mmol/L"
-                                className="bg-white h-12 text-base"
-                              />
-                            </div>
-                          )}
-                          {!test.hasMmol && <div></div>}
+                        </div>
+                        <div>
+                          <Label className="text-sm">Value (mg/dL)</Label>
+                          <Input
+                            value={getFieldValue(test.name)}
+                            onChange={(e) =>
+                              handleLipidMgChange(test.name, e.target.value)
+                            }
+                            placeholder="mg/dL"
+                            className="bg-white h-12 text-base"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm">Value (mmol/L)</Label>
+                          <Input
+                            value={getFieldValue(`${test.name}Mmol`)}
+                            onChange={(e) =>
+                              handleLipidMmolChange(test.name, e.target.value)
+                            }
+                            placeholder="mmol/L"
+                            className="bg-white h-12 text-base"
+                          />
                         </div>
                       </div>
-                    );
-                  });
+                    </div>
+                  );
+                })}
+                {(() => {
+                  fieldIndex++;
+                  const ratioColor =
+                    "border-indigo-400 bg-indigo-100 border-2";
+                  return (
+                    <div
+                      key="tcHdlRatio"
+                      className={`p-2 rounded ${ratioColor}`}
+                    >
+                      <div className="grid grid-cols-3 gap-2 items-end">
+                        <div className="col-span-1">
+                          <div className="mb-1">
+                            <Label className="text-sm font-medium text-indigo-950">
+                              Total Cholesterol / HDL Ratio (TC/HDL)
+                            </Label>
+                          </div>
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-sm">Value (ratio)</Label>
+                          <Input
+                            value={getFieldValue("tcHdlRatio")}
+                            onChange={(e) =>
+                              updateField("tcHdlRatio", e.target.value)
+                            }
+                            placeholder="Auto from TC ÷ HDL (mg/dL)"
+                            className="bg-indigo-50 h-12 text-base border-indigo-300"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
                 })()}
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={applyVldlFromTriglycerides}
+                >
+                  Set VLDL = TG ÷ 5 (mg/dL)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={applyLdlFriedewald}
+                >
+                  Estimate LDL — Friedewald (mg/dL)
+                </Button>
               </div>
             </div>
 
@@ -565,13 +718,14 @@ export default function CardiologyModal({
               })}
               <div className="space-y-2">
                 {renderField("lpPla2", "Lp-PLA2", fieldIndex++, "nmol/min/mL")}
-                {renderField("tropI", "Trop I", fieldIndex++)}
+                {renderField("tropI", "Troponin I", fieldIndex++, "ng/mL")}
                 {renderField(
                   "highSensitiveTropI",
-                  "High Sensitive Trop I",
+                  "High-sensitivity Troponin I (hs-Trop I)",
                   fieldIndex++,
+                  "ng/L",
                 )}
-                {renderField("ckMb", "CK MB", fieldIndex++)}
+                {renderField("ckMb", "CK-MB", fieldIndex++, "ng/mL")}
               </div>
             </div>
 
