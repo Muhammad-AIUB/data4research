@@ -19,8 +19,12 @@ import {
 const AUTO_REPORT_TYPE = "autoimmunoProfile" as const;
 const AUTO_REPORT_NAME = "Autoimmuno Profile";
 
+type AutoFieldDef =
+  | [string, string]
+  | [string, string, "text"];
+
 function addAutoSectionFavourites(
-  fields: Array<[string, string]>,
+  fields: AutoFieldDef[],
   sectionTitle: string,
 ) {
   for (const [fieldName, label] of fields) {
@@ -41,14 +45,14 @@ function addAutoSectionFavourites(
   }
 }
 
-function removeAutoSectionFavourites(fields: Array<[string, string]>) {
+function removeAutoSectionFavourites(fields: AutoFieldDef[]) {
   for (const [fieldName] of fields) {
     removeFavouriteField(AUTO_REPORT_TYPE, fieldName);
     removeFavouriteField(AUTO_REPORT_TYPE, `${fieldName}_notes`);
   }
 }
 
-function isAutoSectionAllFavourited(fields: Array<[string, string]>): boolean {
+function isAutoSectionAllFavourited(fields: AutoFieldDef[]): boolean {
   return fields.every(([fieldName]) =>
     isFieldFavourite(AUTO_REPORT_TYPE, fieldName),
   );
@@ -161,7 +165,12 @@ export default function AutoimmunoProfileModal({
     "bg-cyan-50 border-cyan-200",
   ];
 
-  const renderField = (fieldName: string, label: string, index: number) => {
+  const renderField = (
+    fieldName: string,
+    label: string,
+    index: number,
+    valueKind: "positiveNegative" | "text" = "positiveNegative",
+  ) => {
     const colorClass = fieldColors[index % fieldColors.length];
 
     return (
@@ -172,15 +181,24 @@ export default function AutoimmunoProfileModal({
           <div className="mb-1">
             <Label className="text-sm">{label}</Label>
           </div>
-          <Select
-            value={getFieldValue(fieldName)}
-            onValueChange={(v) => updateField(fieldName, v, "value")}
-            className="bg-white"
-          >
-            <SelectValue placeholder="Select" />
-            <SelectItem value="Positive">Positive</SelectItem>
-            <SelectItem value="Negative">Negative</SelectItem>
-          </Select>
+          {valueKind === "text" ? (
+            <Input
+              value={getFieldValue(fieldName)}
+              onChange={(e) => updateField(fieldName, e.target.value, "value")}
+              placeholder="Value (numeric or qualitative)"
+              className="bg-white"
+            />
+          ) : (
+            <Select
+              value={getFieldValue(fieldName)}
+              onValueChange={(v) => updateField(fieldName, v, "value")}
+              className="bg-white"
+            >
+              <SelectValue placeholder="Select" />
+              <SelectItem value="Positive">Positive</SelectItem>
+              <SelectItem value="Negative">Negative</SelectItem>
+            </Select>
+          )}
         </div>
         <div className="col-span-2">
           <Label className="text-sm">Notes</Label>
@@ -197,7 +215,7 @@ export default function AutoimmunoProfileModal({
 
   const renderSection = (
     title: string,
-    fields: Array<[string, string]>,
+    fields: AutoFieldDef[],
     startIndex: number,
   ) => {
     const allFav = isAutoSectionAllFavourited(fields);
@@ -227,11 +245,17 @@ export default function AutoimmunoProfileModal({
           </button>
         </div>
         <div className="space-y-2">
-          {fields.map(([fieldName, label], idx) => (
-            <div key={fieldName}>
-              {renderField(fieldName, label, startIndex + idx)}
-            </div>
-          ))}
+          {fields.map((def, idx) => {
+            const fieldName = def[0];
+            const label = def[1];
+            const valueKind =
+              def[2] === "text" ? "text" : "positiveNegative";
+            return (
+              <div key={fieldName}>
+                {renderField(fieldName, label, startIndex + idx, valueKind)}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -414,8 +438,8 @@ export default function AutoimmunoProfileModal({
                 ["rheumatoidFactor", "Rheumatoid Factor (RF)"],
                 ["antiCcp", "Anti-CCP (Anti-cyclic citrullinated peptide)"],
                 ["anaRheumatoid", "ANA"],
-                ["esr", "ESR"],
-                ["crp", "CRP"],
+                ["esr", "ESR", "text"],
+                ["crp", "CRP", "text"],
                 ["hlaB27", "HLA-B27 (for spondyloarthropathy)"],
                 ["antiCarp", "Anti-CarP (Carbamylated protein antibody)"],
               ],
@@ -478,7 +502,7 @@ export default function AutoimmunoProfileModal({
                 ["antiTtgIgg", "Anti-tTG IgG"],
                 ["antiEma", "Anti-EMA (Endomysial Ab)"],
                 ["antiDgp", "Anti-DGP (Deamidated gliadin peptide)"],
-                ["totalIga", "Total IgA (to rule out IgA deficiency)"],
+                ["totalIga", "Total IgA (to rule out IgA deficiency)", "text"],
               ],
               62,
             )}
@@ -565,6 +589,7 @@ export default function AutoimmunoProfileModal({
                 [
                   "schirmerTest",
                   "Schirmer test (not antibody but part of evaluation)",
+                  "text",
                 ],
                 ["anaSjogren", "ANA"],
                 ["rheumatoidFactorSjogren", "Rheumatoid Factor"],
@@ -593,8 +618,9 @@ export default function AutoimmunoProfileModal({
               "AUTOIMMUNE FERTILITY / OVARIAN PROFILE",
               [
                 ["antiOvarian", "Anti-Ovarian antibody"],
-                ["antiZonaPelucida", "Anti-Zona-pelucida antibody"],
+                ["antiZonaPelucida", "Anti-Zona pellucida antibody"],
                 ["antiSperm", "Anti-Sperm antibody"],
+                ["amh", "Anti-Müllerian Hormone (AMH)", "text"],
               ],
               104,
             )}
@@ -603,9 +629,9 @@ export default function AutoimmunoProfileModal({
             {renderSection(
               "COMPLEMENT SYSTEM PROFILE",
               [
-                ["c3", "C3"],
-                ["c4", "C4"],
-                ["ch50", "CH50 (Total complement activity)"],
+                ["c3", "C3", "text"],
+                ["c4", "C4", "text"],
+                ["ch50", "CH50 (Total complement activity)", "text"],
               ],
               107,
             )}
