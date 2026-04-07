@@ -254,6 +254,18 @@ export default function LFTModal({
     "bg-cyan-50 border-cyan-200",
   ];
 
+  const parseNum = (value: string) => {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const computeInr = (ptPatientSec: string, ptTestSec: string) => {
+    const patient = parseNum(ptPatientSec);
+    const test = parseNum(ptTestSec);
+    if (patient === null || test === null || test === 0) return "";
+    return (patient / test).toFixed(2);
+  };
+
   const renderField = (
     fieldName: string,
     label: string,
@@ -290,7 +302,7 @@ export default function LFTModal({
     index: number,
     unit1: string,
     unit2: string,
-    conversion: (val1: number, val2: number) => { val1: number; val2: number },
+    conversion: (dir: "to2" | "to1", value: number) => number,
   ) => {
     const colorClass = fieldColors[index % fieldColors.length];
 
@@ -307,13 +319,38 @@ export default function LFTModal({
             <Input
               value={getFieldValue(fieldName, "value1")}
               onChange={(e) => {
-                const val1 = parseFloat(e.target.value) || 0;
-                const val2 = getFieldValue(fieldName, "value2");
-                const calculated = conversion(val1, parseFloat(val2) || 0);
-                updateField(fieldName, e.target.value, "value1");
-                if (calculated.val2) {
-                  updateField(fieldName, calculated.val2.toString(), "value2");
-                }
+                const raw1 = e.target.value;
+                const v1 = parseNum(raw1);
+                const next2 = v1 === null ? "" : conversion("to2", v1).toFixed(2);
+                setFormData((prev) => {
+                  const next: Record<string, unknown> = {
+                    ...prev,
+                    [fieldName]: { value1: raw1, value2: next2 },
+                  };
+                  if (fieldName === "albumin" || fieldName === "globulin") {
+                    const albumin = fieldName === "albumin"
+                      ? parseNum(next2)
+                      : parseNum(
+                          (
+                            (prev.albumin as Record<string, unknown> | undefined)
+                              ?.value2 as string
+                          ) || "",
+                        );
+                    const globulin = fieldName === "globulin"
+                      ? parseNum(next2)
+                      : parseNum(
+                          (
+                            (prev.globulin as Record<string, unknown> | undefined)
+                              ?.value2 as string
+                          ) || "",
+                        );
+                    next.agRatio =
+                      albumin !== null && globulin !== null && globulin !== 0
+                        ? (albumin / globulin).toFixed(2)
+                        : "";
+                  }
+                  return next;
+                });
               }}
               placeholder={unit1}
               className="bg-white"
@@ -324,13 +361,38 @@ export default function LFTModal({
             <Input
               value={getFieldValue(fieldName, "value2")}
               onChange={(e) => {
-                const val2 = parseFloat(e.target.value) || 0;
-                const val1 = getFieldValue(fieldName, "value1");
-                const calculated = conversion(parseFloat(val1) || 0, val2);
-                updateField(fieldName, e.target.value, "value2");
-                if (calculated.val1) {
-                  updateField(fieldName, calculated.val1.toString(), "value1");
-                }
+                const raw2 = e.target.value;
+                const v2 = parseNum(raw2);
+                const next1 = v2 === null ? "" : conversion("to1", v2).toFixed(2);
+                setFormData((prev) => {
+                  const next: Record<string, unknown> = {
+                    ...prev,
+                    [fieldName]: { value1: next1, value2: raw2 },
+                  };
+                  if (fieldName === "albumin" || fieldName === "globulin") {
+                    const albumin = fieldName === "albumin"
+                      ? parseNum(raw2)
+                      : parseNum(
+                          (
+                            (prev.albumin as Record<string, unknown> | undefined)
+                              ?.value2 as string
+                          ) || "",
+                        );
+                    const globulin = fieldName === "globulin"
+                      ? parseNum(raw2)
+                      : parseNum(
+                          (
+                            (prev.globulin as Record<string, unknown> | undefined)
+                              ?.value2 as string
+                          ) || "",
+                        );
+                    next.agRatio =
+                      albumin !== null && globulin !== null && globulin !== 0
+                        ? (albumin / globulin).toFixed(2)
+                        : "";
+                  }
+                  return next;
+                });
               }}
               placeholder={unit2}
               className="bg-white"
@@ -542,11 +604,7 @@ export default function LFTModal({
                   fieldIndex++,
                   "µmol/L",
                   "mg/dL",
-                  (val1, val2) => {
-                    if (val1) return { val1, val2: val1 / 17.1 };
-                    if (val2) return { val1: val2 * 17.1, val2 };
-                    return { val1: 0, val2: 0 };
-                  },
+                  (dir, value) => (dir === "to2" ? value / 17.1 : value * 17.1),
                 )}
                 {renderDualField(
                   "bilirubinDirect",
@@ -554,11 +612,7 @@ export default function LFTModal({
                   fieldIndex++,
                   "µmol/L",
                   "mg/dL",
-                  (val1, val2) => {
-                    if (val1) return { val1, val2: val1 / 17.1 };
-                    if (val2) return { val1: val2 * 17.1, val2 };
-                    return { val1: 0, val2: 0 };
-                  },
+                  (dir, value) => (dir === "to2" ? value / 17.1 : value * 17.1),
                 )}
                 {renderDualField(
                   "bilirubinIndirect",
@@ -566,11 +620,7 @@ export default function LFTModal({
                   fieldIndex++,
                   "µmol/L",
                   "mg/dL",
-                  (val1, val2) => {
-                    if (val1) return { val1, val2: val1 / 17.1 };
-                    if (val2) return { val1: val2 * 17.1, val2 };
-                    return { val1: 0, val2: 0 };
-                  },
+                  (dir, value) => (dir === "to2" ? value / 17.1 : value * 17.1),
                 )}
                 <div
                   className={`p-2 rounded ${fieldColors[fieldIndex % fieldColors.length]}`}
@@ -583,9 +633,12 @@ export default function LFTModal({
                       <Label className="text-sm">Patient (Sec)</Label>
                       <Input
                         value={getFieldValue("ptPatient")}
-                        onChange={(e) =>
-                          updateField("ptPatient", e.target.value)
-                        }
+                        onChange={(e) => {
+                          const ptPatient = e.target.value;
+                          const ptTest = getFieldValue("ptTest");
+                          updateField("ptPatient", ptPatient);
+                          updateField("inr", computeInr(ptPatient, ptTest));
+                        }}
                         placeholder="Sec"
                         className="bg-white"
                       />
@@ -594,7 +647,12 @@ export default function LFTModal({
                       <Label className="text-sm">Test (Sec)</Label>
                       <Input
                         value={getFieldValue("ptTest")}
-                        onChange={(e) => updateField("ptTest", e.target.value)}
+                        onChange={(e) => {
+                          const ptTest = e.target.value;
+                          const ptPatient = getFieldValue("ptPatient");
+                          updateField("ptTest", ptTest);
+                          updateField("inr", computeInr(ptPatient, ptTest));
+                        }}
                         placeholder="Sec"
                         className="bg-white"
                       />
@@ -604,7 +662,7 @@ export default function LFTModal({
                       <Input
                         value={getFieldValue("inr")}
                         onChange={(e) => updateField("inr", e.target.value)}
-                        placeholder="INR"
+                        placeholder="Auto from Patient/Test"
                         className="bg-white"
                       />
                     </div>
@@ -617,11 +675,7 @@ export default function LFTModal({
                   fieldIndex++,
                   "g/L",
                   "g/dL",
-                  (val1, val2) => {
-                    if (val1) return { val1, val2: val1 / 10 };
-                    if (val2) return { val1: val2 * 10, val2 };
-                    return { val1: 0, val2: 0 };
-                  },
+                  (dir, value) => (dir === "to2" ? value / 10 : value * 10),
                 )}
                 {renderDualField(
                   "globulin",
@@ -629,11 +683,7 @@ export default function LFTModal({
                   fieldIndex++,
                   "g/L",
                   "g/dL",
-                  (val1, val2) => {
-                    if (val1) return { val1, val2: val1 / 10 };
-                    if (val2) return { val1: val2 * 10, val2 };
-                    return { val1: 0, val2: 0 };
-                  },
+                  (dir, value) => (dir === "to2" ? value / 10 : value * 10),
                 )}
                 {renderField("agRatio", "A/G ratio", fieldIndex++)}
                 {renderField("totalProtein", "S. Total Protein", fieldIndex++)}
@@ -675,11 +725,7 @@ export default function LFTModal({
                   fieldIndex++,
                   "C/mL",
                   "IU/mL",
-                  (val1, val2) => {
-                    if (val1) return { val1, val2: val1 * 5.6 };
-                    if (val2) return { val1: val2 / 5.6, val2 };
-                    return { val1: 0, val2: 0 };
-                  },
+                  (dir, value) => (dir === "to2" ? value * 5.6 : value / 5.6),
                 )}
                 {renderDropdown("antiHcv", "Anti HCV", fieldIndex++, [
                   "Positive",
@@ -691,11 +737,7 @@ export default function LFTModal({
                   fieldIndex++,
                   "C/mL",
                   "IU/mL",
-                  (val1, val2) => {
-                    if (val1) return { val1, val2: val1 * 4.4 };
-                    if (val2) return { val1: val2 / 4.4, val2 };
-                    return { val1: 0, val2: 0 };
-                  },
+                  (dir, value) => (dir === "to2" ? value * 4.4 : value / 4.4),
                 )}
                 {renderDropdown("antiHavIgm", "Anti HAV IgM", fieldIndex++, [
                   "Positive",
