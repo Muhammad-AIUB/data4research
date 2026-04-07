@@ -311,6 +311,15 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
     return ""
   }
 
+  const computeInr = (ptPatientSec: string, ptTestSec: string) => {
+    const patient = parseFloat(ptPatientSec);
+    const test = parseFloat(ptTestSec);
+    if (!isNaN(patient) && !isNaN(test) && test !== 0) {
+      return (patient / test).toFixed(2);
+    }
+    return "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -450,15 +459,38 @@ export default function HematologyModal({ onClose, defaultDate, onDataChange, pa
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <Label className="text-sm">Patient (Sec)</Label>
-                      <Input value={getFieldValue("ptPatient")} onChange={(e) => updateField("ptPatient", e.target.value)} className="bg-white" />
+                      <Input
+                        value={getFieldValue("ptPatient")}
+                        onChange={(e) => {
+                          const ptPatient = e.target.value;
+                          const ptTest = getFieldValue("ptTest");
+                          updateField("ptPatient", ptPatient);
+                          updateField("inr", computeInr(ptPatient, ptTest));
+                        }}
+                        className="bg-white"
+                      />
                     </div>
                     <div>
                       <Label className="text-sm">Test (Sec)</Label>
-                      <Input value={getFieldValue("ptTest")} onChange={(e) => updateField("ptTest", e.target.value)} className="bg-white" />
+                      <Input
+                        value={getFieldValue("ptTest")}
+                        onChange={(e) => {
+                          const ptTest = e.target.value;
+                          const ptPatient = getFieldValue("ptPatient");
+                          updateField("ptTest", ptTest);
+                          updateField("inr", computeInr(ptPatient, ptTest));
+                        }}
+                        className="bg-white"
+                      />
                     </div>
                     <div>
                       <Label className="text-sm">INR</Label>
-                      <Input value={getFieldValue("inr")} onChange={(e) => updateField("inr", e.target.value)} className="bg-white" />
+                      <Input
+                        value={getFieldValue("inr")}
+                        onChange={(e) => updateField("inr", e.target.value)}
+                        className="bg-white"
+                        placeholder="Auto from Patient/Test"
+                      />
                     </div>
                   </div>
                 </div>
