@@ -697,6 +697,15 @@ function NextPageContent() {
       return;
     }
     setLoading(true);
+
+    if (!isFavouritesCacheReady()) {
+      await hydrateFavouritesFromApi();
+    }
+    const defaultsBySection = buildDefaultsFromFavourites(
+      getFavourites(),
+      getFavouriteFieldValues(),
+    );
+
     const unwrap = (section: TestDataSection): TestDataSection => {
       if (!section || typeof section !== "object") return section;
       if ("data" in section && section.data && typeof section.data === "object") {
@@ -704,18 +713,40 @@ function NextPageContent() {
       }
       return section;
     };
+
+    const SECTION_KEYS = [
+      "autoimmunoProfile", "cardiology", "rft", "lft",
+      "diseaseHistory", "imaging", "hematology", "basdai",
+    ] as const;
+
+    const mergedTestData = { ...testData };
+    for (const key of SECTION_KEYS) {
+      const defaults = defaultsBySection[key];
+      const userSection = unwrap(testData[key]);
+      if (!defaults || Object.keys(defaults).length === 0) {
+        if (userSection && typeof userSection === "object") {
+          mergedTestData[key] = { data: userSection, date: testData.sampleDate };
+        }
+        continue;
+      }
+      const userData =
+        userSection && typeof userSection === "object" ? userSection : {};
+      const merged = { ...defaults, ...userData };
+      mergedTestData[key] = { data: merged, date: testData.sampleDate };
+    }
+
     const optimisticTest = {
       id: `temp-${Date.now()}`,
       createdAt: new Date(),
       sampleDate: testData.sampleDate,
-      autoimmunoProfile: unwrap(testData.autoimmunoProfile),
-      cardiology: unwrap(testData.cardiology),
-      rft: unwrap(testData.rft),
-      lft: unwrap(testData.lft),
-      diseaseHistory: unwrap(testData.diseaseHistory),
-      imaging: unwrap(testData.imaging),
-      hematology: unwrap(testData.hematology),
-      basdai: unwrap(testData.basdai),
+      autoimmunoProfile: unwrap(mergedTestData.autoimmunoProfile),
+      cardiology: unwrap(mergedTestData.cardiology),
+      rft: unwrap(mergedTestData.rft),
+      lft: unwrap(mergedTestData.lft),
+      diseaseHistory: unwrap(mergedTestData.diseaseHistory),
+      imaging: unwrap(mergedTestData.imaging),
+      hematology: unwrap(mergedTestData.hematology),
+      basdai: unwrap(mergedTestData.basdai),
     };
     setSavedTestData((prev) => [optimisticTest as PatientTest, ...prev]);
     
@@ -724,7 +755,7 @@ function NextPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...testData,
+          ...mergedTestData,
           patientId,
         }),
       });
