@@ -240,6 +240,16 @@ const fieldLabels: Record<string, Record<string, string>> = {
     cytology: "Cytology",
     ada: "ADA",
   },
+  rft: {
+    creatinine: "S. Creatinine",
+    sodium: "Sodium (Na+)",
+    potassium: "Potassium (K+)",
+    chloride: "Chloride (Cl-)",
+    bicarbonate: "Bicarbonate (HCO3-)",
+    bun: "Blood Urea Nitrogen (BUN)",
+    crCl: "Cr Clearance (CrCl) (Cockcroft-Gault Formula)",
+    egfr: "eGFR",
+  },
   basdai: {
     q1Fatigue: "Fatigue/tiredness",
     q2SpinalPain: "AS neck/back/hip pain",

@@ -36,6 +36,8 @@ const RFT_ELECTROLYTE_FAVS: RftSectionFav[] = [
 
 const RFT_BUN_FAVS: RftSectionFav[] = [
   { kind: "single", field: "bun", label: "Blood Urea Nitrogen (BUN)" },
+  { kind: "single", field: "crCl", label: "Cr Clearance (CrCl)" },
+  { kind: "single", field: "egfr", label: "eGFR" },
 ];
 
 function addRftSectionFavourites(entries: RftSectionFav[], sectionTitle: string) {
@@ -111,12 +113,13 @@ export default function RFTModal({
   hideDatePicker = false,
   hideFormActions = false,
 }: Props) {
-  const [formData, setFormData] = useState<
-    Record<string, { value1: string; value2: string }>
-  >({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [reportDate, setReportDate] = useState(defaultDate);
   const [saving, setSaving] = useState(false);
   const [, setFavoritesUpdated] = useState(0);
+  const [calcAge, setCalcAge] = useState("");
+  const [calcWeightKg, setCalcWeightKg] = useState("");
+  const [calcSex, setCalcSex] = useState<"male" | "female">("male");
   useFavouritesSync();
 
   useEffect(() => {
@@ -164,41 +167,86 @@ export default function RFTModal({
     
   }, [savedData]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const parseNum = (raw: string) => {
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const getCreatinineMgDl = () => {
+    const mgDl = parseNum(getFieldValue1("creatinine"));
+    if (mgDl !== null) return mgDl;
+    const umol = parseNum(getFieldValue2("creatinine"));
+    if (umol === null) return null;
+    return umol / 88.42;
+  };
+
+  const calculateCrCl = () => {
+    const age = parseNum(calcAge);
+    const weight = parseNum(calcWeightKg);
+    const scr = getCreatinineMgDl();
+    if (age === null || weight === null || scr === null || scr === 0) return null;
+    const base = ((140 - age) * weight) / (72 * scr);
+    return calcSex === "female" ? base * 0.85 : base;
+  };
+
+  const calculateEgfr = () => {
+    const age = parseNum(calcAge);
+    const scr = getCreatinineMgDl();
+    if (age === null || scr === null || scr <= 0) return null;
+    const isFemale = calcSex === "female";
+    const kappa = isFemale ? 0.7 : 0.9;
+    const alpha = isFemale ? -0.241 : -0.302;
+    const ratio = scr / kappa;
+    const minPart = Math.min(ratio, 1);
+    const maxPart = Math.max(ratio, 1);
+    const sexFactor = isFemale ? 1.012 : 1;
+    return (
+      142 *
+      Math.pow(minPart, alpha) *
+      Math.pow(maxPart, -1.2) *
+      Math.pow(0.9938, age) *
+      sexFactor
+    );
+  };
+
   const updateField = (
     fieldName: string,
     value: string,
     type: "value1" | "value2",
   ) => {
-    const numValue = parseFloat(value) || 0;
+    const numValue = parseNum(value);
 
     setFormData((prev) => {
+      const current = (prev[fieldName] as { value1?: string; value2?: string } | undefined) || {
+        value1: "",
+        value2: "",
+      };
+      const dualField: { value1: string; value2: string } = {
+        value1: current.value1 || "",
+        value2: current.value2 || "",
+      };
+      dualField[type] = value;
       const updated = {
         ...prev,
-        [fieldName]: {
-          ...prev[fieldName],
-          [type]: value,
-        },
+        [fieldName]: dualField,
       };
 
       
       if (fieldName === "creatinine") {
-        if (type === "value1" && value) {
-          
-          const calculated = (numValue * 88.42).toFixed(2);
-          updated[fieldName].value2 = calculated;
-        } else if (type === "value2" && value) {
-          
-          const calculated = (numValue / 88.42).toFixed(2);
-          updated[fieldName].value1 = calculated;
+        if (type === "value1") {
+          dualField.value2 =
+            numValue === null ? "" : (numValue * 88.42).toFixed(2);
+        } else {
+          dualField.value1 =
+            numValue === null ? "" : (numValue / 88.42).toFixed(2);
         }
       } else if (
         ["sodium", "potassium", "chloride", "bicarbonate"].includes(fieldName)
       ) {
-        
-        if (type === "value1" && value) {
-          updated[fieldName].value2 = value;
-        } else if (type === "value2" && value) {
-          updated[fieldName].value1 = value;
+        if (type === "value1") {
+          dualField.value2 = value;
+        } else {
+          dualField.value1 = value;
         }
       }
 
@@ -207,9 +255,9 @@ export default function RFTModal({
   };
 
   const getFieldValue1 = (fieldName: string) =>
-    formData[fieldName]?.value1 || "";
+    (formData[fieldName] as { value1?: string } | undefined)?.value1 || "";
   const getFieldValue2 = (fieldName: string) =>
-    formData[fieldName]?.value2 || "";
+    (formData[fieldName] as { value2?: string } | undefined)?.value2 || "";
 
   const fieldColors = [
     "bg-blue-50 border-blue-200",
@@ -262,12 +310,66 @@ export default function RFTModal({
     );
   };
 
+  const renderSingleValueField = (
+    fieldName: string,
+    label: string,
+    index: number,
+    unit?: string,
+    placeholder?: string,
+  ) => {
+    const colorClass = fieldColors[index % fieldColors.length];
+    return (
+      <div className={`p-2 rounded ${colorClass}`}>
+        <div className="grid grid-cols-2 gap-2 items-end">
+          <div>
+            <div className="mb-1">
+              <Label className="text-sm font-medium">{label}</Label>
+            </div>
+          </div>
+          <div>
+            <Label className="text-sm">{unit ? `Value (${unit})` : "Value"}</Label>
+            <Input
+              value={(formData[fieldName] as string) || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  [fieldName]: e.target.value,
+                }))
+              }
+              placeholder={placeholder || unit || "Enter value"}
+              className="bg-white"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const computedCrCl = calculateCrCl();
+  const computedEgfr = calculateEgfr();
+
+  const applyCalculatedRenalValues = () => {
+    if (computedCrCl === null && computedEgfr === null) return;
+    setFormData((prev) => ({
+      ...prev,
+      crCl: computedCrCl !== null ? computedCrCl.toFixed(2) : (prev.crCl as string) || "",
+      egfr: computedEgfr !== null ? computedEgfr.toFixed(2) : (prev.egfr as string) || "",
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const hasData =
       Object.keys(formData).length > 0 &&
-      Object.values(formData).some((f) => f.value1 || f.value2);
+      Object.values(formData).some((f) => {
+        if (typeof f === "string") return f.trim().length > 0;
+        if (f && typeof f === "object" && !Array.isArray(f)) {
+          const v = f as { value1?: string; value2?: string };
+          return Boolean(v.value1) || Boolean(v.value2);
+        }
+        return false;
+      });
 
     if (!hasData) {
       alert("Please enter at least one field value before saving.");
@@ -469,34 +571,122 @@ export default function RFTModal({
                 sectionTitle: "Blood Urea Nitrogen (BUN)",
               })}
               <div className="space-y-2">
-                {(() => {
-                  const colorClass =
-                    fieldColors[fieldIndex % fieldColors.length];
-                  return (
-                    <div className={`p-2 rounded ${colorClass}`}>
-                      <div className="grid grid-cols-2 gap-2 items-end">
-                        <div>
-                          <div className="mb-1">
-                            <Label className="text-sm font-medium">
-                              Blood Urea Nitrogen (BUN)
-                            </Label>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm">Value</Label>
-                          <Input
-                            value={getFieldValue1("bun")}
-                            onChange={(e) =>
-                              updateField("bun", e.target.value, "value1")
-                            }
-                            placeholder="Enter value"
-                            className="bg-white"
-                          />
-                        </div>
+                {renderSingleValueField(
+                  "bun",
+                  "Blood Urea Nitrogen (BUN)",
+                  fieldIndex++,
+                  "mg/dL",
+                )}
+                {renderSingleValueField(
+                  "crCl",
+                  "Cr Clearance (CrCl) (Cockcroft-Gault Formula)",
+                  fieldIndex++,
+                  undefined,
+                  "See special chart page 5",
+                )}
+                {renderSingleValueField(
+                  "egfr",
+                  "eGFR",
+                  fieldIndex++,
+                  undefined,
+                  "See special chart page 4",
+                )}
+                <div className={`p-3 rounded ${fieldColors[fieldIndex % fieldColors.length]}`}>
+                  <div className="mb-2">
+                    <Label className="text-sm font-medium">
+                      Renal Estimate Helper (Cockcroft-Gault + CKD-EPI 2021)
+                    </Label>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 items-end">
+                    <div>
+                      <Label className="text-sm">Age (years)</Label>
+                      <Input
+                        value={calcAge}
+                        onChange={(e) => setCalcAge(e.target.value)}
+                        placeholder="Age"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Weight (kg)</Label>
+                      <Input
+                        value={calcWeightKg}
+                        onChange={(e) => setCalcWeightKg(e.target.value)}
+                        placeholder="Weight"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Sex</Label>
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          type="button"
+                          variant={calcSex === "male" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCalcSex("male")}
+                        >
+                          Male
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={calcSex === "female" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCalcSex("female")}
+                        >
+                          Female
+                        </Button>
                       </div>
                     </div>
-                  );
-                })()}
+                    <div>
+                      <Label className="text-sm">Creatinine used</Label>
+                      {(() => {
+                        const creatinineMgDl = getCreatinineMgDl();
+                        return (
+                      <Input
+                        value={
+                          creatinineMgDl === null
+                            ? ""
+                            : `${creatinineMgDl.toFixed(2)} mg/dL`
+                        }
+                        readOnly
+                        className="bg-slate-50"
+                        placeholder="From S. Creatinine"
+                      />
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 items-end mt-3">
+                    <div>
+                      <Label className="text-sm">Calculated CrCl (mL/min)</Label>
+                      <Input
+                        value={computedCrCl === null ? "" : computedCrCl.toFixed(2)}
+                        readOnly
+                        className="bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Calculated eGFR (mL/min/1.73m2)</Label>
+                      <Input
+                        value={computedEgfr === null ? "" : computedEgfr.toFixed(2)}
+                        readOnly
+                        className="bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={applyCalculatedRenalValues}
+                        disabled={computedCrCl === null && computedEgfr === null}
+                        className="w-full"
+                      >
+                        Apply to CrCl/eGFR
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                {fieldIndex++}
               </div>
             </div>
 
