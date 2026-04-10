@@ -56,6 +56,52 @@ type PatientTest = {
   basdai?: TestDataSection;
 };
 
+const MAIN_CATEGORY_MODAL_IDS = new Set<string>([
+  "my-favorites",
+  "basdai",
+  "autoimmuno",
+  "cardiology",
+  "rft",
+  "lft",
+  "disease-history",
+  "imaging",
+  "hematology",
+]);
+
+/** Sub-category / section-only search rows may use a section slug in `modal` instead of the parent accordion id. */
+const SECTION_KEY_TO_PARENT_MODAL: Record<string, string> = {
+  cbc: "hematology",
+  coagulation: "hematology",
+  coag: "hematology",
+  chemistry: "hematology",
+};
+
+function resolveMainCategoryModal(item: {
+  key: string;
+  label: string;
+  modal: string;
+}): string {
+  const { modal, key, label } = item;
+  if (MAIN_CATEGORY_MODAL_IDS.has(modal)) return modal;
+
+  const fromModal = SECTION_KEY_TO_PARENT_MODAL[modal.toLowerCase()];
+  if (fromModal) return fromModal;
+
+  const fromKey = SECTION_KEY_TO_PARENT_MODAL[key.toLowerCase()];
+  if (fromKey) return fromKey;
+
+  const normLabel = label.trim().toLowerCase();
+  if (SECTION_KEY_TO_PARENT_MODAL[normLabel]) {
+    return SECTION_KEY_TO_PARENT_MODAL[normLabel];
+  }
+
+  const firstWord = normLabel.split(/[\s(/]/)[0] ?? "";
+  if (firstWord && SECTION_KEY_TO_PARENT_MODAL[firstWord]) {
+    return SECTION_KEY_TO_PARENT_MODAL[firstWord];
+  }
+
+  return modal;
+}
 
 function buildDefaultsFromFavourites(
   favourites: FavouriteField[],
@@ -827,11 +873,15 @@ function NextPageContent() {
       .slice(0, 8);
   }, [searchTerm]);
 
-  const openModalForSuggestion = (modalId: string) => {
-    setOpenModal(modalId);
+  const handleSearchSelect = useCallback((item: {
+    key: string;
+    label: string;
+    modal: string;
+  }) => {
+    setOpenModal(resolveMainCategoryModal(item));
     setShowSuggestions(false);
     setSearchTerm("");
-  };
+  }, []);
 
   const favoritesSectionShell =
     "bg-white/95 backdrop-blur-sm border-slate-200/90 border-l-sky-600 border-l-4";
@@ -881,7 +931,7 @@ function NextPageContent() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     if (suggestions.length > 0)
-                      openModalForSuggestion(suggestions[0].modal);
+                      handleSearchSelect(suggestions[0]);
                   } else if (e.key === "Escape") {
                     setShowSuggestions(false);
                   }
@@ -895,7 +945,7 @@ function NextPageContent() {
                     <li
                       key={s.key}
                       className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                      onMouseDown={() => openModalForSuggestion(s.modal)}
+                      onMouseDown={() => handleSearchSelect(s)}
                     >
                       {s.label}
                     </li>
