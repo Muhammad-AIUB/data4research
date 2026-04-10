@@ -58,17 +58,7 @@ export default function Sidebar({ session, onClose }: SidebarProps) {
         </span>
       </div>
 
-      <div className="p-4 border-t border-gray-700">
-        <button
-          onClick={handleLogout}
-          className="flex items-center space-x-3 w-full px-4 py-3 text-white hover:bg-red-600 rounded-lg transition-colors"
-        >
-          <LogOut size={18} />
-          <span className="text-sm font-medium">Logout</span>
-        </button>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
         {navLink("/dashboard", <Home size={18} />, "Dashboard")}
         {navLink("/dashboard/patients", <Users size={18} />, "All Patients")}
         {navLink("/dashboard/settings", <Settings size={18} />, "Settings")}
@@ -80,6 +70,17 @@ export default function Sidebar({ session, onClose }: SidebarProps) {
         {session.user?.role === 'ADMIN' &&
           navLink("/dashboard/audit-logs", <ClipboardList size={18} />, "Audit Logs")}
       </nav>
+
+      <div className="p-4 border-t border-gray-700 shrink-0">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center space-x-3 w-full px-4 py-3 text-white hover:bg-red-600 rounded-lg transition-colors"
+        >
+          <LogOut size={18} />
+          <span className="text-sm font-medium">Logout</span>
+        </button>
+      </div>
     </div>
   )
 }
