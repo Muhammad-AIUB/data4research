@@ -50,3 +50,7 @@ next-env.d.ts
 
 /.cladue
 config.bat
+# secrets: never commit real env files (.env.example stays tracked)
+.env
+.env.*
+!.env.example
